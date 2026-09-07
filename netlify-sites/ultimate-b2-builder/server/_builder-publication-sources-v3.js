@@ -28,6 +28,7 @@ export async function collectStudentsBookPublicationV3Sources(sql) {
     if (!row) return null;
     const resource = await resolveBuilderContentResource(bookSlug, componentSlug, resourceName, key === "default" ? undefined : key);
     const normalized = normalizeStoredBuilderDocument(row, resource);
+    if (resource.validateReadContext) await resource.validateReadContext({ document: row.payload, sql });
     // Validation does not replace the original authored payload. The checksum
     // and revision continue to identify the raw persisted document.
     return { ...normalized, payload: structuredClone(row.payload) };

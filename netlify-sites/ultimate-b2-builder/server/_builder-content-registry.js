@@ -1,3 +1,4 @@
+import { validateCurrentUnitExtrasContext, validateCurrentUnitExtrasMutation, projectCurrentUnitExtrasPreview } from "./_students-book-current-extras.js";
 import repositoryHotspots from "../../../src/data/ultimate-b2/authoring/studentsBookHotspots.json" with { type: "json" };
 import {
   ULTIMATE_B2_HOTSPOT_SCHEMA_VERSION,
@@ -23,7 +24,7 @@ import { NATIVE_ACTIVITY_SCHEMA_VERSION, createEmptyNativeActivityIndex, normali
 import { NATIVE_ACTIVITY_KINDS, normalizeNativeActivityPublicDocument, normalizeNativeActivityTeacherDocument } from "./_native-activity-registry.js";
 import { resolveNativeActivityAdapter } from "./_native-activity-adapters.js";
 import { applyUltimateB2ActivityLifecycle, createEmptyUltimateB2ActivityLifecycle, normalizeUltimateB2ActivityLifecycle, ULTIMATE_B2_ACTIVITY_LIFECYCLE_SCHEMA_VERSION } from "../../../src/data/ultimate-b2/activityLifecycle.js";
-import { createEmptyUltimateB2UnitExtras, normalizeUltimateB2UnitExtrasDocument, projectUltimateB2UnitExtrasForPublication, ULTIMATE_B2_UNIT_EXTRAS_SCHEMA_VERSION } from "../../../src/data/ultimate-b2/unitExtras.js";
+import { createEmptyUltimateB2UnitExtras, validateCurrentUnitExtrasStructure, ULTIMATE_B2_UNIT_EXTRAS_SCHEMA_VERSION } from "../../../src/data/ultimate-b2/unitExtras.js";
 import { listBuilderServerComponents, resolveBuilderServerComponent } from "./_builder-component-registry.js";
 import { createEmptyBuilderTeacherUiDocument, normalizeBuilderTeacherUiDocument, projectBuilderTeacherUiPreview } from "./_builder-teacher-ui-document.js";
 
@@ -171,8 +172,10 @@ const registry = Object.freeze({
     previewAudience: "unit-extras",
     previewRequiresStored: true,
     baseline: createEmptyUltimateB2UnitExtras,
-    validate: normalizeUltimateB2UnitExtrasDocument,
-    projectPreview: projectUltimateB2UnitExtrasForPublication,
+    validate: validateCurrentUnitExtrasStructure,
+    validateReadContext: validateCurrentUnitExtrasContext,
+    validateMutationContext: validateCurrentUnitExtrasMutation,
+    projectPreview: projectCurrentUnitExtrasPreview,
   }),
   ...Object.fromEntries(managedComponents.flatMap((registration) => [
     [`${registration.bookSlug}/${registration.componentSlug}/hotspots`, managedHotspotResource(registration)],

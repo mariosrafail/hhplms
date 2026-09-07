@@ -5,7 +5,8 @@ import { createBookAssetStorage } from "../../../lib/book-assets/storage.js";
 import { buildUnitExtraAssetObjectKey, buildUnitExtraAssetStagingKey } from "../../../lib/book-assets/object-keys.js";
 import { inspectManagedMp4, MANAGED_MP4_MAXIMUM_BYTES } from "../../../lib/book-assets/video-inspection.js";
 import { inspectManagedMp3, MANAGED_MP3_MAXIMUM_BYTES } from "../../../lib/book-assets/audio-inspection.js";
-import { normalizeUltimateB2UnitExtrasDocument } from "../../../src/data/ultimate-b2/unitExtras.js";
+import { validateCurrentUnitExtrasStructure } from "../../../src/data/ultimate-b2/unitExtras.js";
+import { validateCurrentUnitExtrasContext } from "./_students-book-current-extras.js";
 import { getBuilderSql, json, requireBuilderOrigin, requireBuilderUser } from "./_builder-auth.js";
 import { authorizeBuilderPreviewRequestWithDiagnostic } from "./_builder-preview-authorization.js";
 import { builderClientMutationIdPattern, builderDocumentSha256, stableBuilderJson } from "./_builder-content-security.js";
@@ -199,7 +200,7 @@ export function createBuilderUnitExtraAssetsHandler(overrides = {}) {
       if (parsed.action === "save") {
         const body = parseJson(event, ["expectedRevision", "clientMutationId", "document"]); if (body.error) return body.error;
         if (!Number.isSafeInteger(body.value.expectedRevision) || body.value.expectedRevision < 0 || !builderClientMutationIdPattern.test(String(body.value.clientMutationId || ""))) return json(400, { error: "invalid_save_identity" });
-        let document; try { document = normalizeUltimateB2UnitExtrasDocument(body.value.document); } catch (error) { return json(400, { error: "invalid_document", detail: String(error.message).slice(0, 240) }); }
+        let document; try { document = validateCurrentUnitExtrasStructure(body.value.document); await validateCurrentUnitExtrasContext({ document, sql }); } catch (error) { return json(400, { error: "invalid_document", detail: String(error.message).slice(0, 240) }); }
         try { await dependencies.validateAssets(sql, { ...parsed, document }); } catch { return json(400, { error: "unit_extra_asset_invalid" }); }
         const result = await dependencies.saveDocument(sql, { resource, expectedRevision: body.value.expectedRevision, clientMutationId: body.value.clientMutationId, document, payloadSha256: builderDocumentSha256(document), builderUserId: auth.builderUser.id });
         if (["revision_conflict", "mutation_id_conflict"].includes(result.outcome)) return json(409, { error: result.outcome, currentRevision: result.currentRevision });

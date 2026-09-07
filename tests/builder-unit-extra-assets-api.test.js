@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { studentsBookPageSql } from "./fixtures/students-book-current.js";
 
 import { json } from "../netlify-sites/ultimate-b2-builder/server/_builder-auth.js";
 import { createBuilderUnitExtraAssetsHandler } from "../netlify-sites/ultimate-b2-builder/server/_builder-unit-extra-assets.js";
@@ -48,7 +49,7 @@ function harness({ claimOverrides = {}, uploadScopeOverrides = {}, storedActivit
     source_metadata: { unit_extra_item_id: activeItemId, asset_slot: activeItemId },
   } : null;
   const handler = createBuilderUnitExtraAssetsHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     authorize: async (event) => event.headers.cookie === "live" ? { builderUser: { id: actor } } : { error: json(401, { error: "Unauthorized" }) },
     authorizePreview: async (event) => ({ authorized: event.headers["x-preview-authorized"] === "yes" }),
     resolveResource: async () => ({ schemaVersion: "1.0", validate: (value) => value }),

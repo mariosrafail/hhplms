@@ -1,6 +1,6 @@
 import { builderDocumentSha256 } from "./_builder-content-security.js";
 
-function rowDocument(row, resource) {
+async function rowDocument(row, resource, sql) {
   if (!row) return null;
   const checksum = builderDocumentSha256(row.payload);
   if (checksum !== row.payload_sha256) throw new Error("Stored Builder document checksum is invalid");
@@ -8,6 +8,7 @@ function rowDocument(row, resource) {
   const revision = Number(row.revision);
   if (!Number.isSafeInteger(revision) || revision < 1) throw new Error("Stored Builder document revision is invalid");
   const document = resource.validate(row.payload);
+  if (resource.validateReadContext) await resource.validateReadContext({ document, sql });
   return { revision, source: "database", document };
 }
 export async function loadBuilderComponentDocument(sql, resource) {
@@ -23,7 +24,7 @@ export async function loadBuilderComponentDocument(sql, resource) {
       and document.document_key=${resource.documentKey}
     limit 1
   `;
-  return rowDocument(rows[0], resource);
+  return rowDocument(rows[0], resource, sql);
 }
 
 export async function loadBuilderComponentDocuments(sql, resources) {
@@ -54,7 +55,7 @@ export async function loadBuilderComponentDocuments(sql, resources) {
   for (const row of rows) {
     const resource = byKey.get(row.document_key);
     if (!resource || documents.has(row.document_key)) throw new Error("Builder document batch returned an unexpected document");
-    documents.set(row.document_key, rowDocument(row, resource));
+    documents.set(row.document_key, await rowDocument(row, resource, sql));
   }
   return documents;
 }

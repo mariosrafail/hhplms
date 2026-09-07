@@ -98,14 +98,17 @@ function normalizeUnit(value, index) {
   return { ...identity, categories: { videos, audios } };
 }
 
-function normalizePage(value, index, { audioDefaults }) {
+function normalizePage(value, index, { audioDefaults, pageCatalog = ultimateB2StudentsBookAuthoringPages }) {
   const label = `Unit Extras pages[${index}]`;
   exact(value, ["pageId", "unitId", "extrasVisibility"], label);
   const hasAudios = Object.hasOwn(value.extrasVisibility, "audios");
   exact(value.extrasVisibility, ["videos", ...(hasAudios ? ["audios"] : [])], `${label} visibility`);
   if (typeof value.extrasVisibility.videos !== "boolean") throw new Error(`${label} video visibility is invalid.`);
-  const page = ultimateB2StudentsBookAuthoringPages.find((candidate) => candidate.id === value.pageId);
-  if (!page || value.unitId !== `unit-${page.unitNumber}`) throw new Error(`${label} does not belong to its Unit.`);
+  if (typeof value.pageId !== "string" || !/^[a-z0-9][a-z0-9-]{0,127}$/.test(value.pageId) || !/^unit-(?:[1-9]|10)$/.test(value.unitId)) throw new Error(`${label} identity is invalid.`);
+  if (pageCatalog !== null) {
+    const page = pageCatalog.find((candidate) => candidate.id === value.pageId);
+    if (!page || value.unitId !== `unit-${page.unitNumber}`) throw new Error(`${label} does not belong to its Unit.`);
+  }
   if (hasAudios && typeof value.extrasVisibility.audios !== "boolean") throw new Error(`${label} audio visibility is invalid.`);
   return { pageId: value.pageId, unitId: value.unitId, extrasVisibility: { videos: value.extrasVisibility.videos, ...(hasAudios || audioDefaults ? { audios: value.extrasVisibility.audios === true } : {}) } };
 }
@@ -114,19 +117,44 @@ export function createEmptyUltimateB2UnitExtras() {
   return { schemaVersion: ULTIMATE_B2_UNIT_EXTRAS_SCHEMA_VERSION, units: [], pages: [] };
 }
 
-export function normalizeUltimateB2UnitExtrasDocument(value) {
+function normalizeAuthoringDocument(value, pageCatalog = ultimateB2StudentsBookAuthoringPages) {
   exact(value, ["schemaVersion", "units", "pages"], "Unit Extras");
   if (value.schemaVersion !== ULTIMATE_B2_UNIT_EXTRAS_SCHEMA_VERSION) throw new Error("Unit Extras schema version is invalid.");
   if (!Array.isArray(value.units) || value.units.length > ULTIMATE_B2_UNIT_EXTRA_LIMITS.units || !Array.isArray(value.pages) || value.pages.length > ULTIMATE_B2_UNIT_EXTRA_LIMITS.pages) throw new Error("Unit Extras collections are invalid.");
   const units = value.units.map(normalizeUnit);
   if (new Set(units.map((unit) => unit.unitId)).size !== units.length) throw new Error("Unit Extras Unit identities must be unique.");
-  const pages = value.pages.map((page, index) => normalizePage(page, index, { audioDefaults: true }));
+  const pages = value.pages.map((page, index) => normalizePage(page, index, { audioDefaults: true, pageCatalog }));
   if (new Set(pages.map((page) => page.pageId)).size !== pages.length) throw new Error("Unit Extras Page identities must be unique.");
   return { schemaVersion: value.schemaVersion, units, pages };
 }
 
+export function normalizeUltimateB2UnitExtrasDocument(value) {
+  return normalizeAuthoringDocument(value);
+}
+
+// Current storage validation is structural only. Server callers must also
+// resolve current page membership. Never persist this normalizer's read model:
+// whitespace, ordering and absent audio fields belong to the authored identity.
+export function validateCurrentUnitExtrasStructure(value) {
+  normalizeAuthoringDocument(value, null);
+  for (const unit of value.units) for (const item of [...unit.categories.videos, ...(unit.categories.audios || [])]) {
+    if (typeof item.fileName !== "string") throw new Error("Unit Extra filename is invalid.");
+  }
+  return structuredClone(value);
+}
+
 export function projectUltimateB2UnitExtrasForPublication(value) {
-  const document = normalizeUltimateB2UnitExtrasDocument(value);
+  return projectDocument(normalizeUltimateB2UnitExtrasDocument(value));
+}
+
+export function projectCurrentUnitExtras(value, { pages, retained = [] }) {
+  validateCurrentUnitExtrasStructure(value);
+  const document = normalizeAuthoringDocument(value, [...pages, ...retained]);
+  const active = new Set(pages.map((page) => page.id));
+  return { ...projectDocument(document), pages: structuredClone(value.pages.filter((page) => active.has(page.pageId))) };
+}
+
+function projectDocument(document) {
   const units = document.units.map((unit) => ({
     unitId: unit.unitId,
     unitNumber: unit.unitNumber,
@@ -145,6 +173,16 @@ export function projectUltimateB2UnitExtrasForPublication(value) {
 }
 
 export function normalizePublishedUltimateB2UnitExtras(value) {
+  return normalizePublishedDocument(value);
+}
+
+// Draft envelopes are authorized and membership-checked by the current server.
+// Immutable v1/v2 readers continue to use the historical default above.
+export function normalizeCurrentPublishedUnitExtras(value) {
+  return normalizePublishedDocument(value, null);
+}
+
+function normalizePublishedDocument(value, pageCatalog = ultimateB2StudentsBookAuthoringPages) {
   exact(value, ["schemaVersion", "units", "pages"], "Published Unit Extras");
   if (value.schemaVersion !== ULTIMATE_B2_UNIT_EXTRAS_SCHEMA_VERSION || !Array.isArray(value.units) || !Array.isArray(value.pages)) throw new Error("Published Unit Extras are invalid.");
   const units = value.units.map((unit, unitIndex) => {
@@ -178,7 +216,7 @@ export function normalizePublishedUltimateB2UnitExtras(value) {
     return { ...identity, categories: { videos, ...(hasAudios ? { audios } : {}) } };
   });
   if (new Set(units.map((unit) => unit.unitId)).size !== units.length) throw new Error("Published Unit identities must be unique.");
-  const pages = value.pages.map((page, index) => normalizePage(page, index, { audioDefaults: false }));
+  const pages = value.pages.map((page, index) => normalizePage(page, index, { audioDefaults: false, pageCatalog }));
   if (new Set(pages.map((page) => page.pageId)).size !== pages.length) throw new Error("Published Page identities must be unique.");
   return { schemaVersion: value.schemaVersion, units, pages };
 }

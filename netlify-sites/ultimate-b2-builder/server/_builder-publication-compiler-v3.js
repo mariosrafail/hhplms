@@ -2,7 +2,7 @@ import { STUDENTS_BOOK_V3_COMPILER, STUDENTS_BOOK_V3_SCHEMA, STUDENTS_BOOK_V3_CO
 import { emptyStudentsBookCurrentHotspots, normalizeStudentsBookCurrentHotspots } from "../../../src/data/ultimate-b2/studentsBookCurrentHotspots.js";
 import { createEmptyNativeActivityIndex } from "../../../src/data/native-activities/nativeActivityPublic.js";
 import { createEmptyHostedTeacherUiDocument, normalizeHostedTeacherUiDocument, projectHostedTeacherUiPreview } from "../../../src/data/ultimate-b2/hostedTeacherUiDocument.js";
-import { createEmptyUltimateB2UnitExtras, projectUltimateB2UnitExtrasForPublication } from "../../../src/data/ultimate-b2/unitExtras.js";
+import { createEmptyUltimateB2UnitExtras, projectCurrentUnitExtras } from "../../../src/data/ultimate-b2/unitExtras.js";
 import { projectComponentActivityOrder } from "../../../src/data/native-activities/nativeActivityOrder.js";
 import { builderDocumentSha256, stableBuilderJson } from "./_builder-content-security.js";
 import { resolveStudentsBookPageAuthority, studentsBookPageScope } from "./_students-book-page-authority.js";
@@ -79,8 +79,7 @@ export function compileStudentsBookReleaseV3(sources) {
   const extrasAssets = validateUnitExtraAssetRows(extrasDocument, sources.unitExtras?.assetRows || []);
   // Deleted-page settings remain in the authored source and its checksum. They
   // are dormant in this release; unknown/foreign pages still fail validation.
-  const extrasPages = extrasDocument.pages.filter((page) => !pageLibrary.retainedPageIds.has(page.pageId));
-  const unitExtras = { ...projectUltimateB2UnitExtrasForPublication({ ...extrasDocument, pages: [] }), pages: structuredClone(extrasPages) };
+  const unitExtras = projectCurrentUnitExtras(extrasDocument, resolveStudentsBookPageAuthority(sources.pages));
   const uiDocument = normalizeHostedTeacherUiDocument(sources.documents?.teacherUi?.payload || createEmptyHostedTeacherUiDocument());
   const ui = projectHostedTeacherUiPreview(uiDocument);
   const publicNative = Object.fromEntries(selected.map(([id, entry]) => [id, { kind: entry.publicDocument.kind, document: entry.publicDocument }]));

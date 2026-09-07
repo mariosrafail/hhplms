@@ -123,7 +123,7 @@ export function createBuilderPreviewHandler(overrides = {}) {
           loadDocuments: dependencies.loadDocuments,
           allowedResources: requiredRelated,
         }),
-      } : undefined;
+      } : { sql };
       const document = await resource.projectPreview(state.document, projectionContext);
       stage = "validate_projection";
       assertPublicBuilderDocument(document);

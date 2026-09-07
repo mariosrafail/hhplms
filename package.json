@@ -85,6 +85,8 @@
     "test:builder:hosted-ui-controller": "node scripts/book-builder/hosted-ui-controller-playwright.mjs",
     "test:builder:multi-book": "node scripts/book-builder/multi-book-component-playwright.mjs",
     "test:builder:multi-component-authoring": "node scripts/book-builder/multi-book-component-playwright.mjs",
+    "test:builder:extras": "node scripts/book-builder/students-book-extras-playwright.mjs",
+    "test:students-book:fullbook-worker": "node scripts/cloudflare/students-book-fullbook-acceptance.mjs",
     "test:builder:pages": "node scripts/book-builder/page-library-playwright.mjs",
     "test:builder:product-publication": "node scripts/book-builder/publication-playwright.mjs",
     "test:builder:publication": "npm run test:builder:product-publication",

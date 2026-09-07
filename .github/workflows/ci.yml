@@ -20,6 +20,8 @@ jobs:
       - run: npm run verify:migration-manifest
       - run: npm run audit:runtime-schema-boundary
       - run: npm test
+      - name: Verify full-book materialization in local Workers with isolated ASSETS and R2
+        run: npm run test:students-book:fullbook-worker
       - run: npm run test:teacher-project-builder
       - run: npm run audit:source-structure
       - run: npm run audit:branding
@@ -124,6 +126,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Verify published book assignment browser flows against isolated PostgreSQL
         run: npm run test:published-book-assignments
+      - name: Verify current Unit Extras editor against isolated PostgreSQL
+        run: npm run test:builder:extras
       - name: Remove temporary integration schemas
         if: always()
         run: npm run test:integration:cleanup

@@ -82,7 +82,7 @@ export async function loadBuilderUnitExtraAsset(sql, { bookSlug, componentSlug, 
 export async function validateBuilderUnitExtraAssetReferences(sql, { bookSlug, componentSlug, document }) {
   const references = document.units.flatMap((unit) => [
     ...unit.categories.videos.filter((item) => item.asset).map((item) => ({ unit, item, role: "unit_extra_video", mimeType: "video/mp4" })),
-    ...unit.categories.audios.filter((item) => item.asset).map((item) => ({ unit, item, role: "unit_extra_audio", mimeType: "audio/mpeg" })),
+    ...(unit.categories.audios || []).filter((item) => item.asset).map((item) => ({ unit, item, role: "unit_extra_audio", mimeType: "audio/mpeg" })),
   ]);
   if (!references.length) return;
   const ids = references.map(({ item }) => item.asset.assetId);

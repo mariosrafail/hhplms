@@ -1,0 +1,343 @@
+{
+  "compiler_id": "ultimate-b2-grammar-book-v1",
+  "release_schema_version": "1.0",
+  "runtime_compatibility_sha256": "1f3a87e55ae63999702b645e440b3dc49958caf33068ee7cbf4dc5a0cb14a5cd",
+  "source_snapshot": {
+    "schemaVersion": "1.0",
+    "pages": {
+      "revision": 1,
+      "sha256": "2ae87394eaf327051b9f3d137e6748d30e4dd8e72107539d707f0b11d90fdadd"
+    },
+    "hotspots": {
+      "revision": 3,
+      "sha256": "4ca0eba4072a6d52a445d5f9afb2812b493b896a982d28699d07313267909056"
+    },
+    "activityLifecycle": {
+      "revision": 0,
+      "sha256": "04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36"
+    },
+    "nativeIndex": {
+      "revision": 2,
+      "sha256": "fec7d4962aff5cc70ed58d6c25c9ea582dacbc257a590057643a469cbc84032a"
+    },
+    "nativeActivities": {
+      "ultimate-b2-gb-unit-1-page-1-o1": {
+        "kind": "drag-drop",
+        "public": {
+          "revision": 4,
+          "sha256": "bc74ee471ddb1b606ac79655128f0c53662bf881c7263c7d719a9649e59cba61"
+        },
+        "teacher": {
+          "revision": 4,
+          "sha256": "3858acd35a3f0c3f42912040baff047ba3ff962bf9fbe3cd11cd88e9db2f3527"
+        }
+      }
+    }
+  },
+  "source_snapshot_sha256": "e46a52039b4cdf30f30aaa7d238b20b8ffb4f4cec8bc4e6533a5f0a48af7cd43",
+  "public_projection": {
+    "schemaVersion": "1.0",
+    "bookSlug": "ultimate-b2",
+    "componentSlug": "ultimate-b2-grammar-book",
+    "compatibility": "1f3a87e55ae63999702b645e440b3dc49958caf33068ee7cbf4dc5a0cb14a5cd",
+    "units": [
+      {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "slug": "unit-1",
+        "title": "Unit 1",
+        "unitNumber": 1,
+        "sortOrder": 1
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000002",
+        "slug": "unit-2",
+        "title": "Unit 2",
+        "unitNumber": 2,
+        "sortOrder": 2
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000003",
+        "slug": "unit-3",
+        "title": "Unit 3",
+        "unitNumber": 3,
+        "sortOrder": 3
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000004",
+        "slug": "unit-4",
+        "title": "Unit 4",
+        "unitNumber": 4,
+        "sortOrder": 4
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000005",
+        "slug": "unit-5",
+        "title": "Unit 5",
+        "unitNumber": 5,
+        "sortOrder": 5
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000006",
+        "slug": "unit-6",
+        "title": "Unit 6",
+        "unitNumber": 6,
+        "sortOrder": 6
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000007",
+        "slug": "unit-7",
+        "title": "Unit 7",
+        "unitNumber": 7,
+        "sortOrder": 7
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000008",
+        "slug": "unit-8",
+        "title": "Unit 8",
+        "unitNumber": 8,
+        "sortOrder": 8
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000009",
+        "slug": "unit-9",
+        "title": "Unit 9",
+        "unitNumber": 9,
+        "sortOrder": 9
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000010",
+        "slug": "unit-10",
+        "title": "Unit 10",
+        "unitNumber": 10,
+        "sortOrder": 10
+      }
+    ],
+    "pages": [
+      {
+        "id": "synthetic-page-one",
+        "stableKey": "ultimate-b2-grammar-book/pages/synthetic-page-one",
+        "unitId": "10000000-0000-4000-8000-000000000001",
+        "unitSlug": "unit-1",
+        "unitNumber": 1,
+        "unitTitle": "Unit 1",
+        "sectionTitle": "Vocabulary",
+        "printedLabel": "4",
+        "sortOrder": 1,
+        "label": "Workbook page one",
+        "image": {
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "extension": "png",
+          "mediaType": "image/png",
+          "role": "managed_page_image",
+          "byteSize": 68,
+          "width": 1,
+          "height": 1
+        }
+      }
+    ],
+    "hotspots": {
+      "schemaVersion": "1.0",
+      "packageSlug": "ultimate-b2",
+      "componentSlug": "ultimate-b2-grammar-book",
+      "pages": {
+        "synthetic-page-one": [
+          {
+            "id": "synthetic-activity-hotspot",
+            "unitNumber": 1,
+            "pageId": "synthetic-page-one",
+            "left": 4,
+            "top": 4,
+            "width": 12,
+            "height": 12,
+            "label": "Synthetic activity",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-gb-unit-1-page-1-o1"
+          }
+        ]
+      }
+    },
+    "nativeActivities": {
+      "ultimate-b2-gb-unit-1-page-1-o1": {
+        "kind": "drag-drop",
+        "document": {
+          "schemaVersion": "1.0",
+          "activityId": "ultimate-b2-gb-unit-1-page-1-o1",
+          "kind": "drag-drop",
+          "metadata": {
+            "title": "Synthetic historical drag and drop",
+            "visibleInstructionText": ""
+          },
+          "placement": {
+            "pageId": "synthetic-page-one"
+          },
+          "assets": [
+            {
+              "assetId": "20000000-0000-4000-8000-000000000041",
+              "checksumSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "role": "activity_artwork",
+              "slot": "synthetic-panel"
+            },
+            {
+              "assetId": "20000000-0000-4000-8000-000000000043",
+              "checksumSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "role": "activity_font",
+              "slot": "font-20000000000040008000000000000043"
+            }
+          ],
+          "parts": [
+            {
+              "id": "part-1",
+              "interaction": {
+                "kind": "drag-drop",
+                "words": [
+                  {
+                    "id": "word-20000000000040008000000000000001",
+                    "text": "Synthetic first line\nSynthetic second line",
+                    "reusable": false,
+                    "shortLabel": "A"
+                  },
+                  {
+                    "id": "word-20000000000040008000000000000002",
+                    "text": "Synthetic distractor",
+                    "reusable": false,
+                    "shortLabel": "B"
+                  }
+                ],
+                "presentation": {
+                  "bankWordStyle": {
+                    "fontFamily": "Arial",
+                    "fontSize": 18,
+                    "color": "#123abc",
+                    "fontAssetSlot": "font-20000000000040008000000000000043"
+                  },
+                  "placedAnswerStyle": {
+                    "fontFamily": "Georgia",
+                    "fontSize": 21,
+                    "color": "#172033",
+                    "fontAssetSlot": null
+                  }
+                },
+                "layoutMode": "standard",
+                "answerBankHeightPx": null,
+                "textPanelHeightPx": null,
+                "panels": [
+                  {
+                    "id": "panel-20000000000040008000000000000011",
+                    "surface": {
+                      "width": 1000,
+                      "height": 600
+                    },
+                    "images": [
+                      {
+                        "id": "img-20000000000040008000000000000021",
+                        "assetSlot": "synthetic-panel",
+                        "area": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 1000,
+                          "height": 600
+                        },
+                        "order": 0,
+                        "altText": "Synthetic illustration",
+                        "decorative": false,
+                        "fit": "contain",
+                        "locked": false
+                      }
+                    ],
+                    "dropTargets": [
+                      {
+                        "id": "target-20000000000040008000000000000031",
+                        "area": {
+                          "x": 80,
+                          "y": 420,
+                          "width": 220,
+                          "height": 80
+                        },
+                        "accessibleLabel": "Synthetic blank",
+                        "capacity": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "assets": [
+      {
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "extension": "png",
+        "mediaType": "image/png",
+        "role": "managed_page_image"
+      },
+      {
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "extension": "png",
+        "mediaType": "image/png",
+        "role": "activity_artwork"
+      },
+      {
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "extension": "ttf",
+        "mediaType": "font/ttf",
+        "role": "activity_font"
+      }
+    ]
+  },
+  "public_projection_sha256": "ef55d893f53283a8a4bdf0de1109ad3043a4a80329c3be9310bda73f35d6004c",
+  "teacher_projection": {
+    "schemaVersion": "1.0",
+    "bookSlug": "ultimate-b2",
+    "componentSlug": "ultimate-b2-grammar-book",
+    "nativeActivities": {
+      "ultimate-b2-gb-unit-1-page-1-o1": {
+        "kind": "drag-drop",
+        "document": {
+          "schemaVersion": "1.0",
+          "activityId": "ultimate-b2-gb-unit-1-page-1-o1",
+          "kind": "drag-drop",
+          "parts": [
+            {
+              "id": "part-1",
+              "solution": {
+                "kind": "drag-drop",
+                "mappings": [
+                  {
+                    "targetId": "target-20000000000040008000000000000031",
+                    "wordIds": [
+                      "word-20000000000040008000000000000001"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "teacher_projection_sha256": "8050f60b8d0ffd4648d4b389b9d4c87a4ef5d3c40f464465ba413fe726c3d007",
+  "asset_manifest": [
+    {
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "extension": "png",
+      "mediaType": "image/png",
+      "role": "managed_page_image"
+    },
+    {
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "extension": "png",
+      "mediaType": "image/png",
+      "role": "activity_artwork"
+    },
+    {
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "extension": "ttf",
+      "mediaType": "font/ttf",
+      "role": "activity_font"
+    }
+  ],
+  "release_sha256": "a7d88e80dfa8f175ea204e9f7eff2ffa08966f8c3c4f3d0d8f3ee05809a2fa56"
+}

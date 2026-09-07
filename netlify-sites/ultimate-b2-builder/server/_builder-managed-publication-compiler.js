@@ -1,3 +1,4 @@
+import { MANAGED_DRAG_DROP_VERIFICATION_PROFILES, normalizeHistoricalManagedDragDropPublic, normalizeHistoricalManagedDragDropTeacher } from "./_managed-drag-drop-history.js";
 import { nativeTeacherAnswerImages, nativeTeacherAnswerAssetDescriptors, usesNativeComposition } from "../../../src/data/native-activities/nativeImageSampleAnswer.js";
 import { createEmptyNativeActivityIndex, NATIVE_ACTIVITY_INDEX_SCHEMA_VERSION, NATIVE_ACTIVITY_SCHEMA_VERSION } from "../../../src/data/native-activities/nativeActivityPublic.js";
 import { createEmptyUltimateB2ActivityLifecycle } from "../../../src/data/ultimate-b2/activityLifecycle.js";
@@ -72,7 +73,7 @@ function normalizeUnit(value) {
   return { id: value.id.toLowerCase(), slug: value.slug, title: value.title.slice(0, 200), unitNumber, sortOrder: integer(value.sortOrder, 0, Number.MAX_SAFE_INTEGER, "Managed release Unit order") };
 }
 
-function normalizeNativeMaps(publicValues, teacherValues = null) {
+function normalizeNativeMaps(publicValues, teacherValues = null, profile = "current") {
   exact(publicValues, Object.keys(publicValues || {}), "Managed native public map");
   if (teacherValues) exact(teacherValues, Object.keys(teacherValues || {}), "Managed native Teacher map");
   const publicActivities = {};
@@ -83,14 +84,15 @@ function normalizeNativeMaps(publicValues, teacherValues = null) {
     exact(publicEntry, ["kind", "document"], "Managed native public activity");
     const kind = resolveNativeActivityKind(publicEntry.kind);
     if (!kind) throw new Error("Managed native activity kind is unsupported.");
-    const publicDocument = kind.normalizePublic(publicEntry.document, activityId);
+    const historical = profile !== "current" && publicEntry.kind === "drag-drop";
+    const publicDocument = historical ? normalizeHistoricalManagedDragDropPublic(publicEntry.document, activityId, kind, profile) : kind.normalizePublic(publicEntry.document, activityId);
     publicActivities[activityId] = { kind: publicEntry.kind, document: publicDocument };
     if (teacherValues) {
       const teacherEntry = teacherValues[activityId];
       if (!teacherEntry) throw new Error("Managed native Teacher map is incomplete.");
       exact(teacherEntry, ["kind", "document"], "Managed native Teacher activity");
       if (teacherEntry.kind !== publicEntry.kind) throw new Error("Managed native activity kinds do not match.");
-      const teacherDocument = kind.normalizeTeacher(teacherEntry.document, activityId);
+      const teacherDocument = historical ? normalizeHistoricalManagedDragDropTeacher(teacherEntry.document, activityId, kind) : kind.normalizeTeacher(teacherEntry.document, activityId);
       kind.validatePair(publicDocument, teacherDocument);
       teacherActivities[activityId] = { kind: teacherEntry.kind, document: teacherDocument };
     }
@@ -115,6 +117,10 @@ export function normalizeManagedReleaseSourceSnapshot(value, componentSlug) {
 }
 
 export function normalizeManagedPublicProjection(value, componentSlug, expectedCompatibility = null) {
+  return normalizePublicProjection(value, componentSlug, expectedCompatibility);
+}
+
+function normalizePublicProjection(value, componentSlug, expectedCompatibility = null, profile = "current") {
   componentIdentity(componentSlug);
   exact(value, ["schemaVersion", "bookSlug", "componentSlug", "compatibility", "units", "pages", "hotspots", "nativeActivities", "assets", ...(Object.hasOwn(value, "activityOrder") ? ["activityOrder"] : [])], "Managed public release");
   if (value.schemaVersion !== ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION || value.bookSlug !== "ultimate-b2" || value.componentSlug !== componentSlug
@@ -124,7 +130,7 @@ export function normalizeManagedPublicProjection(value, componentSlug, expectedC
   if (!units || units.length !== 10 || !pages || new Set(units.map((unit) => unit.id)).size !== units.length || new Set(pages.map((page) => page.id)).size !== pages.length) throw new Error("Managed release page topology is invalid.");
   const unitIds = new Set(units.map((unit) => unit.id));
   if (pages.some((page) => !unitIds.has(page.unitId))) throw new Error("Managed release page Unit is invalid.");
-  const { publicActivities } = normalizeNativeMaps(value.nativeActivities);
+  const { publicActivities } = normalizeNativeMaps(value.nativeActivities, null, profile);
   const hotspots = validateAndNormalizeManagedComponentHotspotManifest(value.hotspots, { componentSlug, pages, activities: Object.values(publicActivities).map((entry) => ({ activityId: entry.document.activityId, title: entry.document.metadata.title })) });
   const assets = Array.isArray(value.assets) ? value.assets.map((asset) => normalizeAssetDescriptor(asset)) : null;
   if (!assets || new Set(assets.map((asset) => `${asset.sha256}.${asset.extension}.${asset.role}`)).size !== assets.length) throw new Error("Managed release assets are invalid.");
@@ -138,9 +144,13 @@ export function normalizeManagedPublicProjection(value, componentSlug, expectedC
 }
 
 export function normalizeManagedTeacherProjection(value, componentSlug, publicProjection) {
+  return normalizeTeacherProjection(value, componentSlug, publicProjection);
+}
+
+function normalizeTeacherProjection(value, componentSlug, publicProjection, profile = "current") {
   exact(value, ["schemaVersion", "bookSlug", "componentSlug", "nativeActivities"], "Managed Teacher release");
   if (value.schemaVersion !== ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION || value.bookSlug !== "ultimate-b2" || value.componentSlug !== componentSlug) throw new Error("Managed Teacher release identity is invalid.");
-  return { schemaVersion: value.schemaVersion, bookSlug: value.bookSlug, componentSlug, nativeActivities: normalizeNativeMaps(publicProjection.nativeActivities, value.nativeActivities).teacherActivities };
+  return { schemaVersion: value.schemaVersion, bookSlug: value.bookSlug, componentSlug, nativeActivities: normalizeNativeMaps(publicProjection.nativeActivities, value.nativeActivities, profile).teacherActivities };
 }
 
 function publicationPages(sources, componentSlug) {
@@ -217,11 +227,46 @@ export function compileUltimateB2ManagedComponentRelease(sources, componentSlug)
 export function verifyUltimateB2ManagedComponentRelease(release, componentSlug) {
   const identity = componentIdentity(componentSlug);
   if (release.compiler_id !== identity.compilerId || release.release_schema_version !== identity.releaseSchemaVersion) throw new Error("publication_compiler_mismatch");
-  const publicProjection = normalizeManagedPublicProjection(release.public_projection, componentSlug);
-  const expectedCompatibility = compatibility(componentSlug, new Set(Object.values(publicProjection.nativeActivities).map((entry) => entry.kind)), Object.entries(publicProjection.nativeActivities).some(([id, entry]) => usesNativeComposition(entry.document, release.teacher_projection.nativeActivities?.[id]?.document)));
-  if (publicProjection.compatibility !== expectedCompatibility || release.runtime_compatibility_sha256 !== expectedCompatibility) throw new Error("release_integrity_failed");
+  // Identity is checked before attempting the finite canonical representations.
+  let entries;
+  try {
+    const native = release.public_projection?.nativeActivities;
+    exact(native, Object.keys(native || {}), "Managed declared native map");
+    entries = Object.entries(native);
+    for (const [, entry] of entries) {
+      exact(entry, ["kind", "document"], "Managed declared native entry");
+      if (!resolveNativeActivityKind(entry.kind)) throw new Error("Unknown declared native kind.");
+    }
+  } catch { throw new Error("release_integrity_failed"); }
+  const kinds = new Set(entries.map(([, entry]) => entry.kind));
+  const expectedCompatibility = compatibility(componentSlug, kinds, entries.some(([id, entry]) => usesNativeComposition(entry.document, release.teacher_projection?.nativeActivities?.[id]?.document)));
+  if (release.public_projection?.compatibility !== expectedCompatibility || release.runtime_compatibility_sha256 !== expectedCompatibility) throw new Error("release_integrity_failed");
+  if (!kinds.has("drag-drop")) return verifyManagedRepresentation(release, componentSlug, expectedCompatibility);
+
+  const matches = [];
+  for (const profile of MANAGED_DRAG_DROP_VERIFICATION_PROFILES) {
+    try {
+      const verified = verifyManagedRepresentation(release, componentSlug, expectedCompatibility, profile);
+      // A stored immutable representation must itself be canonical for this profile.
+      // This rejects partial defaults and mixed public/Teacher/activity epochs, even
+      // when an attacker recomputes hashes using current authoring normalization.
+      if (stableBuilderJson(verified.publicProjection) !== stableBuilderJson(release.public_projection)
+        || stableBuilderJson(verified.teacherProjection) !== stableBuilderJson(release.teacher_projection)) continue;
+      const adapter = resolveNativeActivityAdapter(identity.bookSlug, componentSlug);
+      if (entries.some(([id]) => !adapter.ownsActivityId(id))) continue;
+      matches.push(verified);
+    } catch {
+      // A profile matches only after every structural, pairing and integrity gate.
+    }
+  }
+  if (matches.length !== 1) throw new Error("release_integrity_failed");
+  return matches[0];
+}
+
+function verifyManagedRepresentation(release, componentSlug, expectedCompatibility, profile = "current") {
+  const publicProjection = normalizePublicProjection(release.public_projection, componentSlug, expectedCompatibility, profile);
   const sourceSnapshot = normalizeManagedReleaseSourceSnapshot(release.source_snapshot, componentSlug);
-  const teacherProjection = normalizeManagedTeacherProjection(release.teacher_projection, componentSlug, publicProjection);
+  const teacherProjection = normalizeTeacherProjection(release.teacher_projection, componentSlug, publicProjection, profile);
   const expectedManifest = [...publicProjection.assets, ...[...new Map(Object.values(teacherProjection.nativeActivities).flatMap((entry) => nativeTeacherAnswerAssetDescriptors(entry.document)).map((asset) => [`${asset.sha256}.${asset.extension}.${asset.role}`, asset])).values()]].sort((left, right) => `${left.sha256}.${left.role}`.localeCompare(`${right.sha256}.${right.role}`));
   if (stableBuilderJson(release.asset_manifest) !== stableBuilderJson(expectedManifest)
     || builderDocumentSha256(sourceSnapshot) !== release.source_snapshot_sha256

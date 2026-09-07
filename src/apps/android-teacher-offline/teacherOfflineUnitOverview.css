@@ -208,6 +208,10 @@
   line-height: 1.05;
 }
 
+/* Authored Students Book labels can be longer than the standard section titles. */
+.teacher-offline-unit-overview-screen [data-overview-book="students-book"] .teacher-unit-page-copy { min-width: 0; }
+.teacher-offline-unit-overview-screen [data-overview-book="students-book"] .teacher-unit-page-copy strong { overflow: hidden; text-overflow: ellipsis; }
+
 .teacher-offline-unit-overview-screen .teacher-offline-unit-overview:is([data-overview-book="workbook"], [data-overview-book="grammar-book"]) .teacher-unit-page-copy {
   min-width: 0;
 }

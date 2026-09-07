@@ -9,6 +9,7 @@ import { json } from "./shared.js";
 import { supportedPublishedBook } from "./published-book-model.js";
 import { deliverPublishedPinnedAsset } from "./published-pinned-asset-delivery.js";
 import { isPrivatePinnableComponentReleaseAssetRole } from "../../../src/data/ultimate-b2/componentPublicationAssetRoles.js";
+import { deliverCanonicalReleasePageAsset } from "../../../netlify-sites/ultimate-b2-builder/server/_canonical-release-page-delivery.js";
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const privateJson = (statusCode, body) => json(statusCode, body, { "Cache-Control": "private, no-store", Vary: "Cookie" });
@@ -60,6 +61,7 @@ export async function getPublishedReleaseAsset(sql, query, { storage = createBoo
   const asset = verified.publicProjection.assets.find((candidate) => candidate.sha256 === query.sha256 && candidate.extension === extension);
   if (!asset) return json(404, { error: "Asset not found" });
   if (verified.publicProjection.bookSlug !== query.bookSlug || verified.publicProjection.componentSlug !== query.componentSlug) return privateJson(404, { error: "Asset not found" });
+  if (asset.role === "canonical_page_image") return deliverCanonicalReleasePageAsset({ projection: verified.publicProjection, asset, storage, method });
   if (row.asset_storage_mode === "pinned-source-v1" && isPrivatePinnableComponentReleaseAssetRole(asset.role)) {
     return deliverPublishedPinnedAsset(sql, query, { row, projection: verified.publicProjection, asset, storage, method, rangeHeader: range });
   }

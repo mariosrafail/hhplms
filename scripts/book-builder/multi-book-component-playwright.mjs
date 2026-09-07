@@ -1,6 +1,6 @@
 import { fulfillManagedWorkerResponse } from "./multi-book-component-worker-response.mjs";
 import { createBuilderNativePreviewHandler } from "../../netlify-sites/ultimate-b2-builder/server/_builder-native-preview.js";
-import { ultimateB2StudentsBookAuthoringActivities } from "../../src/data/ultimate-b2/studentsBookAuthoringCatalog.js";
+
 import { componentActivityOrderEntries, projectComponentActivityOrder } from "../../src/data/native-activities/nativeActivityOrder.js";
 import { managedHotspots } from "./hosted-native-activity-document-fixtures.mjs";
 import { exerciseMarkWordsAuthoring } from "./hosted-native-activity-mark-words.mjs";
@@ -40,7 +40,9 @@ import { emptyShellPackages, emptyShellPageCatalogs } from "./empty-shell-packag
 
 const builderRoot = path.resolve("dist-netlify/ultimate-b2-builder");
 const viewerRoot = path.resolve("dist-netlify/ultimate-b2-interactive");
-const studentsHotspots = JSON.parse(await readFile("src/data/ultimate-b2/authoring/studentsBookHotspots.json", "utf8"));
+const studentsHotspots = { schemaVersion: "1.0", packageSlug: "ultimate-b2", componentSlug: "students-book", pages: {} };
+const studentsUnits = Array.from({ length: 10 }, (_, i) => ({ id: `60000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, slug: `unit-${i + 1}`, title: `Unit ${i + 1}`, unitNumber: i + 1, sortOrder: i + 1 }));
+const studentsUnitRows = () => studentsUnits.map((unit) => ({ ...unit, unit_number: unit.unitNumber, sort_order: unit.sortOrder }));
 const draftUnitExtraBytes = await readFile("src/assets/books/ultimate-b2/teacher-offline-media/ultimate-b2-startup-intro.mp4");
 const draftUnitExtraVideoId = nativeChildIdFromUuid("video", "10000000-0000-4000-8000-000000000081");
 const draftUnitExtraAssetId = "10000000-0000-4000-8000-000000000082";
@@ -231,6 +233,11 @@ let immutableRedirectSourceRequests = 0;
 let immutableRedirectTargetRequests = 0;
 const managedPreviewSql = async (strings, ...values) => {
   const query = strings.join(" ");
+  if (values.includes("ultimate-b2-students-book")) {
+    if (query.includes("from units unit")) return studentsUnitRows();
+    if (query.includes("from book_pages page")) return [];
+    if (query.includes("from book_packages package join book_components component")) return [{ id: "ultimate-b2-students-book", revision: 0 }];
+  }
   if (query.includes("from book_packages package join book_components component")) return [{ id: values[1], revision: managedCatalogs[values[1]].revision }];
   if (query.includes("from units unit")) return managedCatalogs[values[0]].units.map((unit) => ({ id: unit.id, slug: unit.slug, title: unit.title, unit_number: unit.unitNumber, sort_order: unit.sortOrder }));
   if (query.includes("from book_pages page")) return managedCatalogs[values[1]].pages.map((page) => ({
@@ -301,7 +308,7 @@ const builderPagesHandler = createBuilderPagesHandler({
     return classifyBuilderPreviewAuthorization(event, scope, { environment: previewEnvironment, now: previewNow });
   },
   loadPages: async (_sql, identity) => identity.componentSlug === "ultimate-b2-students-book"
-    ? { revision: 0, hotspotRevision: 0, units: [], rows: [] }
+    ? { revision: 0, hotspotRevision: 0, units: studentsUnitRows(), rows: [] }
     : storedManagedPages(identity.componentSlug),
   loadAsset: async (_sql, identity) => {
     const page = managedCatalogs[identity.componentSlug]?.pages.find((candidate) => candidate.id === identity.pageId && candidate.image.assetId === identity.assetId);
@@ -405,7 +412,7 @@ const server = createServer(async (request, response) => {
   const pagesMatch = url.pathname.match(/^\/builder\/api\/pages\/books\/ultimate-b2\/components\/(ultimate-b2-(?:students-book|workbook|grammar-book))$/);
   if (pagesMatch && request.method === "GET") {
     const componentSlug = pagesMatch[1];
-    if (componentSlug === "ultimate-b2-students-book") sendJson(response, { revision: 0, component: { bookSlug: "ultimate-b2", componentSlug, kind: "students-book" }, pages: canonicalStudentsBookPages });
+    if (componentSlug === "ultimate-b2-students-book") sendJson(response, { revision: 0, component: { bookSlug: "ultimate-b2", componentSlug, kind: "students-book" }, units: studentsUnits, pages: canonicalStudentsBookPages.map((page) => ({ ...page, origin: "canonical", unitId: studentsUnits[page.unitNumber - 1].id, unitSortOrder: page.unitNumber })) });
     else sendNetlify(response, await builderPagesHandler(netlifyEvent(request, url)));
     return;
   }
@@ -436,7 +443,7 @@ const server = createServer(async (request, response) => {
     sendJson(response, { schemaVersion: "1.0", revision: 0, source: "repository", document: { schemaVersion: "1.0", activities: {} } }); return;
   }
   if (url.pathname === "/builder/api/native-activities/books/ultimate-b2/components/ultimate-b2-students-book/order" && request.method === "GET") {
-    sendJson(response, { indexRevision: 0, lifecycleRevision: 0, pages: projectComponentActivityOrder(componentActivityOrderEntries(ultimateB2StudentsBookAuthoringActivities, { activities: [] }, { activities: {} })) }); return;
+    sendJson(response, { indexRevision: 0, lifecycleRevision: 0, pages: projectComponentActivityOrder(componentActivityOrderEntries([], { activities: [] }, { activities: {} })) }); return;
   }
   if (url.pathname.startsWith("/builder/api/native-activities/")) {
     const event = netlifyEvent(request, url, await requestBody(request));

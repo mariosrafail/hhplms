@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import { createCloudflareR2BookAssetHeadStorage } from "../../../lib/book-assets/cloudflare-r2-head-storage.js";
+import { createCloudflareR2ReleaseStorage } from "../../../lib/book-assets/cloudflare-r2-release-storage.js";
+import { materializeCanonicalReleaseAssets, canonicalPublicationAssetFetcher } from "./_builder-canonical-release-assets.js";
 import { createBookAssetStorage } from "../../../lib/book-assets/storage.js";
 import { findProductBook, findProductComponent } from "../../../src/data/bookProductCatalog.js";
 import {
@@ -155,8 +156,10 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
     loadMutation: overrides.loadMutation || loadProductPublicationMutation,
     loadAssetModes: overrides.loadAssetModes || loadProductPublicationAssetModes,
     freezePins: overrides.freezePins || freezeComponentPublicationAssetPins,
+    materializeCanonical: overrides.materializeCanonical || materializeCanonicalReleaseAssets,
+    canonicalFetch: overrides.canonicalFetch || canonicalPublicationAssetFetcher,
     storage: overrides.storage || (() => createBookAssetStorage()),
-    cloudflareStorage: overrides.cloudflareStorage || createCloudflareR2BookAssetHeadStorage,
+    cloudflareStorage: overrides.cloudflareStorage || createCloudflareR2ReleaseStorage,
     randomUuid: overrides.randomUuid || randomUUID,
     logger: overrides.logger || console,
   };
@@ -183,7 +186,7 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
           bookSlug: parsedRoute.bookSlug,
           compilerId: ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID,
           releaseSchemaVersion: ULTIMATE_B2_PRODUCT_RELEASE_SCHEMA_VERSION,
-          components: compiledMembers.map((entry) => ({ componentSlug: entry.componentSlug, compilerId: entry.compiled.compilerId, releaseSchemaVersion: entry.compiled.releaseSchemaVersion, currentSourceSha256: entry.compiled.sourceSnapshotSha256 })),
+          components: compiledMembers.map((entry) => ({ componentSlug: entry.componentSlug, compilerId: entry.compiled.compilerId, releaseSchemaVersion: entry.compiled.releaseSchemaVersion, currentSourceSha256: entry.compiled.sourceSnapshotSha256, ...(entry.compiled.reconciliation ? { reconciliation: entry.compiled.reconciliation } : {}) })),
           headRevision: status.headRevision,
           published: decorate(status.published),
           releases: status.releases.map(decorate),
@@ -199,6 +202,9 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
         if (!pinSchemaReady) return json(409, { error: "release_pin_schema_unavailable" });
         const compiledMembers = await dependencies.compileProduct(sql, configuration, dependencies);
         const storage = prepareStorage(context, dependencies);
+        for (const entry of compiledMembers) if (entry.compiled.canonicalAssetSources?.length) {
+          await dependencies.materializeCanonical(storage, { bookSlug: parsedRoute.bookSlug, componentSlug: entry.componentSlug, ...entry.compiled, fetchAsset: dependencies.canonicalFetch(context) });
+        }
         const pinnedMembers = await Promise.all(compiledMembers.map(async (entry) => ({
           entry,
           pins: await dependencies.freezePins(storage, { bookSlug: parsedRoute.bookSlug, componentSlug: entry.componentSlug, assetManifest: entry.compiled.assetManifest, nativeAssetSources: entry.compiled.nativeAssetSources || [] }),
@@ -257,8 +263,8 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
           ...(error.providerCode ? { providerCode: error.providerCode } : {}),
         } : {}),
       });
-      const safeCode = ["native_activity_not_found", "native_activity_pair_invalid", "native_activity_not_ready", "native_activity_asset_invalid", "managed_page_not_ready", "release_asset_unavailable", "publication_compiler_mismatch", "release_pin_conflict", "release_pin_integrity_failed"].includes(error?.code || error?.message) ? (error.code || error.message) : null;
-      return safeCode ? json(409, { error: safeCode, ...(error.activityId ? { activityId: error.activityId } : {}), ...(error.issues?.length ? { issues: error.issues } : {}) }) : json(500, { error: "builder_product_publication_failed" });
+      const safeCode = ["students_book_page_expansion_required", "students_book_page_asset_invalid", "placement_unavailable", "native_activity_not_found", "native_activity_pair_invalid", "native_activity_not_ready", "native_activity_asset_invalid", "managed_page_not_ready", "release_asset_unavailable", "publication_compiler_mismatch", "release_pin_conflict", "release_pin_integrity_failed"].includes(error?.code || error?.message) ? (error.code || error.message) : null;
+      return safeCode ? json(409, { error: safeCode, ...(error.activityId ? { activityId: error.activityId } : {}), ...(error.issues?.length ? { issues: error.issues } : {}), ...(error.reconciliation ? { reconciliation: error.reconciliation } : {}) }) : json(500, { error: "builder_product_publication_failed" });
     }
   };
 }

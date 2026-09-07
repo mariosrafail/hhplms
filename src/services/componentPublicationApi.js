@@ -3,6 +3,7 @@ import { ULTIMATE_B2_OPEN_RESPONSE_ACTIVITY_IDS } from "../data/ultimate-b2/open
 import { normalizeUltimateB2PublicReleaseProjection, ULTIMATE_B2_COMPONENT_RELEASE_COMPILER_ID, ULTIMATE_B2_COMPONENT_RELEASE_SCHEMA_VERSION } from "../data/ultimate-b2/componentPublication.js";
 import { normalizeUltimateB2PublicReleaseV2Projection, ULTIMATE_B2_COMPONENT_RELEASE_V2_COMPILER_ID, ULTIMATE_B2_COMPONENT_RELEASE_V2_SCHEMA_VERSION } from "../data/ultimate-b2/componentPublicationV2.js";
 import { findStudentsBookImplementation } from "../data/ultimate-b2/studentsBookCatalog.js";
+import { STUDENTS_BOOK_V3_COMPILER, STUDENTS_BOOK_V3_SCHEMA, normalizeStudentsBookV3Public } from "../data/ultimate-b2/componentPublicationV3.js";
 
 class PublicationServiceError extends Error {
   constructor(message, code) { super(message); this.name = "PublicationServiceError"; this.code = code; }
@@ -20,10 +21,10 @@ export function normalizeComponentPublicationEnvelope(payload) {
   if (keys.join("\0") !== ["compatibility", "compilerId", "projection", "releaseId", "releaseNumber", "releaseSchemaVersion", "releaseSha256"].sort().join("\0")
     || !UUID.test(String(payload.releaseId || "")) || !Number.isSafeInteger(payload.releaseNumber) || payload.releaseNumber < 1
     || !SHA256.test(String(payload.releaseSha256 || "")) || !SHA256.test(String(payload.compatibility || ""))) throw new Error("invalid_publication_envelope");
-  const seeds = canonicalSeeds();
   let projection;
-  if (payload.compilerId === ULTIMATE_B2_COMPONENT_RELEASE_COMPILER_ID && payload.releaseSchemaVersion === ULTIMATE_B2_COMPONENT_RELEASE_SCHEMA_VERSION) projection = normalizeUltimateB2PublicReleaseProjection(payload.projection, seeds);
-  else if (payload.compilerId === ULTIMATE_B2_COMPONENT_RELEASE_V2_COMPILER_ID && payload.releaseSchemaVersion === ULTIMATE_B2_COMPONENT_RELEASE_V2_SCHEMA_VERSION) projection = normalizeUltimateB2PublicReleaseV2Projection(payload.projection, seeds);
+  if (payload.compilerId === ULTIMATE_B2_COMPONENT_RELEASE_COMPILER_ID && payload.releaseSchemaVersion === ULTIMATE_B2_COMPONENT_RELEASE_SCHEMA_VERSION) projection = normalizeUltimateB2PublicReleaseProjection(payload.projection, canonicalSeeds());
+  else if (payload.compilerId === ULTIMATE_B2_COMPONENT_RELEASE_V2_COMPILER_ID && payload.releaseSchemaVersion === ULTIMATE_B2_COMPONENT_RELEASE_V2_SCHEMA_VERSION) projection = normalizeUltimateB2PublicReleaseV2Projection(payload.projection, canonicalSeeds());
+  else if (payload.compilerId === STUDENTS_BOOK_V3_COMPILER && payload.releaseSchemaVersion === STUDENTS_BOOK_V3_SCHEMA) projection = normalizeStudentsBookV3Public(payload.projection);
   else throw new Error("unsupported_publication_compiler");
   if (projection.compatibility !== payload.compatibility) throw new Error("publication_compatibility_mismatch");
   return { kind: "published", ...payload, projection };

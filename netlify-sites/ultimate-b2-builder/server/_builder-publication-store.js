@@ -195,6 +195,11 @@ export async function publicationV2DatabaseReady(sql) {
   return rows[0]?.ready === true;
 }
 
+export async function publicationV3DatabaseReady(sql) {
+  const rows = await sql`select to_regprocedure('builder_students_book_v3_sources_are_current(uuid)') is not null ready`;
+  return rows[0]?.ready === true;
+}
+
 export async function publicationAssetPinDatabaseReady(sql) {
   const rows = await sql`
     select to_regclass('book_component_release_asset_pins') is not null

@@ -130,7 +130,7 @@ export function HostedHotspotBuilder({
       getBuilderPages(contentIdentity, { signal: controller.signal }).then((value) => {
         setPageLibrary(new Map(value.pages.map((item) => [item.id, item])));
         if (managed) {
-          const rows = value.pages.filter((item) => item.unitNumber).map((item) => ({ ...item, title: item.label, spreadNumber: item.printedLabel || item.label, pageNumber: null, pageNumbers: [] }));
+          const rows = value.pages.filter((item) => item.unitNumber).map((item) => ({ ...item, title: item.label, spreadNumber: item.printedLabel || item.label, pageNumber: item.printedPages?.[0] || null, pageNumbers: item.printedPages || [] }));
           setPageRows(rows);
           setPageId((current) => rows.some((item) => item.id === current) ? current : rows[0]?.id || "");
         } else {

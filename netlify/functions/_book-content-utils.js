@@ -159,12 +159,12 @@ export async function fetchPackageTree(sql, query = {}) {
   if (!pkg) return null;
 
   const componentRows = await sql`
-    select *
+    select *, builder_current_legacy_activity_allowed(id) as legacy_discovery_allowed
     from book_components
     where book_package_id = ${pkg.id}
     order by sort_order asc, title asc
   `;
-  const components = componentRows.filter((component) => isPhaseOneComponentVisible(pkg.slug, component.slug));
+  const components = componentRows.filter((component) => isPhaseOneComponentVisible(pkg.slug, component.slug) && component.legacy_discovery_allowed !== false);
   const componentIds = components.map((item) => item.id);
   const units = componentIds.length
     ? await sql`
@@ -272,6 +272,13 @@ export async function fetchActivity(sql, query = {}) {
     : await sql`select * from activities where slug = ${query.activitySlug || query.slug} limit 1`;
   const activity = rows[0] || null;
   if (!activity) return null;
+  if (query.currentDiscovery === true) {
+    const policy = await sql`
+      select builder_current_legacy_activity_allowed(unit.book_component_id) allowed
+      from lessons lesson join units unit on unit.id=lesson.unit_id where lesson.id=${activity.lesson_id} limit 1
+    `;
+    if (policy[0]?.allowed !== true) return null;
+  }
 
   const questions = await sql`
     select *

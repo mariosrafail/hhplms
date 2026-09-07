@@ -61,6 +61,8 @@ Apply production migrations in this exact order:
 57. `057_builder_activity_order.sql`
 58. `058_native_teacher_answer_assets.sql`
 59. `059_published_assignment_book_locators.sql`
+60. `060_students_book_page_expansion.sql`
+61. `061_students_book_publication_v3.sql`
 
 The two `010` files are historical, already-deployed migrations. Their duplicate number is resolved by this manifest rather than renaming applied files. New migrations must use a unique, increasing number.
 

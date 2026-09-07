@@ -16,7 +16,11 @@ const sha256 = "a".repeat(64);
 const identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", sha256 };
 
 test("publication asset roles have one explicit private-materialized versus hosted-public classification", () => {
-  assert.deepEqual(Object.keys(COMPONENT_PUBLICATION_ASSET_ROLES).sort(), ["ACTIVITY_ARTWORK", "ACTIVITY_FONT", "MANAGED_PAGE_IMAGE", "NATIVE_TEACHER_ANSWER", "OPEN_RESPONSE_ARTWORK", "TEACHER_UI", "UNIT_EXTRA_AUDIO", "UNIT_EXTRA_VIDEO"]);
+  assert.deepEqual(Object.keys(COMPONENT_PUBLICATION_ASSET_ROLES).sort(), ["ACTIVITY_ARTWORK", "ACTIVITY_FONT", "CANONICAL_PAGE_IMAGE", "MANAGED_PAGE_IMAGE", "NATIVE_TEACHER_ANSWER", "OPEN_RESPONSE_ARTWORK", "TEACHER_UI", "UNIT_EXTRA_AUDIO", "UNIT_EXTRA_VIDEO"]);
+  assert.equal(isPrivateMaterializedComponentReleaseAssetRole(COMPONENT_PUBLICATION_ASSET_ROLES.CANONICAL_PAGE_IMAGE), true);
+  assert.equal(isPrivatePinnableComponentReleaseAssetRole(COMPONENT_PUBLICATION_ASSET_ROLES.CANONICAL_PAGE_IMAGE), false);
+  assert.equal(isPublicComponentPublicationAssetRole(COMPONENT_PUBLICATION_ASSET_ROLES.CANONICAL_PAGE_IMAGE), false);
+  assert.equal(isPublicProjectionComponentPublicationAssetRole(COMPONENT_PUBLICATION_ASSET_ROLES.CANONICAL_PAGE_IMAGE), true);
   for (const role of [COMPONENT_PUBLICATION_ASSET_ROLES.ACTIVITY_ARTWORK, COMPONENT_PUBLICATION_ASSET_ROLES.ACTIVITY_FONT, COMPONENT_PUBLICATION_ASSET_ROLES.MANAGED_PAGE_IMAGE, COMPONENT_PUBLICATION_ASSET_ROLES.UNIT_EXTRA_AUDIO, COMPONENT_PUBLICATION_ASSET_ROLES.UNIT_EXTRA_VIDEO]) {
     assert.equal(componentPublicationAssetRolePolicy(role).storage, COMPONENT_PUBLICATION_ASSET_STORAGE.PRIVATE_IMMUTABLE_RELEASE);
     assert.equal(isPrivateMaterializedComponentReleaseAssetRole(role), true);

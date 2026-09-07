@@ -9,6 +9,8 @@ import { authorizeBuilderPreviewRequestWithDiagnostic } from "./_builder-preview
 import { builderClientMutationIdPattern, stableBuilderJson } from "./_builder-content-security.js";
 import { builderDocumentSha256 } from "./_builder-content-security.js";
 import { canonicalStudentsBookPagesById, resolveBuilderPageComponent } from "./_builder-page-catalog.js";
+import { resolveStudentsBookPageAuthority, managedStudentsBookPageId } from "./_students-book-page-authority.js";
+import { normalizeStudentsBookCurrentHotspots, emptyStudentsBookCurrentHotspots } from "../../../src/data/ultimate-b2/studentsBookCurrentHotspots.js";
 import repositoryHotspots from "../../../src/data/ultimate-b2/authoring/studentsBookHotspots.json" with { type: "json" };
 import { ultimateB2StudentsBookAuthoringActivities } from "../../../src/data/ultimate-b2/studentsBookAuthoringCatalog.js";
 import { createEmptyManagedComponentHotspotManifest, ULTIMATE_B2_HOTSPOT_SCHEMA_VERSION, validateManagedComponentHotspotManifestStructure, validateUltimateB2HotspotManifestStructure } from "../../../scripts/ultimate-b2/hotspot-manifest.js";
@@ -123,22 +125,14 @@ function privateImage(parsed, pageId, row, previewAuthorization = "") {
 function listPayload(parsed, policy, stored, previewAuthorization = "") {
   const rows = new Map(stored.rows.map((row) => [pageIdFromStableKey(parsed.componentSlug, row.stable_key), row]));
   if (policy.kind === "students-book") {
-    return policy.baseline.map((baseline) => {
-      const row = rows.get(baseline.id);
-      if (row?.source_metadata?.is_deleted === true || row?.source_metadata?.is_permanently_deleted === true) return null;
-      const metadataOverride = row?.source_metadata?.has_metadata_override === true;
-      const imageOverride = Boolean(row?.asset_id) && (row?.source_metadata?.has_image_override === true || row?.source_metadata?.is_override === true);
+    return resolveStudentsBookPageAuthority({ ...stored, units: stored.units || [] }).pages.map(({ imageRow, storedRow, ...page }) => {
       return {
-        ...baseline,
-        source: imageOverride ? "override" : metadataOverride ? "metadata-override" : baseline.source,
-        label: metadataOverride ? row.label : baseline.label,
-        printedLabel: metadataOverride ? row.source_metadata?.printed_label || "" : baseline.printedLabel,
-        sortOrder: metadataOverride ? Number(row.sort_order) : baseline.sortOrder,
-        image: imageOverride ? privateImage(parsed, baseline.id, row, previewAuthorization) : baseline.image,
-        ...(imageOverride ? { baselineImage: baseline.image } : {}),
-        capabilities: { moveUp: true, moveDown: true, editMetadata: true, replaceImage: true, restoreCanonicalImage: imageOverride, deletePage: true },
+        ...page,
+        image: imageRow ? privateImage(parsed, page.id, imageRow, previewAuthorization) : page.image,
+        ...(page.origin === "canonical" && imageRow ? { baselineImage: page.image } : {}),
+        capabilities: { moveUp: true, moveDown: true, editMetadata: true, replaceImage: true, restoreCanonicalImage: page.origin === "canonical" && Boolean(imageRow), deletePage: true },
       };
-    }).filter(Boolean).sort((left, right) => left.unitNumber - right.unitNumber || left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
+    });
   }
   return stored.rows.filter((row) => row.source_metadata?.is_active === true && row.asset_id).map((row) => {
     const pageId = pageIdFromStableKey(parsed.componentSlug, row.stable_key);
@@ -166,12 +160,9 @@ function listPayload(parsed, policy, stored, previewAuthorization = "") {
 
 function deletedPayload(parsed, policy, stored) {
   const rows = new Map(stored.rows.map((row) => [pageIdFromStableKey(parsed.componentSlug, row.stable_key), row]));
-  if (policy.kind === "students-book") return policy.baseline.filter((baseline) => {
-    const metadata = rows.get(baseline.id)?.source_metadata;
-    return metadata?.is_deleted === true && metadata?.is_permanently_deleted !== true;
-  }).map((baseline) => {
-    const metadata = rows.get(baseline.id).source_metadata;
-    return { ...baseline, source: "deleted", removedHotspotCount: Number(metadata.removed_hotspot_count || 0), preservedActivityCount: Number(metadata.preserved_activity_count || 0), deletedAt: metadata.deleted_at || null, canRestore: true, canDeleteCompletely: true };
+  if (policy.kind === "students-book") return resolveStudentsBookPageAuthority({ ...stored, units: stored.units || [] }).retained.filter((page) => page.storedRow.source_metadata?.is_permanently_deleted !== true).map(({ imageRow, storedRow, ...page }) => {
+    const metadata = storedRow.source_metadata;
+    return { ...page, source: "deleted", removedHotspotCount: Number(metadata.removed_hotspot_count || 0), preservedActivityCount: Number(metadata.preserved_activity_count || 0), deletedAt: metadata.deleted_at || null, canRestore: true, canDeleteCompletely: true };
   });
   return stored.rows.filter((row) => row.source_metadata?.is_deleted === true && row.source_metadata?.is_permanently_deleted !== true).map((row) => ({
     id: pageIdFromStableKey(parsed.componentSlug, row.stable_key), stableKey: row.stable_key, componentSlug: parsed.componentSlug,
@@ -197,10 +188,10 @@ async function listResponse(dependencies, sql, parsed, policy, previewAuthorizat
 
 function prunedPageHotspots(policy, { bookSlug, componentSlug }, stored, pageId) {
   const identity = { bookSlug, componentSlug };
-  const baseline = policy.kind === "students-book" ? structuredClone(repositoryHotspots) : createEmptyManagedComponentHotspotManifest(identity);
+  const baseline = policy.kind === "students-book" ? emptyStudentsBookCurrentHotspots() : createEmptyManagedComponentHotspotManifest(identity);
   const document = stored?.payload || baseline;
   const normalized = policy.kind === "students-book"
-    ? validateUltimateB2HotspotManifestStructure(document)
+    ? normalizeStudentsBookCurrentHotspots(document)
     : validateManagedComponentHotspotManifestStructure(document, identity);
   const removed = normalized.pages[pageId] || [];
   const pages = { ...normalized.pages };
@@ -286,9 +277,10 @@ export function createBuilderPagesHandler(overrides = {}) {
       if (parsed.action === "prepare") {
         const body = parseJson(event, ["mode", "pageId", "expectedRevision", "clientMutationId", "metadata", "file"]); if (body.error) return body.error;
         if (!Number.isSafeInteger(body.value.expectedRevision) || body.value.expectedRevision < 0 || !builderClientMutationIdPattern.test(String(body.value.clientMutationId || ""))) return json(400, { error: "invalid_upload_identity" });
-        let metadata; let file; try { metadata = pageMetadata(body.value.metadata, { managed: policy.kind === "managed", requireUnit: policy.kind === "managed" && body.value.mode === "create" }); file = fileDescriptor(body.value.file); } catch (error) { return json(400, { error: failureCode(error) }); }
+        const canonical = policy.kind === "students-book" && canonicalStudentsBookPagesById.has(String(body.value.pageId || ""));
+        let metadata; let file; try { metadata = pageMetadata(body.value.metadata, { managed: !canonical, requireUnit: !canonical && body.value.mode === "create" }); file = fileDescriptor(body.value.file); } catch (error) { return json(400, { error: failureCode(error) }); }
         let pageId = String(body.value.pageId || "");
-        if (policy.kind === "students-book") {
+        if (canonical) {
           const baseline = canonicalStudentsBookPagesById.get(pageId);
           if (body.value.mode !== "replace" || !baseline) return json(400, { error: "invalid_students_book_page_operation" });
           const currentPages = await dependencies.loadPages(sql, parsed);
@@ -297,8 +289,9 @@ export function createBuilderPagesHandler(overrides = {}) {
           metadata = { ...metadata, baselineWidth: baseline.image.width, baselineHeight: baseline.image.height };
         } else if (body.value.mode === "create") {
           if (pageId) return json(400, { error: "new_page_id_must_be_empty" });
-          pageId = `${policy.pagePrefix}-page-${body.value.clientMutationId.replaceAll("-", "")}`;
+          pageId = `${policy.kind === "students-book" ? "sb" : policy.pagePrefix}-page-${body.value.clientMutationId.replaceAll("-", "")}`;
         } else if (body.value.mode !== "replace" || !SAFE_ROUTE.test(pageId)) return json(400, { error: "invalid_managed_page_operation" });
+        if (policy.kind === "students-book" && !canonical && !managedStudentsBookPageId.test(pageId)) return json(400, { error: "invalid_students_book_page_operation" });
         const uploadId = dependencies.randomUuid();
         const pageKey = `${parsed.componentSlug}/pages/${pageId}`;
         const stagingObjectKey = buildBuilderPageAssetStagingKey({ ...parsed, pageId, uploadId });
@@ -333,7 +326,7 @@ export function createBuilderPagesHandler(overrides = {}) {
           if (bytes.length !== Number(claimed.file_descriptor.size)) throw new Error("actual_object_size_mismatch");
           const inspected = await dependencies.inspectRaster(bytes);
           if (inspected.mimeType !== claimed.file_descriptor.type) throw new Error("actual_mime_mismatch");
-          if (policy.kind === "students-book" && (inspected.width !== Number(claimed.page_metadata.baselineWidth) || inspected.height !== Number(claimed.page_metadata.baselineHeight))) throw new Error("students_book_page_dimensions_mismatch");
+          if (policy.kind === "students-book" && canonicalStudentsBookPagesById.has(pageIdFromStableKey(parsed.componentSlug, claimed.page_key)) && (inspected.width !== Number(claimed.page_metadata.baselineWidth) || inspected.height !== Number(claimed.page_metadata.baselineHeight))) throw new Error("students_book_page_dimensions_mismatch");
           const pageId = pageIdFromStableKey(parsed.componentSlug, claimed.page_key);
           const objectKey = buildBuilderPageAssetObjectKey({ ...parsed, pageId, checksum: inspected.checksumSha256, extension: inspected.extension });
           await storage.upload({ profile: "private", objectKey, body: inspected.bytes, contentType: inspected.mimeType, checksumSha256: inspected.checksumSha256, byteSize: inspected.byteSize });
@@ -352,14 +345,16 @@ export function createBuilderPagesHandler(overrides = {}) {
         const body = parseJson(event, parsed.action === "delete" ? ["expectedRevision", "expectedHotspotRevision", "clientMutationId", "metadata"] : ["expectedRevision", "clientMutationId", "metadata"]); if (body.error) return body.error;
         if (!Number.isSafeInteger(body.value.expectedRevision) || body.value.expectedRevision < 0 || !builderClientMutationIdPattern.test(String(body.value.clientMutationId || ""))) return json(400, { error: "invalid_mutation_identity" });
         if (parsed.action === "delete" && (!Number.isSafeInteger(body.value.expectedHotspotRevision) || body.value.expectedHotspotRevision < 0)) return json(400, { error: "invalid_hotspot_revision" });
-        if (policy.kind === "managed" && parsed.action === "restore-image") return json(400, { error: "operation_not_allowed" });
+        const canonical = policy.kind === "students-book" && canonicalStudentsBookPagesById.has(parsed.pageId);
+        if (policy.kind === "students-book" && !canonical && !managedStudentsBookPageId.test(parsed.pageId)) return json(404, { error: "page_not_found" });
+        if (!canonical && parsed.action === "restore-image") return json(400, { error: "operation_not_allowed" });
         let metadata = {};
-        if (["metadata", "reorder"].includes(parsed.action)) { try { metadata = pageMetadata(body.value.metadata, { managed: policy.kind === "managed" }); } catch (error) { return json(400, { error: failureCode(error) }); } }
+        if (["metadata", "reorder"].includes(parsed.action)) { try { metadata = pageMetadata(body.value.metadata, { managed: !canonical }); } catch (error) { return json(400, { error: failureCode(error) }); } }
         else if (!exact(body.value.metadata, [])) return json(400, { error: "invalid_page_metadata" });
         let result;
         if (parsed.action === "delete") {
           const baseline = policy.kind === "students-book" ? canonicalStudentsBookPagesById.get(parsed.pageId) : null;
-          if (policy.kind === "students-book" && !baseline) return json(404, { error: "page_not_found" });
+          if (policy.kind === "students-book" && !baseline && !managedStudentsBookPageId.test(parsed.pageId)) return json(404, { error: "page_not_found" });
           const storedHotspots = await dependencies.loadHotspots(sql, parsed);
           const pruned = prunedPageHotspots(policy, parsed, storedHotspots, parsed.pageId);
           pruned.preservedActivityCount = await preservedPageActivityCount(dependencies, sql, parsed, parsed.pageId);
@@ -379,7 +374,7 @@ export function createBuilderPagesHandler(overrides = {}) {
           catch (error) { if (error?.code === "42883") return json(503, { error: "page_lifecycle_schema_not_ready" }); throw error; }
         } else {
           const mutationInput = { ...parsed, pageKey: `${parsed.componentSlug}/pages/${parsed.pageId}`, expectedRevision: body.value.expectedRevision, clientMutationId: body.value.clientMutationId, pageMetadata: metadata, builderUserId: auth.builderUser.id };
-          if (policy.kind === "students-book") {
+          if (canonical) {
             const baseline = canonicalStudentsBookPagesById.get(parsed.pageId);
             if (!baseline) return json(404, { error: "page_not_found" });
             result = await dependencies.mutateCanonical(sql, {

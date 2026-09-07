@@ -137,6 +137,7 @@ export function createBuilderWorker({ handlers: handlerOverrides = {}, playerMed
             request: compatible,
             releaseSourceAssets: env.RELEASE_SOURCE_ASSETS,
             releaseSourceAssetsBucket: BUILDER_RELEASE_SOURCE_ASSETS_BUCKET,
+            staticAssets: env.ASSETS,
           } },
         });
       }

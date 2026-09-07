@@ -15,6 +15,7 @@ export async function getPublishedPageImage(sql, query, { assets, origin, method
   const row = await publishedReleaseRow(sql, query);
   if (!row) return unavailable();
   const { publicProjection } = verifyImmutableComponentRelease(row);
+  if (row.compiler_id === "ultimate-b2-students-book-v3") return unavailable();
   if (publicProjection.bookSlug !== query.bookSlug || publicProjection.componentSlug !== query.componentSlug
     || (publicProjection.activePageIds && !publicProjection.activePageIds.includes(page.id))) return unavailable();
   if (!assets?.fetch || !origin) return unavailable(503);

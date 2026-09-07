@@ -8,6 +8,8 @@ import {
   validateManagedComponentHotspotManifestStructure,
 } from "../../../scripts/ultimate-b2/hotspot-manifest.js";
 import { loadBuilderPages } from "./_builder-pages-store.js";
+import { loadStudentsBookPageAuthority } from "./_students-book-page-authority.js";
+import { normalizeStudentsBookCurrentHotspots, emptyStudentsBookCurrentHotspots } from "../../../src/data/ultimate-b2/studentsBookCurrentHotspots.js";
 import { ultimateB2StudentsBookAuthoringActivities } from "../../../src/data/ultimate-b2/studentsBookAuthoringCatalog.js";
 import {
   createUltimateB2HostedOpenResponseSeed,
@@ -59,17 +61,19 @@ const ultimateB2HotspotResource = Object.freeze({
   writeAllowed: true,
   previewReadable: true,
   baseline() {
-    return validateAndNormalizeUltimateB2HotspotManifest(structuredClone(repositoryHotspots));
+    return emptyStudentsBookCurrentHotspots();
   },
   validate(document) {
-    return validateUltimateB2HotspotManifestStructure(document);
+    return normalizeStudentsBookCurrentHotspots(document);
   },
-  async validateMutationContext({ document, loadRelated }) {
-    validateAndNormalizeUltimateB2HotspotManifest(document, await loadUltimateB2HotspotActivityUniverse(loadRelated), { requireActivityPage: true });
+  async validateMutationContext({ document, loadRelated, sql }) {
+    const [catalog, activities] = await Promise.all([loadStudentsBookPageAuthority(sql), loadUltimateB2HotspotActivityUniverse(loadRelated, { includeCanonical: false })]);
+    normalizeStudentsBookCurrentHotspots(document, { pages: catalog.pages, activities, requireActivityPage: true });
   },
-  requiredRelatedForPreview: Object.freeze(["activity-lifecycle", "native-activity-index", "native-activity-public"]),
-  async projectPreview(document, { loadRelated }) {
-    return validateAndNormalizeUltimateB2HotspotManifest(structuredClone(document), await loadUltimateB2HotspotActivityUniverse(loadRelated));
+  requiredRelatedForPreview: Object.freeze(["native-activity-index", "native-activity-public"]),
+  async projectPreview(document, { loadRelated, sql }) {
+    const [catalog, activities] = await Promise.all([loadStudentsBookPageAuthority(sql), loadUltimateB2HotspotActivityUniverse(loadRelated, { includeCanonical: false })]);
+    return normalizeStudentsBookCurrentHotspots(structuredClone(document), { pages: catalog.pages, activities });
   },
 });
 

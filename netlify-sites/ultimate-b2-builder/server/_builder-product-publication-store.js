@@ -38,6 +38,7 @@ export async function productPublicationDatabaseReady(sql) {
   const rows = await sql`
     select to_regclass('book_product_releases') is not null
       and to_regprocedure('create_builder_product_release(uuid,text,text,text,jsonb,text,text,uuid,uuid)') is not null
+      and to_regprocedure('builder_students_book_v3_sources_are_current(uuid)') is not null
       and to_regprocedure('publish_builder_product_release(text,uuid,bigint,text,uuid,uuid)') is not null ready
   `;
   return rows[0]?.ready === true;

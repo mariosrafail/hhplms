@@ -1,3 +1,4 @@
+import { normalizeComponentPublicationEnvelope } from "../../services/componentPublicationApi.js";
 export const ultimateB2HotspotPreviewRoute = "/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/hotspots";
 import { authorizedHostedPreviewPath, HOSTED_VIEWER_RUNTIME_MODES, hostedReleasePath, resolveHostedViewerRuntimeContext } from "../../apps/android-teacher-offline/hostedReleasePreview.js";
 
@@ -79,11 +80,12 @@ export function getUltimateB2AuthoredHotspotActivityKey(action) {
 
 export function createHostedReviewHotspotRuntime(initialManifest) {
   let currentManifest = initialManifest;
+  let pageIdentityOnly = false;
 
   function getHotspots({ pageId, pageNumber, unitNumber } = {}) {
     const hotspots = currentManifest.pages?.[String(pageId || "")] || [];
     return hotspots.filter((hotspot) => (
-      (!Number.isFinite(Number(pageNumber)) || Number(hotspot.pageNumber) === Number(pageNumber))
+      (pageIdentityOnly || !Number.isFinite(Number(pageNumber)) || Number(hotspot.pageNumber) === Number(pageNumber))
       && (!Number.isFinite(Number(unitNumber)) || Number(hotspot.unitNumber) === Number(unitNumber))
     ));
   }
@@ -97,7 +99,7 @@ export function createHostedReviewHotspotRuntime(initialManifest) {
     async prepare({ runtimeContext = resolveHostedViewerRuntimeContext(), fetchImpl = globalThis.fetch, signal } = {}) {
       try {
         const context = runtimeContext;
-        if (context.kind === HOSTED_VIEWER_RUNTIME_MODES.BARE) return { revision: 0, source: "repository" };
+        if (context.kind === HOSTED_VIEWER_RUNTIME_MODES.BARE) { currentManifest = initialManifest; pageIdentityOnly = false; return { revision: 0, source: "repository" }; }
         if (!context.teacherPreview || typeof fetchImpl !== "function") throw unavailable();
         const response = await fetchImpl(context.kind === HOSTED_VIEWER_RUNTIME_MODES.RELEASE_PREVIEW ? hostedReleasePath(context, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" }, "public") : authorizedHostedPreviewPath(ultimateB2HotspotPreviewRoute, context.authorization), {
           cache: "no-store",
@@ -107,11 +109,15 @@ export function createHostedReviewHotspotRuntime(initialManifest) {
         if (!response?.ok) throw unavailable();
         const payload = await response.json();
         if (context.kind === HOSTED_VIEWER_RUNTIME_MODES.RELEASE_PREVIEW) {
-          currentManifest = structuredClone(payload?.projection?.hotspots);
+          const release = normalizeComponentPublicationEnvelope(payload);
+          if (release.releaseId !== context.releaseId) throw unavailable();
+          currentManifest = structuredClone(release.projection.hotspots);
+          pageIdentityOnly = release.compilerId === "ultimate-b2-students-book-v3";
           return { revision: 0, source: "release", releaseId: context.releaseId };
         }
         const envelope = validateUltimateB2HotspotPreviewEnvelope(payload);
         currentManifest = structuredClone(envelope.document);
+        pageIdentityOnly = true;
         return { revision: envelope.revision, source: envelope.source };
       } catch {
         throw unavailable();

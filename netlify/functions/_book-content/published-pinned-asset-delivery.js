@@ -2,6 +2,7 @@ import { loadComponentReleaseAssetPin } from "../../../netlify-sites/ultimate-b2
 import { parseReleaseAssetRange } from "../../../netlify-sites/ultimate-b2-builder/server/_builder-release-source-delivery.js";
 import { verifiedPublicAssetPin } from "./published-asset-pin.js";
 import { json } from "./shared.js";
+import { readBoundedImageResponse } from "../../../lib/book-assets/verified-image-bytes.js";
 
 const failure = (status, error) => json(status, { error }, { "Cache-Control": "private, no-store", Vary: "Cookie" });
 
@@ -17,6 +18,17 @@ export async function deliverPublishedPinnedAsset(sql, query, { row, projection,
     const headers = { "Content-Type": asset.mediaType, "Content-Length": String(size), "Accept-Ranges": "bytes",
       "Cache-Control": "private, no-store", Vary: "Cookie", "Cross-Origin-Resource-Policy": "same-origin", "X-Content-Type-Options": "nosniff",
       ...(contentRange ? { "Content-Range": contentRange } : {}) };
+    if (row.compiler_id === "ultimate-b2-students-book-v3" && asset.role === "managed_page_image") {
+      const page = projection.pages.find((entry) => entry.image.sha256 === asset.sha256 && entry.image.extension === asset.extension);
+      const object = await storage.openReadStream({ profile: "private", objectKey });
+      if (!page || object.byteSize !== Number(pin.byte_size) || object.checksumSha256 !== asset.sha256 || object.contentType !== asset.mediaType || object.contentRange !== null) {
+        await object.body?.cancel(); return failure(409, "release_pin_integrity_failed");
+      }
+      try {
+        const bytes = await readBoundedImageResponse(new Response(object.body, { headers: { "Content-Type": object.contentType } }), page.image);
+        return new Response(method === "HEAD" ? null : range ? bytes.subarray(range.offset, range.offset + range.length) : bytes, { status: range ? 206 : 200, headers });
+      } catch { return failure(409, "release_pin_integrity_failed"); }
+    }
     if (method === "HEAD") {
       const head = await storage.head({ profile: "private", objectKey });
       if (head.checksumSha256 !== asset.sha256 || Number(head.byteSize) !== Number(pin.byte_size) || head.contentType !== asset.mediaType) return failure(409, "release_pin_integrity_failed");

@@ -1,3 +1,4 @@
+import { studentsBookPageSql, currentStudentsBookSources, canonicalStudentsBookPages } from "./fixtures/students-book-current.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -37,7 +38,7 @@ function harness({ sources = createPublicationV2FixtureSources(), asset = undefi
   const documents = sources.native.activities;
   return createBuilderNativePreviewHandler({
     environment,
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     inspectAuthorization: (event, scope) => inspectBuilderPreviewAuthorizationScope(event, scope, { environment, now: authorizationNow }),
     loadDocument: async (_sql, resource) => {
       if (resource.documentType === "native_activity_index") return { revision: sources.native.index.revision, document: sources.native.index.payload };
@@ -170,7 +171,9 @@ test("native draft endpoint fails closed for missing and inconsistent authoritat
 
 
 test("saved order respects library, page and single-activity authorization scopes", async () => {
-  const handler = harness();
+  const sources = currentStudentsBookSources();
+  sources.native.index.payload.activities.push({ activityId: "ultimate-b2-sb-u1-p2-o9000", kind: "open-response", placement: { pageId: canonicalStudentsBookPages[1].id }, sortOrder: 9000 });
+  const handler = harness({ sources });
   const query = (token) => ({ httpMethod: "GET", path: root.replace(/\/activities$/, "/order"), headers: {}, queryStringParameters: { previewAuthorization: token } });
   const library = await handler(query(tokenFor({ view: "library", pageId: null })));
   assert.equal(library.statusCode, 200);

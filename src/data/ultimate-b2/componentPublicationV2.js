@@ -54,7 +54,7 @@ function sourceIdentity(value, label, { nullableZeroSha = false } = {}) {
   return { revision: value.revision, sha256: value.sha256 };
 }
 
-function nativeDefinition(kind, allowedNativeKinds = ULTIMATE_B2_COMPONENT_RELEASE_V2_COMPOSITION_NATIVE_KINDS) {
+export function nativeDefinition(kind, allowedNativeKinds = ULTIMATE_B2_COMPONENT_RELEASE_V2_COMPOSITION_NATIVE_KINDS) {
   if (!allowedNativeKinds.includes(kind)) throw new Error("Published native activity kind is unsupported by this release compatibility variant.");
   if (kind === "multi-part") return {
     normalizePublic(document, activityId) { return normalizeNativeActivityPublic(document, { expectedActivityId: activityId, expectedKind: kind, normalizeInteraction: normalizeNativeMultiPartInteraction }); },

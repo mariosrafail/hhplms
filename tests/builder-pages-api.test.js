@@ -141,7 +141,7 @@ test("managed list serializes relational Unit metadata and normalizes bigint rev
 
 test("all components expose explicit page capabilities and safe Deleted Pages lifecycle metadata", async () => {
   const units = managedUnits("ultimate-b2-workbook");
-  const studentOverride = harness({ loadPages: () => ({ revision: 2, hotspotRevision: 1, units: [], rows: [{
+  const studentOverride = harness({ loadPages: () => ({ revision: 2, hotspotRevision: 1, units, rows: [{
     stable_key: first.stableKey, label: "Edited Student label", sort_order: first.sortOrder + 4, unit_id: units[0].id,
     source_metadata: { has_metadata_override: true, printed_label: "Edited 6-7" }, asset_id: null,
   }] }) });

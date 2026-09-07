@@ -190,7 +190,7 @@ export default defineConfig(({ mode }) => {
       listeningAuthoringPlugin,
       multipleChoicePresentationPlugin,
       committedHotspotVitePlugin({ enabled: isHostedReview }),
-      ultimateB2BuilderPageAssetsPlugin({ enabled: isHostedBuilderReview }),
+      ultimateB2BuilderPageAssetsPlugin({ enabled: isHostedReview }),
       isAndroidTeacherProject ? teacherProjectVitePlugin({ configPath: env.TEACHER_PROJECT_RUNTIME_CONFIG || process.env.TEACHER_PROJECT_RUNTIME_CONFIG }) : null,
       !isAndroidTeacherProject && !isHostedReview ? ultimateB2HotspotBuilderPlugin({ environment: serverEnvironment }) : null,
       !isAndroidTeacherProject && !isHostedReview ? ultimateB2ListeningBuilderPlugin({ environment: serverEnvironment }) : null,

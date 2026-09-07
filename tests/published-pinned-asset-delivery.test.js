@@ -6,6 +6,7 @@ import { publicationAssetPinFingerprint } from "../netlify-sites/ultimate-b2-bui
 import { componentPublicationCanonicalPrivateSourceObjectKey } from "../lib/book-assets/publication-asset-storage.js";
 import { deliverPublishedPinnedAsset } from "../netlify/functions/_book-content/published-pinned-asset-delivery.js";
 import { normalizePublishedBookLocator } from "../netlify/functions/_book-content/published-book-model.js";
+import { verifiedPublicAssetPin } from "../netlify/functions/_book-content/published-asset-pin.js";
 
 function fixture() {
   const { publicProjection: projection } = publishedManagedBookFixture();
@@ -28,6 +29,25 @@ function fixture() {
   const query = { bookSlug: projection.bookSlug, componentSlug: projection.componentSlug, releaseId: row.id, sha256: asset.sha256, extension: asset.extension };
   return { pin, calls, storage, deliver: (options = {}) => deliverPublishedPinnedAsset(async () => [pin], query, { row, projection, asset, storage, method: "GET", ...options }) };
 }
+
+test("font pins retain their exact released source paths without accepting foreign or arbitrary paths", () => {
+  const row = { id: "10000000-0000-4000-8000-000000000099" };
+  const projection = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-workbook" };
+  const asset = { sha256: "a".repeat(64), extension: "ttf", mediaType: "font/ttf", role: "activity_font" };
+  const canonical = `builder-font-library/ultimate-b2/ultimate-b2-workbook/assets/${asset.sha256}.ttf`;
+  const historical = `builder-font-library/ultimate-b2/ultimate-b2-workbook/${asset.sha256}.ttf`;
+  const sign = (objectKey) => {
+    const pin = { component_release_id: row.id, book_asset_id: "30000000-0000-4000-8000-000000000001", asset_role: asset.role, source_asset_role: asset.role, checksum_sha256: asset.sha256, extension: "ttf", media_type: "font/ttf", byte_size: 1234, storage_profile: "private", storage_bucket: "private-assets", object_key: objectKey, source_owner_key: "component", source_asset_slot: "" };
+    pin.pin_sha256 = createHash("sha256").update(publicationAssetPinFingerprint({ assetId: pin.book_asset_id, role: pin.asset_role, sourceAssetRole: pin.source_asset_role, checksumSha256: pin.checksum_sha256, byteSize: pin.byte_size, mediaType: pin.media_type, extension: pin.extension, storageProfile: pin.storage_profile, storageBucket: pin.storage_bucket, objectKey, ownerKey: pin.source_owner_key, assetSlot: "" })).digest("hex");
+    return pin;
+  };
+  for (const key of [canonical, historical]) assert.equal(verifiedPublicAssetPin({ row, projection, asset, pin: sign(key) }), key);
+  for (const key of [canonical.replace("workbook", "grammar-book"), historical.replace(asset.sha256, "b".repeat(64)), `arbitrary/${asset.sha256}.ttf`, canonical.replace("assets/", "assets/../")]) {
+    assert.throws(() => verifiedPublicAssetPin({ row, projection, asset, pin: sign(key) }), /release_pin_integrity_failed/);
+  }
+  const corrupt = sign(historical); corrupt.pin_sha256 = "0".repeat(64);
+  assert.throws(() => verifiedPublicAssetPin({ row, projection, asset, pin: corrupt }), /release_pin_integrity_failed/);
+});
 
 test("private immutable page streams bytes and ranges without redirecting or exposing source identity", async () => {
   const { deliver } = fixture();

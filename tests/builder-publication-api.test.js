@@ -13,6 +13,8 @@ import { createEmptyHostedTeacherUiDocument } from "../src/data/ultimate-b2/host
 import { findStudentsBookImplementation } from "../src/data/ultimate-b2/studentsBookCatalog.js";
 import { compilePublicationV2Fixture, publicationV2Fixture } from "./fixtures/publication-v2.js";
 import { task6SourceBundle } from "./fixtures/open-response-task6.js";
+import { compileStudentsBookReleaseV3 } from "../netlify-sites/ultimate-b2-builder/server/_builder-publication-compiler-v3.js";
+import { canonicalStudentsBookPages, studentsBookUnits } from "./fixtures/students-book-current.js";
 
 const base = "/builder/api/publication/books/ultimate-b2/components/ultimate-b2-students-book";
 const actor = "10000000-0000-4000-8000-000000000001";
@@ -21,7 +23,7 @@ function event(path = base, method = "GET", body, headers = {}) { return { path,
 const parsed = (response) => JSON.parse(response.body);
 
 function harness(overrides = {}) {
-  const release = overrides.release || compileUltimateB2ComponentReleaseV2({ documents: {}, imports: {}, native: { activities: {}, assetRows: [] } });
+  const release = overrides.release || (overrides.current ? compileStudentsBookReleaseV3({ pages: { revision: 0, units: studentsBookUnits, rows: canonicalStudentsBookPages.map((page) => ({ stable_key: page.stableKey, source_metadata: { is_deleted: true } })) }, native: { activities: {}, assetRows: [] } }) : compileUltimateB2ComponentReleaseV2({ documents: {}, imports: {}, native: { activities: {}, assetRows: [] } }));
   let currentRelease = release;
   let mutation = null;
   const id = randomUUID();
@@ -52,7 +54,7 @@ test("publication mutations require Builder auth, same origin, JSON, and explici
 });
 
 test("prepare returns an immutable inactive release identity and only publish moves the active head", async () => {
-  const { handler, id, release, isPublished } = harness();
+  const { handler, id, release, isPublished } = harness({ current: true });
   const prepared = await handler(event(`${base}/prepare`, "POST", { clientMutationId: randomUUID(), releaseNote: "" }));
   assert.equal(prepared.statusCode, 200);
   assert.equal(parsed(prepared).releaseId, id);
@@ -65,7 +67,7 @@ test("prepare returns an immutable inactive release identity and only publish mo
 });
 
 test("publish rechecks the current compiled source identity before the transactional head move", async () => {
-  const { handler, id, release, setCurrentRelease } = harness();
+  const { handler, id, release, setCurrentRelease } = harness({ current: true });
   setCurrentRelease({ ...release, sourceSnapshotSha256: "f".repeat(64) });
   const response = await handler(event(`${base}/publish`, "POST", { releaseId: id, expectedHeadRevision: 0, clientMutationId: randomUUID() }));
   assert.equal(response.statusCode, 409);
@@ -73,7 +75,7 @@ test("publish rechecks the current compiled source identity before the transacti
 });
 
 test("a successful publish mutation retry remains idempotent after later draft changes", async () => {
-  const { handler, id, release, setCurrentRelease, setMutation } = harness();
+  const { handler, id, release, setCurrentRelease, setMutation } = harness({ current: true });
   setCurrentRelease({ ...release, sourceSnapshotSha256: "f".repeat(64) });
   setMutation({ release_id: id, outcome: "published" });
   const response = await handler(event(`${base}/publish`, "POST", { releaseId: id, expectedHeadRevision: 0, clientMutationId: randomUUID() }));

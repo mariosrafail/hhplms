@@ -20,7 +20,7 @@ const testDatabaseUrl = process.env.TEST_DATABASE_URL || "";
 const enabled = Boolean(testDatabaseUrl) && process.env.TEST_DATABASE_CONFIRMATION === "isolated-test-database";
 const actor = "10000000-0000-4000-8000-000000000001";
 
-test("isolated PostgreSQL reorders mixed activities atomically and rejects concurrent revisions", { skip: !enabled }, async (t) => {
+test("isolated PostgreSQL reorders current native activities atomically and rejects concurrent revisions", { skip: !enabled }, async (t) => {
   const schema = `builder_native_${randomBytes(8).toString("hex")}`;
   const admin = new Pool({ connectionString: testDatabaseUrl, max: 1 }); await admin.query(`create schema "${schema}"`);
   const pool = new Pool({ connectionString: scoped(testDatabaseUrl, schema), max: 5 });
@@ -30,6 +30,8 @@ test("isolated PostgreSQL reorders mixed activities atomically and rejects concu
   const sql = tag(pool); const identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" };
   const dependencies = { resolveResource: resolveBuilderContentResource, loadDocument: loadBuilderComponentDocument };
   const handler = createBuilderNativeActivitiesHandler({ getDatabase: () => sql, authorize: async () => ({ builderUser: { id: actor } }), logger: console });
+  const sibling = await handler(event({ kind: "open-response", title: "First native order item" }));
+  assert.equal(sibling.statusCode, 200, sibling.body);
   const response = await handler(event({ kind: "image" })); assert.equal(response.statusCode, 200, response.body);
   const activityId = JSON.parse(response.body).activityId;
   const pageId = "ub2-sb-unit-1-part-1";
@@ -484,7 +486,11 @@ test("isolated PostgreSQL atomically relocates native and canonical identities a
   const destinationHotspots = structuredClone(currentHotspots.document);
   destinationHotspots.pages[destinationPage] ||= [];
   destinationHotspots.pages[destinationPage].push({ id: "moved-canonical-launch", unitNumber: 2, pageId: destinationPage, pageNumber: 19, left: 1, top: 1, width: 10, height: 10, label: "Moved canonical", actionType: "normalized_activity", activityKey: canonicalId });
-  assert.equal((await content(hotspotEvent("PUT", { expectedRevision: currentHotspots.revision, clientMutationId: randomUUID(), document: destinationHotspots }))).statusCode, 200);
+  // Historical lifecycle coverage uses explicit saved historical input through
+  // the retained persistence contract; current authoring cannot add this target.
+  assert.equal((await content(hotspotEvent("PUT", { expectedRevision: currentHotspots.revision, clientMutationId: randomUUID(), document: destinationHotspots }))).statusCode, 400);
+  const historicalResource = await resolveBuilderContentResource("ultimate-b2", "ultimate-b2-students-book", "hotspots");
+  assert.equal((await saveBuilderComponentDocument(sql, { resource: historicalResource, expectedRevision: currentHotspots.revision, clientMutationId: randomUUID(), document: destinationHotspots, payloadSha256: builderDocumentSha256(destinationHotspots), builderUserId: actor })).outcome, "saved");
 
   const retireMutationId = randomUUID();
   const retired = await native(lifecycleEvent(canonicalId, "retire", destinationPage, null, retireMutationId));
@@ -542,24 +548,24 @@ test("isolated PostgreSQL hotspot trigger accepts same-page targets and rejects 
   const movedNative = JSON.parse((await native(event({ title: "Moved trigger native" }))).body);
   let state = await current();
   const withValidNative = structuredClone(state.payload);
-  withValidNative.pages[sourcePage].push(hotspot("trigger-valid-native", movedNative.activityId));
+  (withValidNative.pages[sourcePage] ||= []).push(hotspot("trigger-valid-native", movedNative.activityId));
   const validNative = await content(hotspotEvent("PUT", { expectedRevision: Number(state.revision), clientMutationId: randomUUID(), document: withValidNative }));
   assert.equal(validNative.statusCode, 200, validNative.body);
   assert.equal((await native(lifecycleEvent(movedNative.activityId, "move", sourcePage, destinationPage))).statusCode, 200);
   state = await current();
   const staleMovedNative = structuredClone(state.payload);
-  staleMovedNative.pages[sourcePage].push(hotspot("trigger-stale-moved-native", movedNative.activityId));
+  (staleMovedNative.pages[sourcePage] ||= []).push(hotspot("trigger-stale-moved-native", movedNative.activityId));
   await expectTriggerRejection(staleMovedNative);
 
   const inactiveNative = JSON.parse((await native(event({ title: "Inactive trigger native" }))).body);
   state = await current();
   const withInactiveNative = structuredClone(state.payload);
-  withInactiveNative.pages[sourcePage].push(hotspot("trigger-active-before-delete", inactiveNative.activityId));
+  (withInactiveNative.pages[sourcePage] ||= []).push(hotspot("trigger-active-before-delete", inactiveNative.activityId));
   assert.equal((await content(hotspotEvent("PUT", { expectedRevision: Number(state.revision), clientMutationId: randomUUID(), document: withInactiveNative }))).statusCode, 200);
   assert.equal((await native(deleteEvent(inactiveNative.activityId))).statusCode, 200);
   state = await current();
   const staleInactiveNative = structuredClone(state.payload);
-  staleInactiveNative.pages[sourcePage].push(hotspot("trigger-stale-inactive-native", inactiveNative.activityId));
+  (staleInactiveNative.pages[sourcePage] ||= []).push(hotspot("trigger-stale-inactive-native", inactiveNative.activityId));
   await expectTriggerRejection(staleInactiveNative);
 
   const movedCanonicalId = "ultimate-b2-sb-u1-p1-o1";
@@ -567,7 +573,7 @@ test("isolated PostgreSQL hotspot trigger accepts same-page targets and rejects 
   state = await current();
   const staleMovedCanonical = structuredClone(state.payload);
   staleMovedCanonical.pages[sourcePage] ||= [];
-  staleMovedCanonical.pages[sourcePage].push(hotspot("trigger-stale-moved-canonical", movedCanonicalId));
+  (staleMovedCanonical.pages[sourcePage] ||= []).push(hotspot("trigger-stale-moved-canonical", movedCanonicalId));
   await expectTriggerRejection(staleMovedCanonical);
 
   const retiredCanonicalId = "ultimate-b2-sb-u1-p1-o2";
@@ -575,7 +581,7 @@ test("isolated PostgreSQL hotspot trigger accepts same-page targets and rejects 
   state = await current();
   const staleRetiredCanonical = structuredClone(state.payload);
   staleRetiredCanonical.pages[sourcePage] ||= [];
-  staleRetiredCanonical.pages[sourcePage].push(hotspot("trigger-stale-retired-canonical", retiredCanonicalId));
+  (staleRetiredCanonical.pages[sourcePage] ||= []).push(hotspot("trigger-stale-retired-canonical", retiredCanonicalId));
   await expectTriggerRejection(staleRetiredCanonical);
 });
 

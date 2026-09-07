@@ -35,7 +35,7 @@ export function UltimateB2ManagedComponentHostedWorkspace({ tool = "hotspots", n
 }
 
 export function UltimateB2PagesHostedWorkspace({ bookSlug = "ultimate-b2", componentSlug }) {
-  const managed = componentSlug !== "ultimate-b2-students-book";
+  const managed = true;
   return <div className="ultimate-b2-builder-app" data-build-profile="book-builder-hosted-review" data-component-adapter={componentSlug}><ComponentPagesWorkspace bookSlug={bookSlug} componentSlug={componentSlug} managed={managed} title={componentTitle(componentSlug)} /></div>;
 }
 

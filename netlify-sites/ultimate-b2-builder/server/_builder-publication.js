@@ -1,6 +1,7 @@
 import { deliverNativeTeacherAnswer } from "./_builder-native-answer-delivery.js";
 import { createHash } from "node:crypto";
 import { createBookAssetStorage } from "../../../lib/book-assets/storage.js";
+import { verifiedPublicAssetPin } from "../../../lib/book-assets/verified-publication-pin.js";
 import { componentPublicationAssetStorageTarget } from "../../../lib/book-assets/publication-asset-storage.js";
 import { findProductComponent } from "../../../src/data/bookProductCatalog.js";
 import { componentPublicationAssetRolePolicy } from "../../../src/data/ultimate-b2/componentPublicationAssetRoles.js";
@@ -10,8 +11,11 @@ import { authorizeBuilderPreviewRequest } from "./_builder-preview-authorization
 import { ComponentPublicationAssetError, materializeNativeReleaseAssets } from "./_builder-publication-assets.js";
 import { resolvePublicationCompiler, verifyImmutableComponentRelease } from "./_builder-publication-compilers.js";
 import { servePinnedReleaseSourceAsset } from "./_builder-release-source-delivery.js";
+import { deliverCanonicalReleasePageAsset } from "./_canonical-release-page-delivery.js";
+import { materializeCanonicalReleaseAssets, canonicalPublicationAssetFetcher } from "./_builder-canonical-release-assets.js";
 import { ultimateB2PublicationCanonicalSeeds } from "./_builder-publication-compiler.js";
 import { createComponentRelease, loadComponentPublicationMutation, loadComponentPublicationStatus, loadComponentRelease, loadComponentReleaseAssetPin, publicationV2DatabaseReady, publishComponentRelease } from "./_builder-publication-store.js";
+import { publicationV3DatabaseReady } from "./_builder-publication-store.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256 = /^[a-f0-9]{64}$/;
@@ -87,7 +91,10 @@ export function createBuilderPublicationHandler(overrides = {}) {
     servePinnedAsset: overrides.servePinnedAsset || servePinnedReleaseSourceAsset,
     loadMutation: overrides.loadMutation || loadComponentPublicationMutation,
     v2Ready: overrides.v2Ready || (overrides.compile ? async () => true : publicationV2DatabaseReady),
+    v3Ready: overrides.v3Ready || publicationV3DatabaseReady,
     materialize: overrides.materialize || materializeNativeReleaseAssets,
+    materializeCanonical: overrides.materializeCanonical || materializeCanonicalReleaseAssets,
+    canonicalFetch: overrides.canonicalFetch || canonicalPublicationAssetFetcher,
     storage: overrides.storage || (() => createBookAssetStorage()),
     logger: overrides.logger || console,
   };
@@ -115,6 +122,7 @@ export function createBuilderPublicationHandler(overrides = {}) {
           const match = parsedRoute.activityId.match(/^([a-f0-9]{64})\.(png|jpg|webp|mp3|mp4|pdf|ttf|wav|gaf)$/);
           const asset = match && selectComponentReleaseAsset(release.asset_manifest, match[1], match[2]);
           if (!asset) return json(404, { error: "release_asset_not_found" });
+          if (asset.role === "canonical_page_image") return deliverCanonicalReleasePageAsset({ projection: verified.publicProjection, asset, method: event.httpMethod, binding: context?.cloudflare?.releaseSourceAssets, storage: context?.cloudflare ? null : dependencies.storage() });
           const target = componentPublicationAssetStorageTarget({ bookSlug: parsedRoute.bookSlug, componentSlug: parsedRoute.componentSlug, ...asset });
           if (!target) return json(404, { error: "release_asset_not_found" });
           if (!target.public) {
@@ -124,7 +132,11 @@ export function createBuilderPublicationHandler(overrides = {}) {
               if (!pin || pin.component_release_id !== release.id || pin.asset_role !== asset.role || pin.checksum_sha256 !== asset.sha256
                 || pin.extension !== asset.extension || pin.media_type !== asset.mediaType || Number(pin.byte_size) < 1
                 || pin.storage_profile !== "private") return json(409, { error: "release_pin_integrity_failed" });
-              return dependencies.servePinnedAsset({ event, context, release, asset, pin });
+              if (release.compiler_id === "ultimate-b2-students-book-v3") {
+                try { verifiedPublicAssetPin({ row: release, projection: verified.publicProjection, asset, pin }); }
+                catch { return json(409, { error: "release_pin_integrity_failed" }); }
+              }
+              return dependencies.servePinnedAsset({ event, context, release, projection: verified.publicProjection, asset, pin });
             }
             if (storageMode !== "materialized-v1") return json(409, { error: "release_pin_integrity_failed" });
             const location = await dependencies.storage().signedGetUrl({ profile: target.profile, objectKey: target.objectKey });
@@ -144,13 +156,14 @@ export function createBuilderPublicationHandler(overrides = {}) {
       const auth = await dependencies.authorize(event, sql);
       if (auth.error) return auth.error;
       const configuredCompiler = resolvePublicationCompiler(component.publication.compilerId);
+      if (!dependencies.compile && configuredCompiler.releaseSchemaVersion === "3.0" && !await dependencies.v3Ready(sql)) return json(409, { error: "publication_schema_unavailable" });
       const collectAndCompile = async () => {
         const collected = dependencies.collect ? await dependencies.collect(sql) : await configuredCompiler.collect(sql);
         return dependencies.compile ? dependencies.compile(collected) : configuredCompiler.compile(collected);
       };
       if (event.httpMethod === "GET" && parsedRoute.action === "status") {
         const [status, compiled] = await Promise.all([dependencies.status(sql, parsedRoute.bookSlug, parsedRoute.componentSlug), collectAndCompile()]);
-        return json(200, { bookSlug: parsedRoute.bookSlug, componentSlug: parsedRoute.componentSlug, compilerId: configuredCompiler.compilerId, releaseSchemaVersion: configuredCompiler.releaseSchemaVersion, currentSourceSha256: compiled.sourceSnapshotSha256, ...status, releases: status.releases.map((release) => ({ ...release, state: release.sourceSnapshotSha256 === compiled.sourceSnapshotSha256 ? "current" : "stale" })) });
+        return json(200, { bookSlug: parsedRoute.bookSlug, componentSlug: parsedRoute.componentSlug, compilerId: configuredCompiler.compilerId, releaseSchemaVersion: configuredCompiler.releaseSchemaVersion, currentSourceSha256: compiled.sourceSnapshotSha256, ...(compiled.reconciliation ? { reconciliation: compiled.reconciliation } : {}), ...status, releases: status.releases.map((release) => ({ ...release, state: release.sourceSnapshotSha256 === compiled.sourceSnapshotSha256 ? "current" : "stale" })) });
       }
       if (event.httpMethod !== "POST") return json(405, { error: "method_not_allowed" });
       const originError = requireBuilderOrigin(event); if (originError) return originError;
@@ -160,8 +173,9 @@ export function createBuilderPublicationHandler(overrides = {}) {
         if (configuredCompiler.releaseSchemaVersion === "2.0" && !await dependencies.v2Ready(sql)) return json(409, { error: "publication_schema_unavailable" });
         const compiled = await collectAndCompile();
         const storage = dependencies.storage();
+        if (compiled.canonicalAssetSources?.length) await dependencies.materializeCanonical(storage, { ...parsedRoute, ...compiled, fetchAsset: dependencies.canonicalFetch(context) });
         await dependencies.materialize(storage, { bookSlug: parsedRoute.bookSlug, componentSlug: parsedRoute.componentSlug, nativeAssetSources: compiled.nativeAssetSources || [] });
-        await verifyAssets(storage, compiled.assetManifest, compiled.nativeAssetSources || [], parsedRoute);
+        await verifyAssets(storage, compiled.assetManifest.filter((asset) => asset.role !== "canonical_page_image"), compiled.nativeAssetSources || [], parsedRoute);
         const requestSha256 = sha256(stableBuilderJson({ sourceSnapshotSha256: compiled.sourceSnapshotSha256, releaseSha256: compiled.releaseSha256, releaseNote: parsed.value.releaseNote }));
         const result = await dependencies.create(sql, { ...parsedRoute, ...compiled, releaseSchemaVersion: configuredCompiler.releaseSchemaVersion, requestSha256, releaseNote: parsed.value.releaseNote, clientMutationId: parsed.value.clientMutationId, builderUserId: auth.builderUser.id });
         if (result.outcome === "mutation_id_conflict") return json(409, { error: result.outcome });
@@ -201,8 +215,8 @@ export function createBuilderPublicationHandler(overrides = {}) {
           ...(error.providerCode ? { providerCode: error.providerCode } : {}),
         } : {}),
       });
-      const safeCode = ["native_activity_not_found", "native_activity_pair_invalid", "native_activity_not_ready", "native_activity_asset_invalid", "release_asset_unavailable"].includes(error?.code || error?.message) ? (error.code || error.message) : null;
-      return safeCode ? json(409, { error: safeCode, ...(error.activityId ? { activityId: error.activityId } : {}), ...(error.issues?.length ? { issues: error.issues } : {}) }) : json(500, { error: "builder_publication_failed" });
+      const safeCode = ["students_book_page_expansion_required", "students_book_page_asset_invalid", "placement_unavailable", "native_activity_not_found", "native_activity_pair_invalid", "native_activity_not_ready", "native_activity_asset_invalid", "release_asset_unavailable"].includes(error?.code || error?.message) ? (error.code || error.message) : null;
+      return safeCode ? json(409, { error: safeCode, ...(error.activityId ? { activityId: error.activityId } : {}), ...(error.issues?.length ? { issues: error.issues } : {}), ...(error.reconciliation ? { reconciliation: error.reconciliation } : {}) }) : json(500, { error: "builder_publication_failed" });
     }
   };
 }

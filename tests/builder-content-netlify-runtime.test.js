@@ -38,7 +38,7 @@ test("deployed-style CommonJS artifacts bundle and execute the canonical hotspot
   const functionArtifact = await commonJsArtifact(functionEntry);
   assert.ok(functionArtifact, "The deployed-style builder-content artifact was not generated.");
   assert.doesNotMatch(functionArtifact, /hotspot-manifest\.mjs|require\(["'][^"']*hotspot-manifest|import\(["'][^"']*hotspot-manifest/);
-  assert.match(functionArtifact, /Unsupported hotspot manifest schemaVersion/);
+  assert.match(functionArtifact, /Students Book hotspot identity is invalid/);
 
   const previewFunctionArtifact = await commonJsArtifact(previewFunctionEntry);
   assert.ok(previewFunctionArtifact, "The deployed-style builder-preview artifact was not generated.");
@@ -63,7 +63,7 @@ test("deployed-style CommonJS artifacts bundle and execute the canonical hotspot
   assert.ok(resourceArtifact, "The deployed-style resource artifact was not generated.");
   assert.doesNotMatch(resourceArtifact, /hotspot-manifest\.mjs|require\(["'][^"']*hotspot-manifest|import\(["'][^"']*hotspot-manifest/);
   assert.doesNotMatch(resourceArtifact, /acceptedAnswers|teacherSolutions|teacher-solutions\.json|revealText/);
-  assert.match(resourceArtifact, /Unsupported hotspot manifest schemaVersion/);
+  assert.match(resourceArtifact, /Students Book hotspot identity is invalid/);
 
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "hhplms-builder-content-"));
   try {
@@ -88,6 +88,9 @@ test("deployed-style CommonJS artifacts bundle and execute the canonical hotspot
     const baseline = resource.baseline();
     assert.equal(baseline.packageSlug, "ultimate-b2");
     assert.equal(baseline.componentSlug, "students-book");
+    assert.deepEqual(baseline.pages, {});
+    assert.throws(() => resource.validate({ ...baseline, pages: { unknown: [] } }), /Unknown Students Book page id/);
+    assert.throws(() => resource.validate({ ...baseline, schemaVersion: "broken" }), /identity is invalid/);
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }

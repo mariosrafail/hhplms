@@ -24,6 +24,7 @@ import { isNativeActivityPlacementError } from "../../../src/data/native-activit
 import { currentUltimateB2ActivityLifecycleEntry, updateUltimateB2ActivityLifecycle } from "../../../src/data/ultimate-b2/activityLifecycle.js";
 import { ultimateB2StudentsBookAuthoringActivities } from "../../../src/data/ultimate-b2/studentsBookAuthoringCatalog.js";
 import { pruneComponentActivityHotspots } from "../../../scripts/ultimate-b2/hotspot-manifest.js";
+import { pruneStudentsBookCurrentHotspots } from "../../../src/data/ultimate-b2/studentsBookCurrentHotspots.js";
 import { getBuilderSql, json, requireBuilderOrigin, requireBuilderUser } from "./_builder-auth.js";
 import { resolveBuilderContentResource } from "./_builder-content-registry.js";
 import { assertPublicBuilderDocument, builderClientMutationIdPattern, builderDocumentSha256, stableBuilderJson } from "./_builder-content-security.js";
@@ -238,7 +239,7 @@ async function createActivity(dependencies, sql, auth, parsedRoute, event) {
     const publicDocument = kind.createBlankPublic({ activityId, title, placement });
     const teacherDocument = kind.createBlankTeacher({ activityId, placement });
     validateNativeActivityPair(publicDocument, teacherDocument); assertPublicBuilderDocument(publicDocument);
-    const indexDocument = appendNativeActivityIndexEntry(index, { activityId, kind: kind.kind, placement: { pageId: placement.pageId }, sortOrder: adapter.sortOrder({ placement, activityId }) }, { allowedKinds: adapter.kinds });
+    const indexDocument = appendNativeActivityIndexEntry(index, { activityId, kind: kind.kind, placement: { pageId: placement.pageId }, sortOrder: adapter.sortOrder({ placement, activityId, nativeIndex: index }) }, { allowedKinds: adapter.kinds });
     const result = await dependencies.create(sql, {
       ...parsedRoute, activityId, kind: kind.kind, expectedIndexRevision: storedIndex?.revision || 0,
       indexDocument, indexSha256: builderDocumentSha256(indexDocument), publicDocument, publicSha256: builderDocumentSha256(publicDocument),
@@ -284,7 +285,7 @@ async function deleteActivity(dependencies, sql, auth, parsedRoute, event) {
   const index = storedIndex?.document || createEmptyNativeActivityIndex();
   const removed = removeNativeActivityIndexEntry(index, parsedRoute.activityId, { allowedKinds: adapter.kinds });
   const currentHotspots = storedHotspots?.document || hotspotResource.baseline();
-  const pruned = pruneComponentActivityHotspots(currentHotspots, parsedRoute.activityId);
+  const pruned = (parsedRoute.componentSlug === "ultimate-b2-students-book" ? pruneStudentsBookCurrentHotspots : pruneComponentActivityHotspots)(currentHotspots, parsedRoute.activityId);
   const requestSha256 = sha256(stableBuilderJson({
     bookSlug: parsedRoute.bookSlug,
     componentSlug: parsedRoute.componentSlug,
@@ -400,7 +401,7 @@ async function mutateActivityLifecycle(dependencies, sql, auth, parsedRoute, eve
     return json(409, { error: "activity_placement_invalid" });
   }
   const currentHotspots = storedHotspots?.document || hotspotResource.baseline();
-  const pruned = pruneComponentActivityHotspots(currentHotspots, parsedRoute.activityId);
+  const pruned = (parsedRoute.componentSlug === "ultimate-b2-students-book" ? pruneStudentsBookCurrentHotspots : pruneComponentActivityHotspots)(currentHotspots, parsedRoute.activityId);
   const requestSha256 = sha256(stableBuilderJson({
     bookSlug: parsedRoute.bookSlug,
     componentSlug: parsedRoute.componentSlug,

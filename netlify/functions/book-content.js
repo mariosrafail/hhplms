@@ -108,7 +108,7 @@ export async function handler(event, context) {
       if (query.action === "activity") {
         const accessError = await verifyPackageAccess(sql, currentUser, { activityId: query.activityId, activitySlug: query.activitySlug || query.slug });
         if (accessError) return accessError;
-        const activity = await fetchActivity(sql, query);
+        const activity = await fetchActivity(sql, { ...query, currentDiscovery: true });
         return activity ? json(200, { activity: studentSafeActivityPayload(activity) }) : json(404, { error: "Activity not found" });
       }
       if (query.action === "component") {
@@ -341,6 +341,7 @@ export async function handler(event, context) {
 
     return json(405, { error: "Method not allowed" });
   } catch (error) {
+    if (error?.code === "PZ004") return json(409, { error: "Choose a published Students Book activity for a new assignment or Homework item.", code: "students_book_native_publication_required" });
     if (isDatabaseNotConfiguredError(error)) {
       const response = databaseNotConfiguredResponse();
       return ["dashboard-metrics", "teacher-grade-analytics"].includes(query.action)

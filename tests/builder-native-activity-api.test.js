@@ -1,3 +1,4 @@
+import { studentsBookPageSql, currentStudentsBookSources, canonicalStudentsBookPages } from "./fixtures/students-book-current.js";
 import assert from "node:assert/strict";
 import { generateNativeMarkWordsBulkCandidate } from "../src/data/native-activities/nativeMarkWordsBulkAuthoring.js";
 import { randomUUID } from "node:crypto";
@@ -26,7 +27,7 @@ function harness(overrides = {}) {
   const pairMutations = new Map();
   const deleteMutations = new Map();
   const handler = createBuilderNativeActivitiesHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     authorize: async (event) => event.headers.cookie === "hh_builder_session=live" ? { builderUser: { id: actor } } : { error: json(401, { error: "Unauthorized" }) },
     loadDocument: async (_sql, resource) => resource.documentType === "native_activity_index" ? indexState
       : resource.documentType === "hotspots" ? hotspotState
@@ -248,7 +249,7 @@ test("native documents are authenticated reads and paired writes are the only mu
   const { handler: create, documents } = harness();
   const created = JSON.parse((await create(request())).body);
   const content = createBuilderContentHandler({
-    getDatabase: () => ({}), authorize: async (event) => event.headers.cookie === "hh_builder_session=live" ? { builderUser: { id: actor } } : { error: json(401, { error: "Unauthorized" }) },
+    getDatabase: () => studentsBookPageSql(), authorize: async (event) => event.headers.cookie === "hh_builder_session=live" ? { builderUser: { id: actor } } : { error: json(401, { error: "Unauthorized" }) },
     loadDocument: async (_sql, resource) => documents.get(`${resource.documentType}:${resource.documentKey}`) || null,
     saveDocument: async (_sql, input) => { documents.set(`${input.resource.documentType}:${input.resource.documentKey}`, { revision: input.expectedRevision + 1, source: "database", document: input.document }); return { outcome: "saved", revision: input.expectedRevision + 1, currentRevision: input.expectedRevision + 1, document: input.document }; },
   });
@@ -299,7 +300,7 @@ test("authenticated native catalog exposes page-aware readiness without Teacher 
   const sources = createPublicationV2FixtureSources();
   const scopes = [];
   const handler = createBuilderNativeActivitiesHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     authorize: async (event) => event.headers.cookie === "hh_builder_session=live" ? { builderUser: { id: actor } } : { error: json(401, { error: "Unauthorized" }) },
     collectCatalog: async (_sql, scope) => { scopes.push(scope); return sources; },
     logger: { error() {} },
@@ -333,7 +334,7 @@ test("catalog quarantines a missing local pair while preserving valid activities
   sources.native.activities[publicationV2Fixture.openResponseId].teacher = null;
   const warnings = [];
   const handler = createBuilderNativeActivitiesHandler({
-    getDatabase: () => ({}), authorize: async () => ({ builderUser: { id: actor } }),
+    getDatabase: () => studentsBookPageSql(), authorize: async () => ({ builderUser: { id: actor } }),
     collectCatalog: async () => sources, logger: { error() {}, warn(message, fields) { warnings.push({ message, fields }); } },
   });
   const response = await handler(request({ method: "GET", path: "/builder/api/native-activities/books/ultimate-b2/components/ultimate-b2-students-book/catalog" }));
@@ -355,7 +356,7 @@ test("catalog keeps a structurally valid activity non-ready when its local manag
   const sources = createPublicationV2FixtureSources();
   sources.native.assetRows = sources.native.assetRows.filter((asset) => asset.id !== publicationV2Fixture.assetId);
   const handler = createBuilderNativeActivitiesHandler({
-    getDatabase: () => ({}), authorize: async () => ({ builderUser: { id: actor } }), collectCatalog: async () => sources, logger: { error() {} },
+    getDatabase: () => studentsBookPageSql(), authorize: async () => ({ builderUser: { id: actor } }), collectCatalog: async () => sources, logger: { error() {} },
   });
   const response = await handler(request({ method: "GET", path: "/builder/api/native-activities/books/ultimate-b2/components/ultimate-b2-students-book/catalog" }));
   assert.equal(response.statusCode, 200, response.body);
@@ -372,7 +373,7 @@ test("catalog fails closed when a referenced managed asset belongs to another co
     const sources = createPublicationV2FixtureSources();
     Object.assign(sources.native.assetRows[0], asset);
     const handler = createBuilderNativeActivitiesHandler({
-      getDatabase: () => ({}), authorize: async () => ({ builderUser: { id: actor } }), collectCatalog: async () => sources, logger: { error() {} },
+      getDatabase: () => studentsBookPageSql(), authorize: async () => ({ builderUser: { id: actor } }), collectCatalog: async () => sources, logger: { error() {} },
     });
     const response = await handler(request({ method: "GET", path: "/builder/api/native-activities/books/ultimate-b2/components/ultimate-b2-students-book/catalog" }));
     assert.equal(response.statusCode, 500);
@@ -401,11 +402,11 @@ test("catalog boundary failures retain one generic response and emit only their 
     },
     {
       name: "known placement-domain rejection",
-      mutate(sources) { sources.native.index.payload.activities[0].placement.pageId = "unknown-students-page"; },
+      mutate(sources) { sources.native.index.payload.activities[0].placement.pageId = "../invalid"; },
       expected: {
         code: "native_catalog_boundary_invalid", boundaryStage: "placement_resolution_failed",
         bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", activityId: publicationV2Fixture.openResponseId,
-        kind: "open-response", pageId: "unknown-students-page",
+        kind: "open-response", // Invalid page syntax must not be echoed into diagnostics.
       },
     },
     {
@@ -452,7 +453,7 @@ test("catalog boundary failures retain one generic response and emit only their 
     scenario.mutate?.(sources);
     const errors = [];
     const handler = createBuilderNativeActivitiesHandler({
-      getDatabase: () => ({}),
+      getDatabase: () => studentsBookPageSql(),
       authorize: async () => ({ builderUser: { id: actor } }),
       collectCatalog: async () => sources,
       ...(scenario.resolveAdapter ? { resolveAdapter: scenario.resolveAdapter } : {}),
@@ -552,7 +553,7 @@ test("catalog processing failures retain safe phase and code diagnostics without
     scenario.prepare?.(sources);
     const errors = [];
     const handler = createBuilderNativeActivitiesHandler({
-      getDatabase: () => ({}),
+      getDatabase: () => studentsBookPageSql(),
       authorize: async () => ({ builderUser: { id: actor } }),
       collectCatalog: scenario.collectCatalog || (async () => sources),
       ...(scenario.resolveAdapter ? { resolveAdapter: scenario.resolveAdapter } : {}),
@@ -617,7 +618,7 @@ test("catalog normalizes supported pre-rich Teacher answer shapes instead of qua
   assert.ok(sources.native.activities[publicationV2Fixture.singleChoiceId].teacher.payload.parts[0].solution.correctAnswers.every((answer) => Object.hasOwn(answer, "correctOptionId")));
   assert.ok(sources.native.activities[publicationV2Fixture.dragDropId].teacher.payload.parts[0].solution.mappings.length > 0);
   const handler = createBuilderNativeActivitiesHandler({
-    getDatabase: () => ({}), authorize: async () => ({ builderUser: { id: actor } }), collectCatalog: async () => sources, logger: { error() {} },
+    getDatabase: () => studentsBookPageSql(), authorize: async () => ({ builderUser: { id: actor } }), collectCatalog: async () => sources, logger: { error() {} },
   });
   const response = await handler(request({ method: "GET", path: "/builder/api/native-activities/books/ultimate-b2/components/ultimate-b2-students-book/catalog" }));
   assert.equal(response.statusCode, 200, response.body);
@@ -629,7 +630,7 @@ test("catalog normalizes supported pre-rich Teacher answer shapes instead of qua
 
 test("Students Book catalog keeps a native activity on a tombstoned canonical page as Unassigned", async () => {
   const sources = createPublicationV2FixtureSources();
-  const sql = async () => [{ stable_key: `ultimate-b2-students-book/pages/${publicationV2Fixture.pageId}`, source_metadata: { is_active: false, is_deleted: true } }];
+  const sql = studentsBookPageSql({ rows: [{ stable_key: `ultimate-b2-students-book/pages/${publicationV2Fixture.pageId}`, source_metadata: { is_active: false, is_deleted: true } }] });
   const handler = createBuilderNativeActivitiesHandler({
     getDatabase: () => sql,
     authorize: async () => ({ builderUser: { id: actor } }),
@@ -693,7 +694,7 @@ test("catalog placement loading remains one batch and never calls the per-entry 
     let batchCalls = 0;
     let perEntryCalls = 0;
     const handler = createBuilderNativeActivitiesHandler({
-      getDatabase: () => ({}),
+      getDatabase: () => studentsBookPageSql(),
       authorize: async () => ({ builderUser: { id: actor } }),
       collectCatalog: async () => sources,
       resolveAdapter: () => ({
@@ -760,23 +761,20 @@ test("a 64-Activity Workbook catalog uses one deduplicated placement SQL query w
   assert.doesNotMatch(response.body, /solution|modelAnswers|correctAnswers|mappings/i);
 });
 
-test("a 101-Activity Students Book catalog uses one deduplicated tombstone-overlay SQL query", async () => {
+test("a 101-Activity Students Book catalog uses a fixed component, Unit and page read independent of activity count", async () => {
   const adapter = resolveNativeActivityAdapter("ultimate-b2", "ultimate-b2-students-book");
   const entries = Array.from({ length: 101 }, (_, index) => ({
     activityId: `ultimate-b2-sb-budget-o${index + 1}`,
-    pageId: adapter.placements[index % adapter.placements.length].pageId,
+    pageId: canonicalStudentsBookPages[index % canonicalStudentsBookPages.length].id,
     sortOrder: index + 1,
   }));
   const sources = createWorkbookCatalogSources(entries);
   let placementSqlCalls = 0;
-  let stableKeyCount = 0;
-  const sql = async (strings, ...values) => {
-    if (/from book_pages page/i.test(strings.join("?"))) {
-      placementSqlCalls += 1;
-      stableKeyCount = (values.find(Array.isArray) || []).length;
-    }
-    return [];
-  };
+  const queries = [];
+  const sql = studentsBookPageSql({ onQuery(query) {
+    queries.push(query);
+    if (/from book_pages page/i.test(query)) placementSqlCalls += 1;
+  } });
   const handler = createBuilderNativeActivitiesHandler({
     getDatabase: () => sql,
     authorize: async () => ({ builderUser: { id: actor } }),
@@ -787,7 +785,8 @@ test("a 101-Activity Students Book catalog uses one deduplicated tombstone-overl
   assert.equal(response.statusCode, 200, response.body);
   assert.equal(JSON.parse(response.body).activities.length, entries.length);
   assert.equal(placementSqlCalls, 1);
-  assert.equal(stableKeyCount, new Set(entries.map((entry) => entry.pageId)).size);
+  assert.equal(queries.length, 3);
+  assert.equal(queries.filter((query) => /from units unit/.test(query)).length, 1);
 });
 
 test("catalog fails closed when a Students Book activity is supplied for Workbook", async () => {
@@ -810,7 +809,7 @@ test("catalog fails closed when a Students Book activity is supplied for Workboo
 test("an untrusted native index produces only a generic response and a stable safe server code", async () => {
   const errors = [];
   const handler = createBuilderNativeActivitiesHandler({
-    getDatabase: () => ({}), authorize: async () => ({ builderUser: { id: actor } }),
+    getDatabase: () => studentsBookPageSql(), authorize: async () => ({ builderUser: { id: actor } }),
     collectCatalog: async () => { throw Object.assign(new Error("PRIVATE INDEX PAYLOAD"), { code: "native_catalog_index_invalid" }); },
     logger: { error(message, fields) { errors.push({ message, fields }); } },
   });

@@ -1,3 +1,4 @@
+import { canonicalStudentsBookPages } from "../../netlify-sites/ultimate-b2-builder/server/_builder-page-catalog.js";
 import assert from "node:assert/strict";
 import { createReadStream } from "node:fs";
 import { access, readFile, stat } from "node:fs/promises";
@@ -9,8 +10,8 @@ import { localPlaywrightLaunchOptions } from "./playwright-launch-options.mjs";
 
 const root = path.resolve(process.env.HHPLMS_VIEWER_DIR || "dist-netlify/ultimate-b2-interactive");
 await access(path.join(root, "index.html"));
-const hotspots = JSON.parse(await readFile("src/data/ultimate-b2/authoring/studentsBookHotspots.json", "utf8"));
-const studentsBookRuntime = JSON.parse(await readFile("src/data/ultimate-b2/generated/students-book.runtime.json", "utf8"));
+const hotspots = { schemaVersion: "1.0", packageSlug: "ultimate-b2", componentSlug: "students-book", pages: {} };
+const studentsUnits = Array.from({ length: 10 }, (_, i) => ({ id: `60000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, slug: `unit-${i + 1}`, title: `Unit ${i + 1}`, unitNumber: i + 1, sortOrder: i + 1 }));
 const token = `v1.${Buffer.from("viewer-boundary-smoke").toString("base64url")}.${"a".repeat(43)}`;
 const uiPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/ui-controller";
 const hotspotsPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/hotspots";
@@ -89,7 +90,7 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, { document: { schemaVersion: "1.0", packageId: "ultimate-b2-students-book", assets: {} } });
   }
   if (url.pathname === hotspotsPath) return sendJson(response, 200, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", resource: "hotspots", schemaVersion: "1.0", revision: 43, source: "database", document: hotspots });
-  if (url.pathname === studentsPagePath) return sendJson(response, 200, { component: { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", kind: "students-book" }, pages: studentsBookRuntime.units.flatMap((unit) => unit.pages.map((page) => ({ id: page.id, source: "canonical" }))) });
+  if (url.pathname === studentsPagePath) return sendJson(response, 200, { component: { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", kind: "students-book" }, units: studentsUnits, pages: canonicalStudentsBookPages.map((page) => ({ ...page, origin: "canonical", unitId: studentsUnits[page.unitNumber - 1].id })) });
   const managedPageMatch = url.pathname.match(/^\/preview\/pages\/books\/ultimate-b2\/components\/(ultimate-b2-(?:workbook|grammar-book))$/);
   if (managedPageMatch) {
     await awaitManagedFixture(flow, url.pathname);

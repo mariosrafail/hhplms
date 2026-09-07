@@ -1,5 +1,6 @@
 import { loadProductionMigrationManifest, migrationChecksumMatches, withAdvisoryLock } from "./_staging-db.mjs";
 import { openVerifiedStagingMigrationPool } from "./_staging-preflight.mjs";
+import { applyProductionMigration } from "./_migration-transaction.mjs";
 
 const { pool, safeLabel } = await openVerifiedStagingMigrationPool();
 const client = await pool.connect();
@@ -34,19 +35,8 @@ try {
         continue;
       }
 
-      await client.query("begin");
-      try {
-        await client.query(migration.sql);
-        await client.query(
-          "insert into eduforge_migration_history (filename, checksum_sha256) values ($1, $2)",
-          [migration.filename, migration.checksum],
-        );
-        await client.query("commit");
-        console.log(`Applied ${migration.filename}`);
-      } catch (error) {
-        await client.query("rollback");
-        throw error;
-      }
+      await applyProductionMigration(client, migration);
+      console.log(`Applied ${migration.filename}`);
     }
   });
   console.log("Staging migrations verified successfully.");

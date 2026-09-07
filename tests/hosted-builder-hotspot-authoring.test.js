@@ -11,8 +11,11 @@ const hostedHotspotSource = async () => [
 test("hosted Hotspot Builder reuses the proven editor and exposes explicit persistence state", async () => {
   const editor = await hostedHotspotSource();
   assert.match(editor, /EditableHotspotLayer/);
-  assert.match(editor, /ultimateB2StudentsBookPageUnits/);
-  assert.match(editor, /android-content-packs\/ultimate-b2-students-book\/catalog\.json/);
+  assert.doesNotMatch(editor, /ultimateB2StudentsBookPageUnits/);
+  assert.doesNotMatch(editor, /android-content-packs\/ultimate-b2-students-book\/catalog\.json/);
+  assert.match(editor, /const managed = true/);
+  assert.match(editor, /managed=\{managed\}/);
+  assert.match(editor, /getBuilderPages/);
   assert.match(editor, /setStatus\("Loading"\)/);
   assert.match(editor, /setStatus\("Ready"\)/);
   assert.match(editor, /setStatus\("Unsaved changes"\)/);

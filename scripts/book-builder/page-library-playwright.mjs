@@ -13,7 +13,7 @@ const root = path.resolve("dist-netlify/ultimate-b2-builder");
 const mime = { ".css": "text/css", ".html": "text/html", ".jpg": "image/jpeg", ".js": "text/javascript", ".png": "image/png", ".svg": "image/svg+xml", ".webp": "image/webp" };
 const imageA = await readFile("unit/1/parts/HD/parts_part_1.png");
 const imageB = await readFile("unit/1/parts/HD/parts_part_2.png");
-const managedSlugs = ["ultimate-b2-workbook", "ultimate-b2-grammar-book"];
+const managedSlugs = ["ultimate-b2-students-book", "ultimate-b2-workbook", "ultimate-b2-grammar-book"];
 const unitsFor = (componentSlug) => Array.from({ length: 10 }, (_, index) => ({ id: `${componentSlug}-unit-${index + 1}`, slug: `unit-${index + 1}`, title: `Unit ${index + 1}`, unitNumber: index + 1, sortOrder: index + 1 }));
 const managedImage = (uploadId, bytes) => ({ source: "managed", assetId: uploadId, url: `/test-uploaded/${uploadId}`, originalFilename: "browser-page.png", mimeType: "image/png", byteSize: bytes.length, checksumSha256: "a".repeat(64), width: 581, height: 794 });
 const legacyAssetId = "40000000-0000-4000-8000-000000000001";
@@ -36,7 +36,7 @@ const managedFixturePage = (componentSlug, unitNumber, printedLabel, index) => (
 const workbookUnit7 = ["70-71", "72-73", "74-75", "76", "77", "78-79"].map((label, index) => managedFixturePage("ultimate-b2-workbook", 7, label, index + 1));
 const grammarUnit4 = ["40", "41-42", "43"].map((label, index) => managedFixturePage("ultimate-b2-grammar-book", 4, label, index + 1));
 const state = {
-  "ultimate-b2-students-book": { revision: 0, hotspotRevision: 0, units: [], pages: canonicalStudentsBookPages.map((page) => ({ ...page })), deletedPages: [] },
+  "ultimate-b2-students-book": { revision: 0, hotspotRevision: 0, units: unitsFor("ultimate-b2-students-book"), pages: canonicalStudentsBookPages.map((page) => ({ ...page, origin: "canonical", unitId: `ultimate-b2-students-book-unit-${page.unitNumber}`, unitSortOrder: page.unitNumber })), deletedPages: [] },
   "ultimate-b2-workbook": { revision: 0, hotspotRevision: 0, units: unitsFor("ultimate-b2-workbook"), pages: [...workbookUnit7, { id: "wb-legacy-unassigned", stableKey: "ultimate-b2-workbook/pages/wb-legacy-unassigned", componentSlug: "ultimate-b2-workbook", source: "managed", unitId: null, unitSlug: null, unitNumber: null, unitTitle: "", unitSortOrder: null, printedPages: [], printedLabel: "L", sortOrder: 1, label: "Legacy unassigned", image: managedImage(legacyAssetId, imageA) }], deletedPages: [] },
   "ultimate-b2-grammar-book": { revision: 0, hotspotRevision: 0, units: unitsFor("ultimate-b2-grammar-book"), pages: grammarUnit4, deletedPages: [] },
 };
@@ -63,12 +63,12 @@ async function pagesApi(request, response, url) {
   if (suffix === "/assets/prepare") {
     if (input.expectedRevision !== current.revision) { json(response, 409, { error: "revision_conflict", currentRevision: current.revision }); return true; }
     if (managedSlugs.includes(componentSlug) && input.mode === "create" && !current.units.some((unit) => unit.id === input.metadata.unitId)) { json(response, 400, { error: "invalid_page_unit" }); return true; }
-    const prefix = componentSlug.endsWith("workbook") ? "wb" : "gb"; const pageId = input.mode === "create" ? `${prefix}-page-${input.clientMutationId.replaceAll("-", "")}` : input.pageId; const uploadId = input.clientMutationId;
+    const prefix = componentSlug.endsWith("students-book") ? "sb" : componentSlug.endsWith("workbook") ? "wb" : "gb"; const pageId = input.mode === "create" ? `${prefix}-page-${input.clientMutationId.replaceAll("-", "")}` : input.pageId; const uploadId = input.clientMutationId;
     sessions.set(uploadId, { componentSlug, pageId, mode: input.mode, metadata: input.metadata }); json(response, 200, { pageId, uploadId, expectedRevision: current.revision, expiresIn: 900, authorization: { url: `${origin}/test-upload/${uploadId}`, headers: { "Content-Type": input.file.type } }, idempotent: false }); return true;
   }
   if (suffix === "/assets/finalize") {
     const session = sessions.get(input.uploadId); const bytes = uploads.get(input.uploadId); if (!session || session.componentSlug !== componentSlug || !bytes) { json(response, 409, { error: "session_identity_conflict" }); return true; }
-    if (session.mode === "create") current.pages.push({ id: session.pageId, stableKey: `${componentSlug}/pages/${session.pageId}`, componentSlug, source: "managed", ...unitMetadata(current, session.metadata.unitId), printedPages: [], printedLabel: session.metadata.printedLabel, sortOrder: session.metadata.sortOrder, label: session.metadata.label, image: managedImage(input.uploadId, bytes) });
+    if (session.mode === "create") current.pages.push({ id: session.pageId, stableKey: `${componentSlug}/pages/${session.pageId}`, componentSlug, origin: "managed", source: "managed", ...unitMetadata(current, session.metadata.unitId), printedPages: [], printedLabel: session.metadata.printedLabel, sortOrder: session.metadata.sortOrder, label: session.metadata.label, image: managedImage(input.uploadId, bytes) });
     else { const index = current.pages.findIndex((page) => page.id === session.pageId); const existing = current.pages[index]; current.pages[index] = { ...existing, source: componentSlug.endsWith("students-book") ? "override" : "managed", image: managedImage(input.uploadId, bytes), ...(componentSlug.endsWith("students-book") ? { baselineImage: existing.baselineImage || existing.image } : {}) }; }
     current.revision += 1; json(response, 200, { ...library(componentSlug), idempotent: false }); return true;
   }
@@ -86,7 +86,7 @@ async function pagesApi(request, response, url) {
     delete current.pages[index].baselineImage;
   } else if (action === "purge" && deletedIndex >= 0) current.deletedPages.splice(deletedIndex, 1);
   else if (action === "delete") { const [deleted] = current.pages.splice(index, 1); current.deletedPages.push({ ...deleted, removedHotspotCount: componentSlug.endsWith("students-book") ? 2 : 1, preservedActivityCount: componentSlug.endsWith("students-book") ? 3 : 2 }); current.hotspotRevision += 1; }
-  else current.pages[index] = { ...current.pages[index], ...input.metadata, ...(managedSlugs.includes(componentSlug) ? unitMetadata(current, input.metadata.unitId) : { source: current.pages[index].source === "override" ? "override" : "metadata-override" }) };
+  else current.pages[index] = { ...current.pages[index], ...input.metadata, ...(current.pages[index].origin !== "canonical" ? unitMetadata(current, input.metadata.unitId) : { source: current.pages[index].source === "override" ? "override" : "metadata-override" }) };
   if (action === "metadata" || action === "reorder") current.pages.sort((left, right) => (left.unitSortOrder ?? Number.MAX_SAFE_INTEGER) - (right.unitSortOrder ?? Number.MAX_SAFE_INTEGER) || left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
   current.revision += 1; json(response, 200, { ...library(componentSlug), idempotent: false }); return true;
 }
@@ -108,7 +108,7 @@ async function assertUnitLayout(page, componentSlug, unitNumber, expectedLabels 
   const rows = unit.locator("[data-page-row]");
   const rowNames = expected.bottom.length ? ["top", "bottom"] : ["top"];
   assert.equal(await rows.count(), rowNames.length);
-  assert.equal(await unit.getAttribute("data-page-unit"), componentSlug.endsWith("students-book") ? `unit-${unitNumber}` : `${componentSlug}-unit-${unitNumber}`);
+  assert.equal(await unit.getAttribute("data-page-unit"), `${componentSlug}-unit-${unitNumber}`);
 
   const actualIds = [];
   const actualLabels = [];
@@ -250,6 +250,14 @@ try {
   await capture(page, "students-book-unit-1", group(page, "Unit 1"));
   await capture(page, "students-book-unit-2", group(page, "Unit 2"));
   await capture(page, "students-book-page-library");
+  const canonicalUnit10Ids = state["ultimate-b2-students-book"].pages.filter((item) => item.unitNumber === 10).map((item) => item.id);
+  await addFiles(page, "Unit 10", [{ name: "Students managed Unit 10.png", mimeType: "image/png", buffer: imageA }]);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await group(page, "Unit 10").getByText("Students managed Unit 10", { exact: true }).waitFor();
+  const currentUnit10 = state["ultimate-b2-students-book"].pages.filter((item) => item.unitNumber === 10);
+  assert.deepEqual(currentUnit10.filter((item) => item.origin === "canonical").map((item) => item.id), canonicalUnit10Ids);
+  assert.equal(currentUnit10.filter((item) => item.origin === "managed").length, 1);
+  await assertUnitLayout(page, "ultimate-b2-students-book", 10);
 
   const baseline = canonicalStudentsBookPages[0];
   const studentCard = page.locator(`.component-page-card[data-page-id="${baseline.id}"]`);
@@ -261,9 +269,9 @@ try {
   await studentCard.locator(".component-page-card-copy strong", { hasText: "Student opening page" }).waitFor();
   assert.equal(await studentCard.getAttribute("data-source"), "metadata-override");
   await studentCard.getByTitle("Move later in this Unit").click();
-  await page.waitForFunction((id) => document.querySelector('[data-page-unit="unit-1"] [data-page-row="top"] .component-page-card')?.dataset.pageId !== id, baseline.id);
+  await page.waitForFunction((id) => document.querySelector('[data-page-unit="ultimate-b2-students-book-unit-1"] [data-page-row="top"] .component-page-card')?.dataset.pageId !== id, baseline.id);
   await studentCard.getByTitle("Move earlier in this Unit").click();
-  await page.waitForFunction((id) => document.querySelector('[data-page-unit="unit-1"] [data-page-row="top"] .component-page-card')?.dataset.pageId === id, baseline.id);
+  await page.waitForFunction((id) => document.querySelector('[data-page-unit="ultimate-b2-students-book-unit-1"] [data-page-row="top"] .component-page-card')?.dataset.pageId === id, baseline.id);
   await page.reload({ waitUntil: "domcontentloaded" });
   await studentCard.locator(".component-page-card-copy strong", { hasText: "Student opening page" }).waitFor();
   const studentReplace = page.waitForEvent("filechooser");

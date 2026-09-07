@@ -1,3 +1,4 @@
+import { createBuilderNativeActivitiesHandler } from "../../netlify-sites/ultimate-b2-builder/server/_builder-native-activities.js";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import test from "node:test";
@@ -61,8 +62,13 @@ test("isolated PostgreSQL persists current state, strict history, idempotency, c
   });
   const initial = JSON.parse((await handler(event())).body);
   assert.equal(initial.revision, 0);
-  const pageId = Object.keys(initial.document.pages)[0];
-  initial.document.pages[pageId][0].label = "Integration revision one";
+  assert.deepEqual(initial.document.pages, {});
+  const pageId = "ub2-sb-unit-1-part-1";
+  const native = createBuilderNativeActivitiesHandler({ getDatabase: () => sql, authorize: async () => ({ builderUser: { id: builderUserId } }) });
+  const created = await native(event("POST", { kind: "open-response", pageId, title: "Current native persistence target", clientMutationId: "10000000-0000-4000-8000-000000000099" }, "/builder/api/native-activities/books/ultimate-b2/components/ultimate-b2-students-book/create"));
+  assert.equal(created.statusCode, 200, created.body);
+  const nativeBefore = (await pool.query("select * from builder_component_documents where document_type like 'native_%' order by id")).rows;
+  initial.document.pages[pageId] = [{ id: "integration-native-hotspot", pageId, unitNumber: 1, pageNumber: 5, left: 1, top: 2, width: 10, height: 12, label: "Integration revision one", actionType: "normalized_activity", activityKey: JSON.parse(created.body).activityId }];
   const mutationOne = "10000000-0000-4000-8000-000000000011";
   const firstBody = { expectedRevision: 0, clientMutationId: mutationOne, document: initial.document };
   const first = await handler(event("PUT", firstBody));
@@ -96,12 +102,12 @@ test("isolated PostgreSQL persists current state, strict history, idempotency, c
 
   const counts = await pool.query(`
     select
-      (select count(*)::int from builder_component_documents) documents,
-      (select count(*)::int from builder_component_document_revisions) revisions,
-      (select count(*)::int from builder_audit_log where action='builder_document_saved') audits
+      (select count(*)::int from builder_component_documents where document_type='hotspots') documents,
+      (select count(*)::int from builder_component_document_revisions revision join builder_component_documents document on document.id=revision.document_id where document.document_type='hotspots') revisions,
+      (select count(*)::int from builder_audit_log where action='builder_document_saved' and metadata->>'document_type'='hotspots') audits
   `);
   assert.deepEqual(counts.rows[0], { documents: 1, revisions: 2, audits: 2 });
-  const state = await pool.query("select revision,payload,updated_by_builder_user_id from builder_component_documents");
+  const state = await pool.query("select revision,payload,updated_by_builder_user_id from builder_component_documents where document_type='hotspots'");
   assert.equal(Number(state.rows[0].revision), 2);
   assert.equal(state.rows[0].payload.pages[pageId][0].label, "Integration revision two");
   assert.equal(state.rows[0].updated_by_builder_user_id, builderUserId);
@@ -118,7 +124,8 @@ test("isolated PostgreSQL persists current state, strict history, idempotency, c
   }, openResponseRoute));
   assert.equal(openResponseSave.statusCode, 200);
   assert.equal(JSON.parse(openResponseSave.body).revision, 1);
-  const identities = await pool.query("select document_type,document_key,revision from builder_component_documents order by document_type,document_key");
+  assert.deepEqual((await pool.query("select * from builder_component_documents where document_type like 'native_%' order by id")).rows, nativeBefore);
+  const identities = await pool.query("select document_type,document_key,revision from builder_component_documents where document_type in ('hotspots','open_response') order by document_type,document_key");
   assert.deepEqual(identities.rows.map((row) => ({ ...row, revision: Number(row.revision) })), [
     { document_type: "hotspots", document_key: "default", revision: 2 },
     { document_type: "open_response", document_key: openResponseActivityId, revision: 1 },

@@ -1,7 +1,6 @@
 import { lazy } from "react";
 
 import { NATIVE_ACTIVITY_KINDS } from "../../../data/native-activities/nativeActivityKinds.js";
-import { ultimateB2NativeActivityPlacements } from "../../../data/ultimate-b2/nativeActivityAdapter.js";
 
 const UltimateB2StudentsBookHostedWorkspace = lazy(() => import(
   "../../ultimate-b2-builder/HostedUltimateB2BuilderApp.jsx"
@@ -54,7 +53,7 @@ const adapters = Object.freeze({
     id: "ultimate-b2-students-book",
     bookSlug: "ultimate-b2",
     componentSlug: "ultimate-b2-students-book",
-    nativeActivities: Object.freeze({ enabled: true, kinds: NATIVE_ACTIVITY_KINDS, placements: ultimateB2NativeActivityPlacements }),
+    nativeActivities: Object.freeze({ enabled: true, kinds: NATIVE_ACTIVITY_KINDS, placements: Object.freeze([]), managed: true }),
     capabilities: Object.freeze({
       pages: Object.freeze({ readable: true, writable: true }),
       hotspots: Object.freeze({ readable: true, writable: true }),

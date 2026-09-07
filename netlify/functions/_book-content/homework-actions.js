@@ -188,7 +188,7 @@ async function resolveHomeworkTargets(sql, currentUser, items) {
     if (item.kind === LEGACY_TARGET_KIND) {
       const rows = await sql`
         select activity.id, activity.title, activity.is_assignable, activity.content_json,
-               package.id as book_package_id
+               package.id as book_package_id, builder_current_legacy_activity_allowed(component.id) as legacy_assignment_allowed
         from activities activity
         join lessons lesson on lesson.id = activity.lesson_id
         join units unit_record on unit_record.id = lesson.unit_id
@@ -206,6 +206,7 @@ async function resolveHomeworkTargets(sql, currentUser, items) {
       ) return { error: forbidden("This activity is not assignable") };
       const accessError = await verifyPackageAccess(sql, currentUser, { activityId: item.activityId });
       if (accessError) return { error: accessError };
+      if (activity.legacy_assignment_allowed === false) return { error: json(409, { error: "Choose a published Students Book activity for a new Homework item.", code: "students_book_native_publication_required" }) };
       resolved.push({
         position: index + 1,
         target_kind: LEGACY_TARGET_KIND,

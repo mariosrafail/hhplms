@@ -15,6 +15,12 @@ async function request(path = "", options = {}) {
 const short = (value) => value ? String(value).slice(0, 12) : "—";
 const date = (value) => value ? new Date(value).toLocaleString() : "—";
 
+function ActivityInclusion({ entries }) {
+  if (!Array.isArray(entries)) return null;
+  const reason = (entry) => ({ included: "Included", no_authored_hotspot: "No authored hotspot", placement_unavailable: "Page unavailable", native_activity_not_found: "Public or Teacher document missing" }[entry.reason] || entry.reason.replaceAll("_", " "));
+  return <section className="publication-history" aria-label="Students Book activity inclusion"><h2>Saved Draft activity inclusion</h2><p>Every active activity is listed. Only ready activities linked by authored hotspots enter the next preview.</p>{entries.length ? <table><thead><tr><th>Activity</th><th>Page</th><th>Hotspot</th><th>Next preview</th><th>Reason</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.activityId}><td>{entry.activityId}</td><td>{entry.unplaced ? "Unavailable placement" : entry.pageId}</td><td>{entry.linked ? "Linked" : "Unlinked"}</td><td>{entry.included ? "Included" : "Excluded"}</td><td>{reason(entry)}</td></tr>)}</tbody></table> : <p>No active native activities.</p>}</section>;
+}
+
 function PublicationBlocked({ failure }) {
   if (!failure) return null;
   return <section className="publication-blocked" role="alert">
@@ -23,6 +29,7 @@ function PublicationBlocked({ failure }) {
     {failure.activityId ? <p>Activity: <code>{failure.activityId}</code></p> : null}
     <h3>Issues</h3>
     <ul>{failure.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul>
+    <ActivityInclusion entries={failure.reconciliation} />
     <a className="hosted-builder-action" href={hostedBuilderHash({ bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", tool: "activities" })}>Open in Activity Builder</a>
   </section>;
 }
@@ -54,7 +61,7 @@ export function HostedPublicationWorkspace() {
       setSelectedId((current) => current && next.releases.some((release) => release.id === current) ? current : next.releases[0]?.id || "");
     } catch (error) {
       const failure = publicationReadinessPresentation(error);
-      setPublicationFailure(failure);
+      setPublicationFailure(failure && { ...failure, reconciliation: error.payload?.reconciliation });
       if (!failure) setMessage(error.message);
       throw error;
     }
@@ -86,9 +93,9 @@ export function HostedPublicationWorkspace() {
       if (error.code === "release_asset_unavailable") setMessage("A referenced immutable asset could not be verified. No release was created.");
       else if (error.code === "release_pin_schema_unavailable") setMessage("Publication Freeze v2 is waiting for migration 049. Saved Draft and historical Review remain available.");
       else if (["release_pin_conflict", "release_pin_integrity_failed"].includes(error.code)) setMessage("Saved Draft assets could not be frozen consistently. No release was created.");
-      else if (error.code?.startsWith("native_activity_")) setPublicationFailure(publicationReadinessPresentation(error));
-      else if (error.code === "managed_page_not_ready") setMessage("A managed Workbook or Grammar page is incomplete. No product release was created.");
-      else if (error.code === "publication_schema_unavailable") setMessage("Product publication is waiting for migration 048. No release was created.");
+      else if (error.code?.startsWith("native_activity_") || error.code === "placement_unavailable") { const failure = publicationReadinessPresentation(error); setPublicationFailure(failure && { ...failure, reconciliation: error.payload?.reconciliation }); }
+      else if (error.code === "managed_page_not_ready") setMessage("A page in the saved product is incomplete. No product release was created.");
+      else if (error.code === "publication_schema_unavailable") setMessage("Product publication is waiting for the required database schema. No release was created.");
       else setMessage(error.message);
     }
     finally { setBusy(""); }
@@ -112,6 +119,7 @@ export function HostedPublicationWorkspace() {
       <section><h2>Preview release</h2>{selected ? <><strong>Release {selected.number} · {selected.state === "current" ? "Current" : "Stale"}</strong><span>{selected.compilerId} · schema {selected.releaseSchemaVersion}</span><span>{date(selected.createdAt)}</span><code>{short(selected.releaseSha256)}</code></> : <strong>No preview prepared</strong>}</section>
     </div>
     {selected ? <section className="publication-members"><h2>Exact release members</h2><ReleaseMembers release={selected} /></section> : null}
+    <ActivityInclusion entries={status.components.find((component) => component.componentSlug === "ultimate-b2-students-book")?.reconciliation} />
     <div className="publication-actions"><button type="button" disabled={Boolean(busy)} onClick={prepare}>{busy === "prepare" ? "Preparing…" : "Prepare Preview"}</button><button type="button" disabled={!selected || selected.state !== "current" || selected.compilerId !== status.compilerId || Boolean(busy)} onClick={publish}>{busy === "publish" ? "Publishing…" : "Publish Preview"}</button>{message ? <p role="status">{message}</p> : null}</div>
     <PublicationBlocked failure={publicationFailure} />
     <section className="publication-history"><h2>Product release history</h2><table><thead><tr><th>Release</th><th>Members</th><th>Fingerprint</th><th>Created</th><th>Status</th></tr></thead><tbody>{status.releases.map((release) => <tr key={release.id}><td><button type="button" onClick={() => setSelectedId(release.id)}>#{release.number}</button></td><td>{release.members.map((member) => `${componentTitle(member.componentSlug)}: ${member.status}`).join(" · ")}</td><td><code>{short(release.releaseSha256)}</code></td><td>{date(release.createdAt)}</td><td>{release.current ? "Published" : release.state === "current" ? "Preview current" : release.state === "historical" ? "Historical" : "Stale"}</td></tr>)}</tbody></table></section>

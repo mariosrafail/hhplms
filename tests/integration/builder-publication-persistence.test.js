@@ -49,7 +49,8 @@ test("isolated PostgreSQL preserves immutable release history and stale-safe ato
   const staleCandidate = await createComponentRelease(sql, releaseInput(baseline));
 
   const hotspotResource = await resolveBuilderContentResource("ultimate-b2", "ultimate-b2-students-book", "hotspots");
-  const changed = structuredClone(hotspotResource.baseline());
+  // Frozen v1 compiler input, never the mutable current-authoring baseline.
+  const changed = structuredClone(baseline.publicProjection.hotspots);
   const pageId = Object.keys(changed.pages)[0];
   changed.pages[pageId][0].label = "Unpublished hotspot change";
   assert.equal((await saveBuilderComponentDocument(sql, { resource: hotspotResource, expectedRevision: 0, clientMutationId: randomUUID(), document: changed, payloadSha256: builderDocumentSha256(changed), builderUserId: actor })).outcome, "saved");

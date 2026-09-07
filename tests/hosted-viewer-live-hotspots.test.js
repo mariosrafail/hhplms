@@ -207,3 +207,17 @@ test("Android runtime remains a bundled no-op with no preview route dependency",
   assert.match(generatedProvider, /interactiveStartupAssets = createNoopStartupAssets\(\)/);
   assert.doesNotMatch(generatedProvider, /hostedReviewStartupAssets/);
 });
+
+
+test("Saved Draft hotspot lookup uses authoritative page identity without requiring a printed folio", async () => {
+  const draft = manifest(); delete draft.pages[pageId][0].pageNumber;
+  const runtime = createHostedReviewHotspotRuntime(manifest());
+  await withViewerSearch(builderPreviewSearch, () => runtime.prepare({ fetchImpl: successfulFetch(envelope({ document: draft }), []) }));
+  assert.equal(runtime.getActions({ pageId, pageNumber: 8, unitNumber: 1 }).length, 1);
+  assert.equal(runtime.getActions({ pageId, pageNumber: null, unitNumber: 1 }).length, 1);
+  assert.equal(runtime.getActions({ pageId: "foreign-page", unitNumber: 1 }).length, 0);
+  assert.equal(runtime.getActions({ pageId, unitNumber: 2 }).length, 0);
+  assert.deepEqual(runtime.currentManifest(), draft);
+  await runtime.prepare({ runtimeContext: { kind: "bare" } });
+  assert.equal(runtime.getActions({ pageId, pageNumber: 9, unitNumber: 1 }).length, 0, "bare historical folio matching remains unchanged");
+});

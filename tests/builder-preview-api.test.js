@@ -1,3 +1,4 @@
+import { studentsBookContentSql, studentsBookPageSql, currentStudentsBookSources, canonicalStudentsBookPages } from "./fixtures/students-book-current.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -103,7 +104,7 @@ async function managedPreview(componentSlug, { storedHotspots = null, nativeInde
 test("public Builder preview returns the canonical repository revision without a session", async () => {
   let databaseReads = 0;
   const handler = createBuilderPreviewHandler({
-    getDatabase: () => async () => { databaseReads += 1; return []; },
+    getDatabase: () => studentsBookContentSql(null, () => { databaseReads += 1; }),
   });
   const response = await handler(event("GET", route, {}));
   const body = parsed(response);
@@ -112,7 +113,7 @@ test("public Builder preview returns the canonical repository revision without a
   assert.equal(response.headers["Content-Type"], "application/json");
   assert.equal(response.headers["Cache-Control"], "no-store");
   assert.equal(response.headers["X-Content-Type-Options"], "nosniff");
-  assert.equal(databaseReads, 3);
+  assert.equal(databaseReads, 5);
   assert.deepEqual(Object.keys(body), [
     "bookSlug", "componentSlug", "resource", "schemaVersion", "revision", "source", "document",
   ]);
@@ -130,11 +131,12 @@ test("public Builder preview returns the canonical repository revision without a
 });
 
 test("public Builder preview returns the checksum-validated latest database revision", async () => {
-  const document = resource.baseline();
+  const sources = currentStudentsBookSources();
+  const document = sources.documents.hotspots.payload;
   const pageId = Object.keys(document.pages)[0];
   Object.assign(document.pages[pageId][0], { left: 11.125, top: 22.25, width: 13.375, height: 14.5 });
   const handler = createBuilderPreviewHandler({
-    getDatabase: () => async (_strings, _bookSlug, _componentSlug, documentType) => documentType === resource.documentType ? [row(document)] : [],
+    getDatabase: () => studentsBookContentSql({ ...sources, documents: { hotspots: { payload: document, revision: 3, sha256: builderDocumentSha256(document) } } }),
   });
   const response = await handler(event());
   const body = parsed(response);
@@ -151,10 +153,10 @@ test("public Builder preview returns the checksum-validated latest database revi
 });
 
 test("hotspot preview loads declared native context and preserves a valid persisted native target", async () => {
-  const fixture = createPublicationV2FixtureSources();
+  const fixture = currentStudentsBookSources();
   const loaded = [];
   const handler = createBuilderPreviewHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     loadDocument: async (_sql, candidate) => {
       loaded.push(`${candidate.resource}:${candidate.documentKey}`);
       if (candidate.resource === "hotspots") return { revision: fixture.documents.hotspots.revision, source: "database", document: fixture.documents.hotspots.payload };
@@ -247,12 +249,13 @@ test("persisted managed hotspots preview with same-component public native activ
   assert.doesNotMatch(result.response.body, forbiddenResponseData);
 });
 
-test("Students hotspot preview still loads lifecycle and filters retired canonical activities", async () => {
-  const document = resource.baseline();
+test("Students hotspot preview rejects non-native targets without consulting mutable canonical lifecycle", async () => {
+  const document = currentStudentsBookSources().documents.hotspots.payload;
   const target = Object.values(document.pages).flat()[0];
+  target.activityKey = "ultimate-b2-sb-u1-p1-o1";
   const loaded = [];
   const handler = createBuilderPreviewHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     loadDocument: async (_sql, candidate) => {
       loaded.push(`${candidate.resource}:${candidate.documentKey}`);
       if (candidate.resource === "hotspots") return { revision: 8, source: "database", document };
@@ -265,7 +268,7 @@ test("Students hotspot preview still loads lifecycle and filters retired canonic
   });
   const response = await handler(event());
   assert.equal(response.statusCode, 500);
-  assert.equal(loaded.includes("activity-lifecycle:default"), true);
+  assert.equal(loaded.includes("activity-lifecycle:default"), false);
   assert.equal(loaded.includes("native-activity-index:default"), true);
   assert.equal(loaded.some((value) => value.startsWith("native-activity-teacher:")), false);
   assert.deepEqual(parsed(response), { error: "builder_preview_failed" });
@@ -291,9 +294,9 @@ test("managed hotspot preview rejects a token issued for the other component bef
 });
 
 test("hotspot preview rejects deleted, unknown, and malformed native targets without weakening geometry", async () => {
-  const fixture = createPublicationV2FixtureSources();
+  const fixture = currentStudentsBookSources();
   const preview = async (document, index = fixture.native.index.payload, publicDocuments = fixture.native.activities) => createBuilderPreviewHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     loadDocument: async (_sql, candidate) => {
       if (candidate.resource === "hotspots") return { revision: 4, source: "database", document };
       if (candidate.resource === "native-activity-index") return { revision: 2, source: "database", document: index };
@@ -328,7 +331,7 @@ test("preview resources without a related-context declaration do not load the na
   const teacherResource = await resolveBuilderContentResource("ultimate-b2", "ultimate-b2-students-book", "ui-controller");
   const resolutions = [];
   const handler = createBuilderPreviewHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     resolveResource: async (...arguments_) => {
       resolutions.push(arguments_.slice(2).join(":"));
       return resolveBuilderContentResource(...arguments_);
@@ -408,7 +411,7 @@ test("private keys are rejected before projection and can never be serialized", 
   const privateDocument = resource.baseline();
   privateDocument.teacherSolution = "must-not-escape";
   const handler = createBuilderPreviewHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     loadDocument: async () => ({ revision: 7, source: "database", document: privateDocument }),
     logger: { error() {} },
   });
@@ -423,7 +426,7 @@ test("Teacher UI draft preview requires explicit Builder/scoped authorization", 
   const teacherRoute = "/builder/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/ui-controller";
   const document = teacherResource.baseline();
   const handler = createBuilderPreviewHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     authorizePreview: async (request) => request.headers["x-preview-authorized"] === "yes",
     loadDocument: async () => ({ revision: 1, source: "database", document }),
   });
@@ -459,7 +462,7 @@ test("Saved Draft Unit Extras require exact scoped authorization and project onl
   const unitExtrasRoute = "/builder/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/unit-extras";
   const scopes = [];
   const handler = createBuilderPreviewHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     authorizePreview: async (_request, _sql, scope) => { scopes.push(scope); return true; },
     loadDocument: async () => ({ revision: sources.unitExtras.document.revision, source: "database", document: sources.unitExtras.document.payload }),
   });
@@ -474,7 +477,7 @@ test("Saved Draft Unit Extras require exact scoped authorization and project onl
   assert.doesNotMatch(JSON.stringify(body.document), /fileName|byteSize/);
 
   const denied = createBuilderPreviewHandler({
-    getDatabase: () => ({}), authorizePreview: async () => false,
+    getDatabase: () => studentsBookPageSql(), authorizePreview: async () => false,
     loadDocument: async () => { throw new Error("must not load unauthorized Unit Extras"); },
   });
   assert.equal((await denied(event("GET", unitExtrasRoute))).statusCode, 401);

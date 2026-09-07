@@ -251,7 +251,7 @@ export function validateNativePublicationAssetRows(nativeEntries, assetRows) {
   return [...sources.values()].sort((left, right) => `${left.descriptor.sha256}.${left.descriptor.extension}`.localeCompare(`${right.descriptor.sha256}.${right.descriptor.extension}`));
 }
 
-function validateUnitExtraAssetRows(document, assetRows) {
+export function validateUnitExtraAssetRows(document, assetRows) {
   const byId = new Map(assetRows.map((row) => [String(row.id), row]));
   const sources = new Map();
   for (const unit of document.units) for (const video of unit.categories.videos) {

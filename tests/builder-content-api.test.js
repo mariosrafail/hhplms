@@ -1,3 +1,4 @@
+import { studentsBookPageSql, currentStudentsBookSources, canonicalStudentsBookPages } from "./fixtures/students-book-current.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -34,12 +35,13 @@ function parsed(response) {
 }
 
 function memoryHarness() {
+  const native = currentStudentsBookSources().native;
   let current = null;
   const history = [];
   const audits = [];
   const saveCalls = [];
   const handler = createBuilderContentHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     authorize: async (request) => {
       const cookie = request.headers.cookie || "";
       if (cookie !== "hh_builder_session=live") return { error: json(401, { error: "Unauthorized" }) };
@@ -47,7 +49,8 @@ function memoryHarness() {
     },
     loadDocument: async (_sql, resource) => resource.resource === "hotspots" && current
       ? { revision: current.revision, source: "database", document: current.document }
-      : null,
+      : resource.resource === "native-activity-index" ? { revision: native.index.revision, source: "database", document: native.index.payload } : null,
+    loadDocuments: async (_sql, resources) => new Map(resources.map((resource) => [resource.documentKey, { revision: 1, source: "database", document: native.activities[resource.documentKey].public.payload }])),
     saveDocument: async (_sql, input) => {
       saveCalls.push(input);
       const replay = history.find((item) => item.clientMutationId === input.clientMutationId);
@@ -67,7 +70,7 @@ function memoryHarness() {
 }
 
 function baseline() {
-  return hotspotResource.baseline();
+  return currentStudentsBookSources().documents.hotspots.payload;
 }
 
 function saveReadyDocument(document = baseline()) {
@@ -228,7 +231,7 @@ test("stored documents verify raw checksums before validation and fail corrupt s
 });
 
 test("component document batches are exact-scope, public-only, bounded, and canonically validated", async () => {
-  const fixture = createPublicationV2FixtureSources();
+  const fixture = currentStudentsBookSources();
   const ids = [publicationV2Fixture.openResponseId, publicationV2Fixture.imageId];
   const resources = await Promise.all(ids.map((id) => resolveBuilderContentResource(
     "ultimate-b2", "ultimate-b2-students-book", "native-activity-public", id,
@@ -306,7 +309,7 @@ test("native validation uses one public batch for zero, one, and many activities
       }
     };
     const handler = createBuilderContentHandler({
-      getDatabase: () => ({}),
+      getDatabase: () => studentsBookPageSql({ onQuery: consumeBudget }),
       authorize: async () => ({ builderUser: { id: builderUserId, role: "developer", status: "active" } }),
       loadDocument: async (_sql, candidate) => {
         consumeBudget();
@@ -325,19 +328,19 @@ test("native validation uses one public batch for zero, one, and many activities
         return { outcome: "saved", revision: 1, currentRevision: 1, document: input.document, payloadSha256: input.payloadSha256 };
       },
     });
-    const response = await handler(event({ method: "PUT", body: saveBody(saveReadyDocument()) }));
+    const response = await handler(event({ method: "PUT", body: saveBody({ ...hotspotResource.baseline(), pages: {} }) }));
     assert.equal(response.statusCode, 200);
     assert.equal(batchCalls, activityCount === 0 ? 0 : 1);
     assert.equal(batchSize, activityCount);
-    assert.equal(operations, activityCount === 0 ? 3 : 4);
+    assert.equal(operations, activityCount === 0 ? 5 : 6);
   }
 });
 
 test("native hotspot targets save, reload, and fail closed when the saved native catalog cannot prove membership", async () => {
-  const fixture = createPublicationV2FixtureSources();
+  const fixture = currentStudentsBookSources();
   let saved = null;
   const handler = createBuilderContentHandler({
-    getDatabase: () => ({}),
+    getDatabase: () => studentsBookPageSql(),
     authorize: async () => ({ builderUser: { id: builderUserId, role: "developer", status: "active" } }),
     loadDocument: async (_sql, resource) => {
       if (resource.resource === "hotspots") return saved;
@@ -369,14 +372,15 @@ test("native hotspot targets save, reload, and fail closed when the saved native
 test("hotspot PUT rejects retired and moved canonical targets before save_document", async () => {
   const document = saveReadyDocument();
   const pageId = Object.keys(document.pages)[0];
-  const activityId = document.pages[pageId][0].activityKey;
+  const activityId = "ultimate-b2-sb-u1-p1-o1";
+  document.pages[pageId][0].activityKey = activityId;
   for (const lifecycleEntry of [
     { status: "retired", pageId },
     { status: "active", pageId: "ub2-sb-unit-1-part-2" },
   ]) {
     let saveCalls = 0;
     const handler = createBuilderContentHandler({
-      getDatabase: () => ({}),
+      getDatabase: () => studentsBookPageSql(),
       authorize: async () => ({ builderUser: { id: builderUserId, role: "developer", status: "active" } }),
       loadDocument: async (_sql, candidate) => {
         if (candidate.resource === "activity-lifecycle") return { revision: 1, source: "database", document: { schemaVersion: "1.0", activities: { [activityId]: lifecycleEntry } } };
@@ -388,13 +392,13 @@ test("hotspot PUT rejects retired and moved canonical targets before save_docume
     assert.equal(response.statusCode, 400);
     assert.equal(parsed(response).error, "invalid_document");
     assert.equal(saveCalls, 0);
-    assert.match(parsed(response).detail, lifecycleEntry.status === "retired" ? /unavailable activityKey/ : /another page/);
+    assert.match(parsed(response).detail, /unavailable activityKey/);
   }
 });
 
 test("hotspot PUT rejects inactive, moved, kind-mismatched, and placement-mismatched native targets before save_document", async () => {
   const makeCase = ({ indexTransform = (value) => value, publicTransform = (value) => value }) => {
-    const fixture = createPublicationV2FixtureSources();
+    const fixture = currentStudentsBookSources();
     const activityId = publicationV2Fixture.openResponseId;
     const document = saveReadyDocument(fixture.documents.hotspots.payload);
     document.pages[publicationV2Fixture.pageId] = document.pages[publicationV2Fixture.pageId]
@@ -416,7 +420,7 @@ test("hotspot PUT rejects inactive, moved, kind-mismatched, and placement-mismat
   for (const candidate of cases) {
     let saveCalls = 0;
     const handler = createBuilderContentHandler({
-      getDatabase: () => ({}),
+      getDatabase: () => studentsBookPageSql(),
       authorize: async () => ({ builderUser: { id: builderUserId, role: "developer", status: "active" } }),
       loadDocument: async (_sql, resource) => resource.resource === "native-activity-index"
         ? { revision: 1, source: "database", document: candidate.index }

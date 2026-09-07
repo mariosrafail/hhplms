@@ -28,6 +28,9 @@ import {
   verifyUltimateB2ManagedComponentRelease,
 } from "./_builder-managed-publication-compiler.js";
 import { COMPONENT_PUBLICATION_ASSET_ROLES } from "../../../src/data/ultimate-b2/componentPublicationAssetRoles.js";
+import { STUDENTS_BOOK_V3_COMPILER, STUDENTS_BOOK_V3_SCHEMA, normalizeStudentsBookV3Sources, normalizeStudentsBookV3Public, normalizeStudentsBookV3Teacher } from "../../../src/data/ultimate-b2/componentPublicationV3.js";
+import { compileStudentsBookReleaseV3, studentsBookV3Compatibility } from "./_builder-publication-compiler-v3.js";
+import { collectStudentsBookPublicationV3Sources } from "./_builder-publication-sources-v3.js";
 
 function expectedAssetManifest(publicProjection, teacherProjection) {
   return [
@@ -142,7 +145,25 @@ function managed(componentSlug) {
 
 const workbook = managed("ultimate-b2-workbook");
 const grammarBook = managed("ultimate-b2-grammar-book");
-const registry = Object.freeze({ [v1.compilerId]: v1, [v2.compilerId]: v2, [workbook.compilerId]: workbook, [grammarBook.compilerId]: grammarBook });
+const v3 = Object.freeze({
+  compilerId: STUDENTS_BOOK_V3_COMPILER,
+  releaseSchemaVersion: STUDENTS_BOOK_V3_SCHEMA,
+  collect: collectStudentsBookPublicationV3Sources,
+  compile: compileStudentsBookReleaseV3,
+  verifyRelease(release) {
+    const compatibility = studentsBookV3Compatibility;
+    const sourceSnapshot = normalizeStudentsBookV3Sources(release.source_snapshot);
+    const publicProjection = normalizeStudentsBookV3Public(release.public_projection, compatibility);
+    const teacherProjection = normalizeStudentsBookV3Teacher(release.teacher_projection, publicProjection);
+    if (Object.keys(sourceSnapshot.nativeActivities).sort().join("\0") !== Object.keys(publicProjection.nativeActivities).sort().join("\0")
+      || Object.entries(sourceSnapshot.nativeActivities).some(([id, entry]) => entry.kind !== publicProjection.nativeActivities[id].kind)
+      || sourceSnapshot.pages.sha256 !== builderDocumentSha256({ units: publicProjection.units, pages: publicProjection.pages })) throw new Error("release_integrity_failed");
+    verifyManifest(release, expectedAssetManifest(publicProjection, teacherProjection));
+    verifyHashes(release, compatibility, sourceSnapshot, publicProjection, teacherProjection);
+    return { compatibility, sourceSnapshot, publicProjection, teacherProjection };
+  },
+});
+const registry = Object.freeze({ [v1.compilerId]: v1, [v2.compilerId]: v2, [v3.compilerId]: v3, [workbook.compilerId]: workbook, [grammarBook.compilerId]: grammarBook });
 
 export function resolvePublicationCompiler(compilerId, releaseSchemaVersion = null) {
   const compiler = registry[compilerId] || null;

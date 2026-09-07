@@ -3,12 +3,16 @@ import {
   migrationManifestSummary,
 } from "./_migration-readiness.mjs";
 import { readFile } from "node:fs/promises";
+import { verifyStudentsBookPageExpansion } from "./generate-students-book-page-expansion.mjs";
+import { verifyStudentsBookPublicationV3 } from "./generate-students-book-publication-v3.mjs";
 import {
   expectedRuntimeSchemaContractSource,
   runtimeSchemaContractUrl,
 } from "./generate-runtime-schema-contract.mjs";
 
 try {
+  await verifyStudentsBookPageExpansion();
+  await verifyStudentsBookPublicationV3();
   const migrations = await loadProductionMigrationManifest();
   const result = migrationManifestSummary(migrations);
   const [committedContract, expectedContract] = await Promise.all([

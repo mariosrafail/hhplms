@@ -1,5 +1,4 @@
 import { componentActivityOrderEntries, projectComponentActivityOrder, reorderComponentActivity } from "../../../src/data/native-activities/nativeActivityOrder.js";
-import { ultimateB2StudentsBookAuthoringActivities } from "../../../src/data/ultimate-b2/studentsBookAuthoringCatalog.js";
 import { builderDocumentSha256 } from "./_builder-content-security.js";
 
 export async function loadBuilderActivityOrder(dependencies, sql, identity) {
@@ -7,7 +6,7 @@ export async function loadBuilderActivityOrder(dependencies, sql, identity) {
   if (resources.some((value) => !value)) return null;
   const stored = await Promise.all(resources.map((resource) => dependencies.loadDocument(sql, resource)));
   const [index, lifecycle] = resources.map((resource, i) => stored[i]?.document || resource.baseline());
-  const canonical = identity.bookSlug === "ultimate-b2" && identity.componentSlug === "ultimate-b2-students-book" ? ultimateB2StudentsBookAuthoringActivities : [];
+  const canonical = [];
   return { index, lifecycle, canonical, indexRevision: stored[0]?.revision || 0, lifecycleRevision: stored[1]?.revision || 0, pages: projectComponentActivityOrder(componentActivityOrderEntries(canonical, index, lifecycle)) };
 }
 

@@ -30,7 +30,7 @@ async function loadRelease(signal, runtimeContext, identity) {
   const response = await fetch(hostedReleasePath(context, identity, "public"), { method: "GET", credentials: "omit", cache: "no-store", signal });
   if (!response.ok) throw new Error("Prepared release is unavailable.");
   const payload = await response.json();
-  const normalized = payload.compilerId === "ultimate-b2-students-book-v2" ? normalizeComponentPublicationEnvelope(payload) : {
+  const normalized = identity.componentSlug === "ultimate-b2-students-book" ? normalizeComponentPublicationEnvelope(payload) : {
     kind: "published", releaseId: payload.releaseId, releaseNumber: payload.releaseNumber, releaseSha256: payload.releaseSha256,
     compatibility: payload.compatibility, compilerId: payload.compilerId, releaseSchemaVersion: payload.releaseSchemaVersion, projection: payload.projection,
   };
@@ -71,6 +71,7 @@ export function hydratePublishedActivityImport(activityId, input, publication) {
 }
 
 export function publishedHotspotActions(publication, identity) {
+  if (publication.kind === "published" && publication.compilerId === "ultimate-b2-students-book-v3") return getUltimateB2StudentsBookHotspotActionsFromManifest(publication.projection.hotspots, { pageId: identity.pageId, unitNumber: identity.unitNumber });
   if (publication.kind === "published") return getUltimateB2StudentsBookHotspotActionsFromManifest(publication.projection.hotspots, identity);
   if (publication.kind === "none") return getUltimateB2StudentsBookHotspotActions(identity);
   return [];

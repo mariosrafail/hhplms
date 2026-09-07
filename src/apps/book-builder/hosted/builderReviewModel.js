@@ -49,12 +49,12 @@ function safeIssues(value) {
 
 export function publicationReadinessPresentation(error) {
   const code = String(error?.code || error?.payload?.error || "");
-  if (!code.startsWith("native_activity_")) return null;
+  if (!code.startsWith("native_activity_") && code !== "placement_unavailable") return null;
   const activityId = SAFE_ID.test(String(error?.payload?.activityId || "")) ? String(error.payload.activityId) : null;
   const issues = safeIssues(error?.payload?.issues);
   return {
     title: "Publication blocked",
     activityId,
-    issues: issues.length ? issues : ["The referenced native activity is not ready to publish."],
+    issues: issues.length ? issues : [code === "placement_unavailable" ? "A linked activity refers to an unavailable page." : "The referenced native activity is not ready to publish."],
   };
 }

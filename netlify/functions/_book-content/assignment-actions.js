@@ -271,7 +271,7 @@ export async function createAssignment(sql, body, currentUser = null) {
   } else {
     const activityRows = await sql`
       select activity.id, activity.title, activity.is_assignable, activity.content_json,
-             package.id as book_package_id
+             package.id as book_package_id, builder_current_legacy_activity_allowed(component.id) as legacy_assignment_allowed
       from activities activity
       join lessons lesson on lesson.id = activity.lesson_id
       join units unit_record on unit_record.id = lesson.unit_id
@@ -289,6 +289,7 @@ export async function createAssignment(sql, body, currentUser = null) {
     ) return forbidden("This activity is not assignable");
     const packageError = await verifyPackageAccess(sql, currentUser, { activityId });
     if (packageError) return packageError;
+    if (activity.legacy_assignment_allowed === false) return json(409, { error: "Choose a published Students Book activity for a new assignment.", code: "students_book_native_publication_required" });
   }
 
   const targetPackageId = nativeTarget?.row.book_package_id || activity?.book_package_id || null;

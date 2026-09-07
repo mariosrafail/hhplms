@@ -1,5 +1,6 @@
 import { canonicalStudentsBookPages } from "../../../netlify-sites/ultimate-b2-builder/server/_builder-page-catalog.js";
 import studentsBookRuntime from "../../../src/data/ultimate-b2/generated/students-book.runtime.json" with { type: "json" };
+import { STUDENTS_BOOK_V3_COMPILER, STUDENTS_BOOK_V3_SCHEMA, STUDENTS_BOOK_V3_COMPATIBILITY_SHA256 } from "../../../src/data/ultimate-b2/componentPublicationV3.js";
 
 export const LMS_PUBLISHED_COMPONENTS = Object.freeze([
   "ultimate-b2-students-book", "ultimate-b2-workbook", "ultimate-b2-grammar-book",
@@ -30,7 +31,11 @@ export function publishedBookReadModel(row, projection, capabilities = {}, produ
   if (!supportedPublishedBook(bookSlug, componentSlug)
     || projection.bookSlug !== bookSlug || projection.componentSlug !== componentSlug) throw new Error("publication_identity_mismatch");
   const activePageIds = projection.activePageIds ? new Set(projection.activePageIds) : null;
-  const sourcePages = componentSlug === "ultimate-b2-students-book" ? canonicalStudentsBookPages : projection.pages;
+  const unifiedStudentsBook = row.compiler_id === STUDENTS_BOOK_V3_COMPILER && row.release_schema_version === STUDENTS_BOOK_V3_SCHEMA
+    && projection.schemaVersion === STUDENTS_BOOK_V3_SCHEMA && projection.compatibility === STUDENTS_BOOK_V3_COMPATIBILITY_SHA256;
+  if (componentSlug === "ultimate-b2-students-book" && (row.compiler_id === STUDENTS_BOOK_V3_COMPILER || projection.schemaVersion === STUDENTS_BOOK_V3_SCHEMA) && !unifiedStudentsBook) throw new Error("publication_contract_mismatch");
+  const legacyStudentsBook = componentSlug === "ultimate-b2-students-book" && !unifiedStudentsBook;
+  const sourcePages = legacyStudentsBook ? canonicalStudentsBookPages : projection.pages;
   if (!Array.isArray(sourcePages)) throw new Error("publication_pages_unavailable");
   const sourceIds = new Set(sourcePages.map((page) => page.id));
   if (activePageIds && [...activePageIds].some((id) => !sourceIds.has(id))) throw new Error("publication_page_identity_mismatch");
@@ -42,7 +47,7 @@ export function publishedBookReadModel(row, projection, capabilities = {}, produ
     title: page.sectionTitle || page.label,
     printedLabel: page.printedLabel,
     sortOrder: page.sortOrder,
-    image: componentSlug === "ultimate-b2-students-book"
+    image: legacyStudentsBook
       ? { source: "canonical-published-page", logicalKey: canonicalPageImages.get(page.id), checksumSha256: page.image.checksumSha256, width: page.image.width, height: page.image.height }
       : { ...page.image },
     hotspots: [],

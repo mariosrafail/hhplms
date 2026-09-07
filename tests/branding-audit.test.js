@@ -31,6 +31,11 @@ test("branding audit permits only an enumerated compatibility token in its appro
     path: "src/example.js",
     content: `select * from ${token}`,
   }]).length, 1);
+  for (const path of ["scripts/_migration-transaction.mjs", "tests/integration/_students-book-preservation.mjs", "tests/integration/students-book-preservation.test.js"]) {
+    assert.deepEqual(findBrandingViolations([{ path, content: `select * from ${token}` }]), []);
+    assert.equal(findBrandingViolations([{ path, content: `${retiredName} visible label` }]).length, 1);
+    assert.equal(findBrandingViolations([{ path, content: `${token}_unapproved` }]).length, 1);
+  }
 });
 
 test("branding audit preserves the existing login hash-domain exceptions", () => {

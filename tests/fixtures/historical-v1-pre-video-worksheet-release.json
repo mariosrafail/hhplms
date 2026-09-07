@@ -1,0 +1,451 @@
+{
+  "compiler_id": "ultimate-b2-students-book-v1",
+  "release_schema_version": "1.0",
+  "runtime_compatibility_sha256": "0864cd57203cf9f9bb5a3faef64d767ac150f701290b1a1e82d9fc8b684d0ef2",
+  "source_snapshot": {
+    "schemaVersion": "1.0",
+    "hotspots": {
+      "revision": 0,
+      "sha256": "487c0dd7bc9a2de5994b37667781fe591327ed9c230d2d31faf31fa37befaae6"
+    },
+    "openResponse": {
+      "ultimate-b2-sb-u1-p1-o1": {
+        "document": {
+          "revision": 0,
+          "sha256": "2ddaf5f4b380dfc67a350b31ca38a8337aac47ff0f065b18f1cc62bee900a7a9"
+        },
+        "import": {
+          "revision": 0,
+          "sha256": null
+        }
+      },
+      "ultimate-b2-sb-u2-p1-o1": {
+        "document": {
+          "revision": 0,
+          "sha256": "c7fb05cb529529e2ec3dbf242906e7274c41d651777f37c42d40824295bd8dbe"
+        },
+        "import": {
+          "revision": 0,
+          "sha256": null
+        }
+      }
+    },
+    "teacherUi": {
+      "revision": 0,
+      "sha256": "982613b73d8d80078697dadd1d3ceed7f637bb2326f823327c138578c8a9af4b"
+    }
+  },
+  "source_snapshot_sha256": "81450a57c10d9e2cb76a51a97d7fce3c1f19094ddbe9295ff398c35b9c82a163",
+  "public_projection": {
+    "schemaVersion": "1.0",
+    "bookSlug": "ultimate-b2",
+    "componentSlug": "ultimate-b2-students-book",
+    "compatibility": "0864cd57203cf9f9bb5a3faef64d767ac150f701290b1a1e82d9fc8b684d0ef2",
+    "hotspots": {
+      "schemaVersion": "1.0",
+      "packageSlug": "ultimate-b2",
+      "componentSlug": "students-book",
+      "pages": {
+        "ub2-sb-unit-1-part-1": [
+          {
+            "id": "hotspot-140c5a95-cb33-49df-8575-c2f5dc059db7",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-1",
+            "pageNumber": 5,
+            "left": 4.6644,
+            "top": 8.7909,
+            "width": 90.0516,
+            "height": 63.5768,
+            "label": "Unit opener · Exercise 1",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p1-o1"
+          },
+          {
+            "id": "hotspot-8a3e63db-f717-42f4-9310-34a31c4e3190",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-1",
+            "pageNumber": 5,
+            "left": 10.6196,
+            "top": 74.0806,
+            "width": 25.7487,
+            "height": 20.2519,
+            "label": "Unit opener · Exercise 2",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p1-o2"
+          }
+        ],
+        "ub2-sb-unit-1-part-2": [
+          {
+            "id": "hotspot-9ba3eb23-3107-4c95-a671-94a7e22f1517",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-2",
+            "pageNumber": 6,
+            "left": 13.9054,
+            "top": 8.3879,
+            "width": 35.7969,
+            "height": 8.262,
+            "label": "Reading · Exercise 1",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p2-o1"
+          },
+          {
+            "id": "hotspot-5a0b8866-e9ca-42f3-8c15-d82c77fb162d",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-2",
+            "pageNumber": 6,
+            "left": 2.9072,
+            "top": 16.6499,
+            "width": 46.7951,
+            "height": 80.806,
+            "label": "Reading · Exercise 2",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p2-o2"
+          },
+          {
+            "id": "hotspot-58ab922d-3519-4443-a196-0c4c07aa9315",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-2",
+            "pageNumber": 6,
+            "left": 52.8021,
+            "top": 3.7531,
+            "width": 42.1892,
+            "height": 49.068,
+            "label": "Reading · Exercise 3",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p2-o3"
+          },
+          {
+            "id": "hotspot-136ed144-46b3-469d-9475-08f4dfda3747",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-2",
+            "pageNumber": 6,
+            "left": 52.8546,
+            "top": 53.8287,
+            "width": 41.8914,
+            "height": 19.6474,
+            "label": "Reading · Exercise 4",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p2-o4"
+          },
+          {
+            "id": "hotspot-11a7d195-4984-4341-a08b-6f01e07caa20",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-2",
+            "pageNumber": 6,
+            "left": 53.1349,
+            "top": 73.7783,
+            "width": 41.7513,
+            "height": 24.0806,
+            "label": "Reading · Debate club",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p2-o5"
+          }
+        ],
+        "ub2-sb-unit-1-part-3": [
+          {
+            "id": "hotspot-d0edb4a7-da73-4462-923c-5678a2edc054",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-3",
+            "pageNumber": 8,
+            "left": 2.8371,
+            "top": 7.8841,
+            "width": 45.6042,
+            "height": 41.9144,
+            "label": "Vocabulary in Use · Exercise 1",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p3-o1"
+          },
+          {
+            "id": "hotspot-59e8216b-577c-4b39-ba05-bd242b02bdfd",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-3",
+            "pageNumber": 8,
+            "left": 2.8371,
+            "top": 50,
+            "width": 36.7075,
+            "height": 18.4383,
+            "label": "Vocabulary in Use · Exercise 2",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p3-o2"
+          },
+          {
+            "id": "hotspot-0221fa21-d355-404a-bbf3-67791156065a",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-3",
+            "pageNumber": 8,
+            "left": 2.9772,
+            "top": 69.1436,
+            "width": 45.1839,
+            "height": 26.5995,
+            "label": "Vocabulary in Use · Exercise 3",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p3-o3"
+          },
+          {
+            "id": "hotspot-f3cbff95-dc8a-4196-bb19-7aba78a8520a",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-3",
+            "pageNumber": 8,
+            "left": 52.6445,
+            "top": 3.4509,
+            "width": 44.2032,
+            "height": 16.8262,
+            "label": "Vocabulary in Use · Exercise 4",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p3-o4"
+          },
+          {
+            "id": "hotspot-e70e4b3c-1faa-4c21-9988-23f0a910c919",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-3",
+            "pageNumber": 8,
+            "left": 52.627,
+            "top": 20.7809,
+            "width": 23.7303,
+            "height": 30.6045,
+            "label": "Vocabulary in Use · Exercise 5",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p3-o5"
+          },
+          {
+            "id": "hotspot-219a5628-c83c-45b0-8cc7-412c6c436ae9",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-3",
+            "pageNumber": 8,
+            "left": 76.7951,
+            "top": 20.9068,
+            "width": 19.8774,
+            "height": 30.3526,
+            "label": "Vocabulary in Use · Exercise 6",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p3-o6"
+          },
+          {
+            "id": "hotspot-eeff2831-20d7-4c74-958d-c0d56b4f7862",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-3",
+            "pageNumber": 8,
+            "left": 52.7145,
+            "top": 53.6524,
+            "width": 43.6953,
+            "height": 40.6801,
+            "label": "Vocabulary in Use · Exercise 7",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p3-o7"
+          }
+        ],
+        "ub2-sb-unit-1-part-4": [
+          {
+            "id": "hotspot-b02fb07e-06d0-49f4-8948-9f0d98231af7",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-4",
+            "pageNumber": 10,
+            "left": 25.7443,
+            "top": 3.8539,
+            "width": 21.4361,
+            "height": 47.8589,
+            "label": "Grammar in Use · Exercise 3",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p4-o3"
+          },
+          {
+            "id": "hotspot-c429c5c4-6294-4670-b429-91851d36e0be",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-4",
+            "pageNumber": 10,
+            "left": 2.4168,
+            "top": 17.3552,
+            "width": 23.1173,
+            "height": 28.5139,
+            "label": "Grammar in Use · Exercise 1",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p4-o1"
+          },
+          {
+            "id": "hotspot-85214bb9-455e-4dbf-a88d-9e0a3eaefb7f",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-4",
+            "pageNumber": 10,
+            "left": 52.5044,
+            "top": 61.0831,
+            "width": 21.7863,
+            "height": 28.3123,
+            "label": "Grammar in Use · Exercise 6",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p4-o6"
+          },
+          {
+            "id": "hotspot-46573041-8fd1-4f7d-8e69-74a320a5cb12",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-4",
+            "pageNumber": 10,
+            "left": 74.641,
+            "top": 3.1486,
+            "width": 22.2767,
+            "height": 46.9521,
+            "label": "Grammar in Use · Exercise 7",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p4-o7"
+          },
+          {
+            "id": "hotspot-881fedf7-e810-4f20-835c-d94149176331",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-4",
+            "pageNumber": 10,
+            "left": 74.9912,
+            "top": 52.2166,
+            "width": 23.8179,
+            "height": 45.4408,
+            "label": "Grammar in Use · Exercise 8",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p4-o8"
+          },
+          {
+            "id": "hotspot-ddf45d8c-86db-4750-87a2-db5f152ca6bb",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-4",
+            "pageNumber": 10,
+            "left": 2.8897,
+            "top": 48.4887,
+            "width": 22.3292,
+            "height": 46.0957,
+            "label": "Grammar in Use · Exercise 3",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p4-o3"
+          },
+          {
+            "id": "hotspot-259a4b8a-f158-4568-9413-df775516f417",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-4",
+            "pageNumber": 10,
+            "left": 25.8319,
+            "top": 70.529,
+            "width": 21.0158,
+            "height": 24.6851,
+            "label": "Grammar in Use · Exercise 4",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p4-o4"
+          },
+          {
+            "id": "hotspot-dee85a7d-78a2-4050-84f0-3f6532de0dcf",
+            "unitNumber": 1,
+            "pageId": "ub2-sb-unit-1-part-4",
+            "pageNumber": 10,
+            "left": 52.3643,
+            "top": 9.194,
+            "width": 21.8914,
+            "height": 51.0076,
+            "label": "Grammar in Use · Exercise 4",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p4-o4"
+          }
+        ],
+        "reading-19": [
+          {
+            "id": "hotspot-9fb35e28-9319-4493-80b9-05236f41b8f6",
+            "unitNumber": 2,
+            "pageId": "reading-19",
+            "pageNumber": 19,
+            "left": 30.4131,
+            "top": 1.9899,
+            "width": 63.6145,
+            "height": 32.5441,
+            "label": "Unit opener · Exercise 1",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u2-p1-o1"
+          }
+        ],
+        "review-30": [
+          {
+            "id": "hotspot-d13a00d3-fa9e-4555-b12c-c89b58bad81d",
+            "unitNumber": 2,
+            "pageId": "review-30",
+            "pageNumber": 30,
+            "left": 5.4217,
+            "top": 9.6977,
+            "width": 43.8898,
+            "height": 85.6423,
+            "label": "Practice 2 · Exercise 1",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u2-p9-o1"
+          },
+          {
+            "id": "hotspot-c8a6b46f-38bf-45d5-9571-07a7298ebf15",
+            "unitNumber": 2,
+            "pageId": "review-30",
+            "pageNumber": 30,
+            "left": 50.5164,
+            "top": 9.8237,
+            "width": 44.5783,
+            "height": 86.1461,
+            "label": "Unit opener · Exercise 2",
+            "actionType": "normalized_activity",
+            "activityKey": "ultimate-b2-sb-u1-p1-o2"
+          }
+        ]
+      }
+    },
+    "activities": {
+      "ultimate-b2-sb-u1-p1-o1": {
+        "authoring": {
+          "schemaVersion": "1.0",
+          "activityId": "ultimate-b2-sb-u1-p1-o1",
+          "visibleInstructionText": "Read the quote and discuss these questions with a partner.",
+          "questions": [
+            {
+              "id": "ultimate-b2-sb-u1-p1-o1-q1",
+              "prompt": "In what ways are films an art form?"
+            },
+            {
+              "id": "ultimate-b2-sb-u1-p1-o1-q2",
+              "prompt": "Why is theatre life?"
+            },
+            {
+              "id": "ultimate-b2-sb-u1-p1-o1-q3",
+              "prompt": "Do you agree that TV is furniture?"
+            }
+          ]
+        },
+        "import": null
+      },
+      "ultimate-b2-sb-u2-p1-o1": {
+        "authoring": {
+          "schemaVersion": "1.0",
+          "activityId": "ultimate-b2-sb-u2-p1-o1",
+          "visibleInstructionText": "Read the quote and discuss these questions with a partner.",
+          "questions": [
+            {
+              "id": "ultimate-b2-sb-u2-p1-o1-q1",
+              "prompt": "Do you believe that time travel is possible? Why/Why not?"
+            },
+            {
+              "id": "ultimate-b2-sb-u2-p1-o1-q2",
+              "prompt": "Which time period in history would you choose to travel to? Why?"
+            },
+            {
+              "id": "ultimate-b2-sb-u2-p1-o1-q3",
+              "prompt": "What would you change if you travelled back or forward in time?"
+            }
+          ]
+        },
+        "import": null
+      }
+    },
+    "assets": []
+  },
+  "public_projection_sha256": "059757259a2e1fb7c72f64ea750084cc1e7f302a5d1debdbc8306af265de873d",
+  "teacher_projection": {
+    "schemaVersion": "1.0",
+    "bookSlug": "ultimate-b2",
+    "componentSlug": "ultimate-b2-students-book",
+    "solutions": {},
+    "ui": {
+      "schemaVersion": "1.0",
+      "packageId": "ultimate-b2-students-book",
+      "assets": {}
+    }
+  },
+  "teacher_projection_sha256": "bd5dbfb122445df6a2bbb3f8863afd062807e858d50e3572ae26ca70c128dc4a",
+  "asset_manifest": [],
+  "release_sha256": "7a024dd8d6be028bce8bbfb1345e4ad07da0258eaca307971d42dc06a8516c44"
+}

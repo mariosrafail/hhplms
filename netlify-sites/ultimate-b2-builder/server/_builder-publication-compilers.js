@@ -14,7 +14,7 @@ import {
   ULTIMATE_B2_COMPONENT_RELEASE_V2_COMPILER_ID,
   ULTIMATE_B2_COMPONENT_RELEASE_V2_SCHEMA_VERSION,
 } from "../../../src/data/ultimate-b2/componentPublicationV2.js";
-import { compileUltimateB2ComponentRelease, ultimateB2PublicationCanonicalSeeds, ultimateB2PublicationCompatibility } from "./_builder-publication-compiler.js";
+import { compileUltimateB2ComponentRelease, ultimateB2PublicationCanonicalSeeds, ultimateB2PublicationCompatibility, ultimateB2PublicationCompatibilityBeforeVideoWorksheetBinding } from "./_builder-publication-compiler.js";
 import {
   compileUltimateB2ComponentReleaseV2,
   resolveUltimateB2PublicationV2CompatibilityVariant,
@@ -91,16 +91,25 @@ function verifyHashes(release, compatibility, sourceSnapshot, publicProjection, 
   if (RELEASE_INTEGRITY_CHECK_NAMES.some((name) => !checks[name])) throw new ReleaseIntegrityError(checks);
 }
 
+function resolveV1CompatibilityVariant(identity) {
+  return [ultimateB2PublicationCompatibility(), ultimateB2PublicationCompatibilityBeforeVideoWorksheetBinding()]
+    .map((compatibility) => ({ compatibility }))
+    .find((variant) => variant.compatibility === identity) || null;
+}
+
 const v1 = Object.freeze({
   compilerId: ULTIMATE_B2_COMPONENT_RELEASE_COMPILER_ID,
   releaseSchemaVersion: ULTIMATE_B2_COMPONENT_RELEASE_SCHEMA_VERSION,
   collect: collectUltimateB2PublicationSources,
   compile: compileUltimateB2ComponentRelease,
   verifyRelease(release) {
+    const variant = resolveV1CompatibilityVariant(release.runtime_compatibility_sha256);
+    if (!variant) throw new ReleaseCompatibilityVariantError();
     const seeds = ultimateB2PublicationCanonicalSeeds();
-    const compatibility = ultimateB2PublicationCompatibility();
+    const compatibility = variant.compatibility;
     const sourceSnapshot = normalizeUltimateB2ReleaseSourceSnapshot(release.source_snapshot, seeds);
     const publicProjection = normalizeUltimateB2PublicReleaseProjection(release.public_projection, seeds);
+    if (publicProjection.compatibility !== compatibility) throw new Error("release_integrity_failed");
     const teacherProjection = normalizeUltimateB2TeacherReleaseProjection(release.teacher_projection, seeds);
     verifyManifest(release, expectedAssetManifest(publicProjection, teacherProjection));
     verifyHashes(release, compatibility, sourceSnapshot, publicProjection, teacherProjection);

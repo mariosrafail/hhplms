@@ -1,11 +1,40 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { studentsBookUnits } from "./fixtures/students-book-current.js";
-import { studentsBookV3Sources, studentsBookV3ReleaseRow as releaseRow } from "./fixtures/students-book-publication-v3.js";
+import { studentsBookV3Sources, studentsBookV3PdfSources, studentsBookPdfArtwork, studentsBookV3ReleaseRow as releaseRow } from "./fixtures/students-book-publication-v3.js";
 import { compileStudentsBookReleaseV3, reconcileStudentsBookPublication } from "../netlify-sites/ultimate-b2-builder/server/_builder-publication-compiler-v3.js";
 import { verifyImmutableComponentRelease } from "../netlify-sites/ultimate-b2-builder/server/_builder-publication-compilers.js";
 import { normalizeStudentsBookV3Public, STUDENTS_BOOK_V3_COMPATIBILITY, STUDENTS_BOOK_V3_COMPATIBILITY_SHA256 } from "../src/data/ultimate-b2/componentPublicationV3.js";
 import { builderDocumentSha256 } from "../netlify-sites/ultimate-b2-builder/server/_builder-content-security.js";
+
+test("v3 compiles the restored PDF worksheet descriptor and preserves its exact public asset identity", () => {
+  const sources = studentsBookV3PdfSources(); const before = structuredClone(sources);
+  const compiled = compileStudentsBookReleaseV3(sources);
+  const projection = normalizeStudentsBookV3Public(compiled.publicProjection);
+  assert.deepEqual(projection.assets.find((asset) => asset.sha256 === studentsBookPdfArtwork.sha256), studentsBookPdfArtwork);
+  assert.deepEqual(compiled.assetManifest.find((asset) => asset.sha256 === studentsBookPdfArtwork.sha256), studentsBookPdfArtwork);
+  const source = compiled.nativeAssetSources.find((entry) => entry.descriptor.sha256 === studentsBookPdfArtwork.sha256);
+  assert.equal(source.row.source_metadata.native_activity_id, "ultimate-b2-sb-u1-p2-o7");
+  assert.equal(source.row.source_metadata.asset_slot, "video-worksheet");
+  assert.deepEqual(sources, before);
+});
+
+test("v3 PDF support retains exact MIME, role and checksum validation", () => {
+  const compiled = compileStudentsBookReleaseV3(studentsBookV3PdfSources());
+  for (const replacement of [
+    { extension: "pdf", mediaType: "image/png" },
+    { extension: "png", mediaType: "application/pdf" },
+    { extension: "unknown", mediaType: "application/pdf" },
+    { role: "unknown_role" },
+    { role: "native_teacher_answer" },
+    { sha256: "bad-checksum" },
+    { sha256: studentsBookPdfArtwork.sha256.toUpperCase() },
+  ]) {
+    const projection = structuredClone(compiled.publicProjection);
+    Object.assign(projection.assets.find((asset) => asset.sha256 === studentsBookPdfArtwork.sha256), replacement);
+    assert.throws(() => normalizeStudentsBookV3Public(projection), /Invalid Students Book v3 asset identity/);
+  }
+});
 
 test("Students Book v3 captures canonical pages and all native inclusion decisions with frozen verification", () => {
   const sources = studentsBookV3Sources(); const before = structuredClone(sources);

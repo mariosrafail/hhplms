@@ -12,7 +12,7 @@ export const STUDENTS_BOOK_V3_COMPATIBILITY = Object.freeze({ compilerId: STUDEN
 const safeId = /^[a-z0-9][a-z0-9-]{0,127}$/;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const sha = /^[a-f0-9]{64}$/;
-const media = { png: "image/png", jpg: "image/jpeg", webp: "image/webp", mp3: "audio/mpeg", mp4: "video/mp4", ttf: "font/ttf" };
+const media = { png: "image/png", jpg: "image/jpeg", webp: "image/webp", mp3: "audio/mpeg", mp4: "video/mp4", pdf: "application/pdf", ttf: "font/ttf" };
 const publicRoles = new Set(["canonical_page_image", "managed_page_image", "activity_artwork", "activity_font", "unit_extra_audio", "unit_extra_video"]);
 const exact = (value, keys, label) => {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).sort().join("\0") !== [...keys].sort().join("\0")) throw new Error(`Invalid Students Book v3 ${label}.`);

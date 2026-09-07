@@ -49,7 +49,7 @@ export function UnitExtrasEditor({ open, unit, category = "videos", onClose, ret
   const pages = useMemo(() => ready ? catalog.pages.filter((page) => page.unitNumber === unitNumber) : [], [catalog, ready, unitNumber]);
 
   useEffect(() => {
-    if (!open || !unitNumber) return undefined;
+    if (!open || !unitNumber) { setLoadedUnit(null); return undefined; }
     const controller = new AbortController();
     const session = ++generation.current;
     const active = () => !controller.signal.aborted && session === generation.current;

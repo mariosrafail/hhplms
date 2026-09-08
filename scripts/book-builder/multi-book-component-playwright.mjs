@@ -10,7 +10,7 @@ import { mkdir, readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 import { localPlaywrightLaunchOptions } from "../android-teacher/playwright-launch-options.mjs";
 import { assertInteractiveOverview } from "./interactive-overview-assertions.mjs";
 import { managedOverviewDescriptors, managedPageBytes, managedPageFixture, managedSpreadPageWidth } from "./interactive-overview-fixtures.mjs";
@@ -570,8 +570,9 @@ try {
       assert.equal(new URL(page.url()).hash, `#/books/${shell.bookSlug}/components/${component.componentSlug}`);
       assert.equal(await page.getByRole("link", { name: shell.bookTitle, exact: true }).count(), 1);
       assert.deepEqual(await page.locator(".hosted-builder-tool-tabs a strong").allTextContents(), ["Pages", "Hotspot Builder", "Activity Builder"]);
+      const unitSections = page.locator(".component-pages-groups > section[data-page-unit]");
+      await expect(unitSections).toHaveCount(10);
       assert.equal(await page.locator(".component-page-card").count(), 0);
-      assert.equal(await page.locator(".component-pages-groups > section[data-page-unit]").count(), 10);
       assert.doesNotMatch(await page.locator("#main-content").innerText(), /Ultimate B2/);
       await page.getByRole("link", { name: shell.bookTitle, exact: true }).click();
       await page.locator(".hosted-builder-book-heading").getByRole("heading", { name: shell.bookTitle, exact: true }).waitFor();
@@ -603,7 +604,8 @@ try {
     await page.goto(`${origin}/#/books/ultimate-b2/components/${componentSlug}`, { waitUntil: "domcontentloaded" });
     await page.locator(`[data-component-pages="${componentSlug}"]`).waitFor();
     assert.deepEqual(await page.locator(".hosted-builder-tool-tabs a strong").allTextContents(), ["Pages", "Hotspot Builder", "Activity Builder", "Publication"]);
-    assert.equal(await page.locator(".component-pages-groups > section").count(), 11);
+    const pageSections = page.locator(".component-pages-groups > section");
+    await expect(pageSections).toHaveCount(11);
     const selectedCatalog = managedCatalogs[componentSlug];
     assert.equal(await page.locator(".component-page-card").count(), selectedCatalog.pages.length);
     await page.getByRole("button", { name: `Preview ${selectedCatalog.pages[0].label}`, exact: true }).click();

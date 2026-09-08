@@ -5,7 +5,7 @@ import { createUltimateB2HostedOpenResponseSeed } from "../../data/ultimate-b2/h
 import { hydrateUltimateB2ReleaseImport } from "../../data/ultimate-b2/componentPublication.js";
 import { findStudentsBookImplementation } from "../../data/ultimate-b2/studentsBookCatalog.js";
 import { getUltimateB2StudentsBookHotspotActions, getUltimateB2StudentsBookHotspotActionsFromManifest } from "../../data/ultimate-b2/studentsBookHotspots.js";
-import { normalizeCurrentPublishedUnitExtras } from "../../data/ultimate-b2/unitExtras.js";
+import { normalizeCurrentDraftUnitExtras } from "../../data/ultimate-b2/unitExtras.js";
 import { authorizedHostedPreviewPath, HOSTED_VIEWER_RUNTIME_MODES, hostedReleasePath, resolveHostedViewerRuntimeContext } from "./hostedReleasePreview.js";
 import { normalizeComponentActivityOrder } from "../../data/native-activities/nativeActivityOrder.js";
 
@@ -48,7 +48,7 @@ export async function loadHostedDraftUnitExtras({ signal, context = resolveHoste
   if (keys !== ["bookSlug", "componentSlug", "document", "resource", "revision", "schemaVersion", "source"].sort().join("\0")
     || payload.bookSlug !== identity.bookSlug || payload.componentSlug !== identity.componentSlug || payload.resource !== "unit-extras"
     || payload.schemaVersion !== "1.0" || !Number.isSafeInteger(payload.revision) || payload.revision < 1 || payload.source !== "database") throw new Error("Saved Draft Unit Extras identity is invalid.");
-  return Object.freeze({ kind: "draft", revision: payload.revision, projection: Object.freeze({ unitExtras: normalizeCurrentPublishedUnitExtras(payload.document) }), runtimeContext: context, identity: Object.freeze({ ...identity }) });
+  return Object.freeze({ kind: "draft", revision: payload.revision, projection: Object.freeze({ unitExtras: normalizeCurrentDraftUnitExtras(payload.document) }), runtimeContext: context, identity: Object.freeze({ ...identity }) });
 }
 
 export function usePublishedComponentRelease({ runtimeContext = resolveHostedViewerRuntimeContext(), identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" } } = {}) {
@@ -86,7 +86,7 @@ export function publishedNativeAssetUrl(publication, reference) {
 export function publishedUnitExtraVideoUrl(publication, reference) {
   if (publication.kind === "draft" && reference) {
     for (const unit of (publication.projection.unitExtras?.units || [])) {
-      const video = unit.categories.videos.find((entry) => entry.video.asset.assetId === reference.assetId && entry.video.asset.checksumSha256 === reference.checksumSha256);
+      const video = unit.categories.videos.find((entry) => entry.video?.asset?.assetId === reference.assetId && entry.video.asset.checksumSha256 === reference.checksumSha256);
       if (video) return authorizedHostedPreviewPath(`/preview/unit-extras/books/${publication.identity.bookSlug}/components/${publication.identity.componentSlug}/units/${unit.unitId}/videos/${video.id}/assets/${reference.assetId}/preview`, publication.runtimeContext.authorization);
     }
     return "";
@@ -97,7 +97,7 @@ export function publishedUnitExtraVideoUrl(publication, reference) {
 export function publishedUnitExtraAudioUrl(publication, reference) {
   if (publication.kind === "draft" && reference) {
     for (const unit of (publication.projection.unitExtras?.units || [])) {
-      const audio = (unit.categories.audios ?? []).find((entry) => entry.audio.asset.assetId === reference.assetId && entry.audio.asset.checksumSha256 === reference.checksumSha256);
+      const audio = (unit.categories.audios ?? []).find((entry) => entry.audio?.asset?.assetId === reference.assetId && entry.audio.asset.checksumSha256 === reference.checksumSha256);
       if (audio) return authorizedHostedPreviewPath(`/preview/unit-extras/books/${publication.identity.bookSlug}/components/${publication.identity.componentSlug}/units/${unit.unitId}/audios/${audio.id}/assets/${reference.assetId}/preview`, publication.runtimeContext.authorization);
     }
     return "";

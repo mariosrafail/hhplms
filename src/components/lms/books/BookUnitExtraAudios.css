@@ -5,5 +5,6 @@
 .book-page-extra-audios label { display:flex; align-items:center; gap:7px; font-size:.75rem; }
 .book-page-extra-audios select { min-width:0; flex:1; }
 .book-page-extra-audios audio { display:block; width:100%; height:36px; }
+.book-page-extra-audios > [role="status"] { display:flex; align-items:center; height:36px; margin:0; font-size:.875rem; }
 .book-page-extra-videos:has(~ .book-page-extra-audios) { bottom:max(116px,calc(env(safe-area-inset-bottom) + 116px)); }
 @media (max-width:720px) { .book-page-extra-audios { right:12px; bottom:12px; width:min(320px,calc(100% - 24px)); } .book-page-extra-videos:has(~ .book-page-extra-audios) { bottom:110px; } }

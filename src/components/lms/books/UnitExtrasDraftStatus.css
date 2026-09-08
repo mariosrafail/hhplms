@@ -1,0 +1,18 @@
+.unit-extras-draft-status {
+  position: absolute;
+  z-index: 35;
+  top: 52px;
+  right: 16px;
+  max-width: min(360px, 80%);
+  max-height: 170px;
+  overflow: auto;
+  padding: 12px 16px;
+  border: 1px solid #b7791f;
+  border-radius: 8px;
+  background: #fff8e6;
+  color: #47330c;
+  font: 14px/1.4 sans-serif;
+}
+.unit-extras-draft-status ul { margin: 8px 0; padding-left: 20px; }
+.unit-extras-draft-status p { margin: 0; }
+body:has([aria-modal="true"]) .unit-extras-draft-status { display: none; }

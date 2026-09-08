@@ -5,8 +5,10 @@ import { access, readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 import { localPlaywrightLaunchOptions } from "./playwright-launch-options.mjs";
+import { incompleteExtrasFixture } from "../../tests/fixtures/unit-extras-draft.js";
+import { projectCurrentUnitExtrasDraft } from "../../src/data/ultimate-b2/unitExtras.js";
 
 const root = path.resolve(process.env.HHPLMS_VIEWER_DIR || "dist-netlify/ultimate-b2-interactive");
 await access(path.join(root, "index.html"));
@@ -15,13 +17,15 @@ const studentsUnits = Array.from({ length: 10 }, (_, i) => ({ id: `60000000-0000
 const token = `v1.${Buffer.from("viewer-boundary-smoke").toString("base64url")}.${"a".repeat(43)}`;
 const uiPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/ui-controller";
 const hotspotsPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/hotspots";
+const extrasPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/unit-extras";
+const extras = projectCurrentUnitExtrasDraft(incompleteExtrasFixture(), { pages: canonicalStudentsBookPages });
 const exchangePath = "/preview/authorization/exchange";
 const studentsPagePath = "/preview/pages/books/ultimate-b2/components/ultimate-b2-students-book";
 const workbookPagePath = "/preview/pages/books/ultimate-b2/components/ultimate-b2-workbook";
 const workbookHotspotsPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-workbook/hotspots";
 const grammarPagePath = "/preview/pages/books/ultimate-b2/components/ultimate-b2-grammar-book";
 const grammarHotspotsPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-grammar-book/hotspots";
-const hydrationPaths = Object.freeze([uiPath, hotspotsPath, studentsPagePath, workbookPagePath, workbookHotspotsPath, grammarPagePath, grammarHotspotsPath]);
+const hydrationPaths = Object.freeze([uiPath, hotspotsPath, extrasPath, studentsPagePath, workbookPagePath, workbookHotspotsPath, grammarPagePath, grammarHotspotsPath]);
 const managedHydrationPaths = new Set([workbookPagePath, workbookHotspotsPath, grammarPagePath, grammarHotspotsPath]);
 const testFlowHeader = "x-hhplms-test-flow";
 const delayedManagedFixture = process.env.HHPLMS_VIEWER_BOUNDARY_DELAY_MANAGED === "1";
@@ -90,6 +94,10 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, { document: { schemaVersion: "1.0", packageId: "ultimate-b2-students-book", assets: {} } });
   }
   if (url.pathname === hotspotsPath) return sendJson(response, 200, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", resource: "hotspots", schemaVersion: "1.0", revision: 43, source: "database", document: hotspots });
+  if (url.pathname === extrasPath) {
+    if (url.searchParams.get("previewAuthorization") !== token) return sendJson(response, 401, { error: "Unauthorized" });
+    return sendJson(response, 200, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", resource: "unit-extras", schemaVersion: "1.0", revision: 1, source: "database", document: extras });
+  }
   if (url.pathname === studentsPagePath) return sendJson(response, 200, { component: { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", kind: "students-book" }, units: studentsUnits, pages: canonicalStudentsBookPages.map((page) => ({ ...page, origin: "canonical", unitId: studentsUnits[page.unitNumber - 1].id })) });
   const managedPageMatch = url.pathname.match(/^\/preview\/pages\/books\/ultimate-b2\/components\/(ultimate-b2-(?:workbook|grammar-book))$/);
   if (managedPageMatch) {
@@ -172,6 +180,7 @@ try {
     assert.equal(bareRequests.filter((url) => /native-activities|native-draft|\/assets\//.test(url.pathname)).length, 0, "Bare Viewer must make zero native draft or draft asset requests.");
     assert.equal(await page.getByText("Publisher answer", { exact: true }).count(), 0);
     assert.equal(await page.getByRole("button", { name: /Show all answers|Reveal model answer/i }).count(), 0);
+    await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toHaveCount(0);
   });
 
   const authorized = new URL(origin);
@@ -181,6 +190,8 @@ try {
     await page.goto(authorized.toString(), { waitUntil: "domcontentloaded" });
     await waitForLibrary(page);
     await hydrated;
+    await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toContainText("Unfinished video - MP4 required");
+    await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toContainText("Unfinished audio - MP3 required");
     const authorizedRequests = previewRequestsFor("authorized");
     for (const expectedPath of hydrationPaths) assert.ok(authorizedRequests.some((url) => url.pathname === expectedPath), `Authorized hydration must complete ${expectedPath}.`);
     const uiRequest = authorizedRequests.find((url) => url.pathname === uiPath);
@@ -197,6 +208,8 @@ try {
     for (const edition of ["Workbook", "Grammar Book", "Students Book"]) {
       await page.getByRole("button", { name: edition, exact: true }).click();
       await waitForLibrary(page);
+      if (edition === "Students Book") await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toBeVisible();
+      else await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toHaveCount(0);
     }
     return { uiRequest };
   });

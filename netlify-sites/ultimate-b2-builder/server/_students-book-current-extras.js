@@ -1,4 +1,4 @@
-import { validateCurrentUnitExtrasStructure, projectCurrentUnitExtras } from "../../../src/data/ultimate-b2/unitExtras.js";
+import { validateCurrentUnitExtrasStructure, projectCurrentUnitExtrasDraft } from "../../../src/data/ultimate-b2/unitExtras.js";
 import { loadStudentsBookPageAuthority } from "./_students-book-page-authority.js";
 import { validateBuilderUnitExtraAssetReferences } from "./_builder-unit-extra-assets-store.js";
 
@@ -19,5 +19,5 @@ export async function validateCurrentUnitExtrasMutation(context) {
 }
 
 export async function projectCurrentUnitExtrasPreview(document, { sql }) {
-  return projectCurrentUnitExtras(document, await validateCurrentUnitExtrasContext({ document, sql }));
+  return projectCurrentUnitExtrasDraft(document, await validateCurrentUnitExtrasContext({ document, sql }));
 }

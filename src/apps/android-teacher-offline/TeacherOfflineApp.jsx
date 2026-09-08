@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Volume2, VolumeX } from "lucide-react";
-
 import { readTeacherOfflineLocation, writeTeacherOfflineLocation } from "./teacherOfflineStorage.js";
 import TeacherOfflineBook from "./TeacherOfflineBook.jsx";
 import TeacherOfflineLibrary from "./TeacherOfflineLibrary.jsx";
+import { HostedUnitExtrasDraftStatus } from "virtual:unit-extras-draft-status";
 import TeacherOfflineMedia from "./TeacherOfflineMedia.jsx";
 import TeacherViewportDiagnostics from "./TeacherViewportDiagnostics.jsx";
 import { recordTeacherOfflineNavigation } from "./teacherOfflineDiagnostics.js";
@@ -51,7 +51,6 @@ import {
   resolveTeacherEditionComponent,
   reviewComponentRegistry,
 } from "./reviewComponentRegistry.js";
-
 const defaultLocation = { unitNumber: 1, tab: "pages", pageId: "" };
 const initialPackState = Object.freeze({
   status: "loading",
@@ -621,6 +620,7 @@ export default function TeacherOfflineApp() {
           {content}
         </div>
         {componentFeedback ? <p className="teacher-component-feedback" role="status">{componentFeedback}</p> : null}
+        {!startupIntroPending && packReady && activeRuntimeContext?.kind === HOSTED_VIEWER_RUNTIME_MODES.BUILDER_PREVIEW && activeRuntime.componentSlug === "ultimate-b2-students-book" ? <HostedUnitExtrasDraftStatus runtimeContext={activeRuntimeContext} identity={componentIdentity(activeRuntime)} /> : null}
         {!startupIntroPending && packReady && (
           <TeacherShellChrome
             menuSkin={menuSkin}

@@ -55,6 +55,7 @@ export function BookUnitExtraVideos({ unitNumber, pageId, hidden = false }) {
     launcherRef.current?.focus();
   };
   const selectVideo = (entry) => {
+    if (entry.readiness === "missing-media") return;
     document.querySelectorAll("audio,video").forEach((media) => media.pause());
     setMenuOpen(false);
     setActiveVideo(entry);
@@ -67,7 +68,7 @@ export function BookUnitExtraVideos({ unitNumber, pageId, hidden = false }) {
           <div className="book-page-extra-video-menu" role="menu" aria-label="Extra Videos">
             <strong>Extra Videos</strong>
             {videos.map((entry) => (
-              <button key={entry.id} type="button" role="menuitem" onClick={() => selectVideo(entry)}>{entry.title}</button>
+              <button key={entry.id} type="button" role="menuitem" disabled={entry.readiness === "missing-media"} onClick={() => selectVideo(entry)}>{entry.title}{entry.readiness === "missing-media" ? " - Not ready: MP4 required" : ""}</button>
             ))}
           </div>
         ) : null}

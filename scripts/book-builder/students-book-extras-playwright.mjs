@@ -7,6 +7,7 @@ import { chromium, expect } from "@playwright/test";
 import { currentExtrasFixture, extrasRoute, responseJson } from "../../tests/integration/_students-book-current-extras-fixture.mjs";
 import media from "../../tests/fixtures/students-book-synthetic-media.json" with { type: "json" };
 import { localPlaywrightLaunchOptions } from "../android-teacher/playwright-launch-options.mjs";
+import { incompleteExtrasFixture } from "../../tests/fixtures/unit-extras-draft.js";
 
 const cleanup = [];
 const f = await currentExtrasFixture({ after: (callback) => cleanup.unshift(callback) });
@@ -17,7 +18,7 @@ try {
   const bundle = await build({ entryPoints: ["tests/fixtures/students-book-extras-browser.jsx"], bundle: true, write: false, outdir: "out", format: "esm", platform: "browser", jsx: "automatic", define: { "process.env.NODE_ENV": '"production"' }, alias: { "virtual:component-publication": path.resolve("tests/fixtures/students-book-extras-preview-provider.js") }, loader: { ".png": "dataurl", ".svg": "dataurl", ".woff2": "dataurl", ".ttf": "dataurl" } });
   const script = bundle.outputFiles.find((file) => file.path.endsWith(".js")).text;
   const css = bundle.outputFiles.find((file) => file.path.endsWith(".css"))?.text || "";
-  let failRead = false; let failSave = false; let failUpload = false; let delayRead = null;
+  let failRead = false; let failSave = false; let failUpload = false; let delayRead = null; let draftReads = 0;
   const config = { managedId, canonicalId, authorization: `v2.${Buffer.from("isolated-extras").toString("base64url")}.${"a".repeat(43)}` };
   server = createServer(async (request, response) => {
     try {
@@ -35,7 +36,7 @@ try {
         result = failRead ? { statusCode: 503, body: '{"error":"simulated_page_catalog_failure"}' } : await f.pages(event);
       } else if (pathname.startsWith(extrasRoute("content"))) result = await f.content(event);
       else if (pathname.startsWith(extrasRoute("unit-extras"))) result = (failSave && pathname.endsWith("/save") || failUpload && pathname.endsWith("/prepare")) ? { statusCode: 503, body: '{"error":"simulated_save_or_upload_failure"}' } : await f.extras(event);
-      else if (pathname.startsWith("/builder/preview/content/")) result = await f.preview(event);
+      else if (pathname.startsWith("/builder/preview/content/")) { draftReads += 1; result = await f.preview(event); }
       else if (pathname.startsWith("/builder/preview/unit-extras/")) {
         // Authenticated synthetic preview; bytes were finalized by the real handler.
         const id = pathname.match(/assets\/([^/]+)\/preview$/)?.[1];
@@ -86,9 +87,44 @@ try {
   await page.evaluate(() => window.selectExtrasFixture({ unit: { unitNumber: 10, title: "Unit 10" }, category: "audios" }));
   await expect(page.locator(`input[data-page-id="${managedId}"]`)).toBeVisible(); releaseRead();
   await expect(page.locator(`input[data-page-id="${canonicalId}"]`)).toHaveCount(0);
+  await close();
+  // Reinitialize Saved Draft with mixed content, before any media is attached
+  // to the new placeholders. All persistence still uses the product handler.
+  const current = await f.read();
+  const unfinished = incompleteExtrasFixture().units[0].categories;
+  const target = current.document.units.find(unit => unit.unitNumber === 3);
+  target.categories.videos.push(...unfinished.videos);
+  target.categories.audios.unshift(...unfinished.audios);
+  responseJson(await f.save(current.document, current.revision));
+  const persisted = await f.read();
+  const missingRequests = [];
+  page.on("request", request => { if ([...unfinished.videos, ...unfinished.audios].some(item => request.url().includes(`/assets/`) && request.url().includes(item.id))) missingRequests.push(request.url()); });
+  await page.reload();
+  await page.getByRole("button", { name: "Saved Draft Unit 3", exact: true }).click();
+  await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toContainText("Unfinished video - MP4 required");
+  await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toContainText("Unfinished audio - MP3 required");
+  for (const view of ["workbook", "release"]) {
+    const beforeReads = draftReads;
+    await page.getByRole("button", { name: `Status ${view}`, exact: true }).click();
+    await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toHaveCount(0);
+    assert.equal(draftReads, beforeReads, `${view} must not fetch the current Students Book draft`);
+    await page.getByRole("button", { name: "Status draft", exact: true }).click();
+    await expect(page.getByRole("status", { name: "Unfinished Unit Extras" })).toContainText("Unfinished audio - MP3 required");
+  }
+  await expect(page.getByText("Not ready: MP3 required", { exact: true })).toBeVisible();
+  await expect(page.locator("audio, video")).toHaveCount(0);
+  await page.getByRole("button", { name: "Extra Videos", exact: true }).click();
+  await expect(page.getByRole("menuitem", { name: "Unfinished video - Not ready: MP4 required", exact: true })).toBeDisabled();
+  await page.getByRole("menuitem", { name: "Synthetic videos 3", exact: true }).click();
+  await expect(page.locator("video")).toHaveJSProperty("readyState", 4);
+  await page.getByRole("button", { name: "Close Extra Video", exact: true }).click();
+  await page.getByRole("combobox", { name: "Extra Audio track" }).selectOption({ label: "Synthetic audios 3" });
+  await expect(page.locator("audio")).toHaveJSProperty("readyState", 4);
+  assert.deepEqual(missingRequests, [], "Missing media must not create asset requests");
+  assert.deepEqual(await f.read(), persisted, "Draft preview must not modify stored source or revision");
   if (process.env.SB_EXTRAS_SCREENSHOT_DIR) { await mkdir(process.env.SB_EXTRAS_SCREENSHOT_DIR, { recursive: true }); await page.screenshot({ path: path.join(process.env.SB_EXTRAS_SCREENSHOT_DIR, "synthetic-extras-unit-10.png") }); }
   assert.deepEqual(errors, []);
-  console.log("PASS: actual Extras editor + real PostgreSQL handlers, U3/U10 independent flags, save/reload, real Saved Draft media render, failed reads/saves/uploads and stale selection responses.");
+  console.log("PASS: actual Extras editor + real PostgreSQL handlers, U3/U10 independent flags, save/reload, real Saved Draft media render, incomplete MP4/MP3 initialization and visible readiness, mixed ready playback, no missing-media requests or source writes, failed reads/saves/uploads and stale selection responses.");
 } finally {
   await browser?.close(); if (server) await new Promise((resolve) => server.close(resolve));
   for (const callback of cleanup) await callback();

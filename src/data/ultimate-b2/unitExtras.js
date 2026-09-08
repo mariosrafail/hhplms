@@ -148,22 +148,34 @@ export function projectUltimateB2UnitExtrasForPublication(value) {
 }
 
 export function projectCurrentUnitExtras(value, { pages, retained = [] }) {
+  return projectCurrentDocument(value, { pages, retained });
+}
+
+// This read model is only for authorized Saved Draft review. Publication keeps
+// the strict projector above and cannot accept the missing-media entries.
+export function projectCurrentUnitExtrasDraft(value, authority) {
+  return projectCurrentDocument(value, authority, true);
+}
+
+function projectCurrentDocument(value, { pages, retained = [] }, draft = false) {
   validateCurrentUnitExtrasStructure(value);
   const document = normalizeAuthoringDocument(value, [...pages, ...retained]);
   const active = new Set(pages.map((page) => page.id));
-  return { ...projectDocument(document), pages: structuredClone(value.pages.filter((page) => active.has(page.pageId))) };
+  return { ...projectDocument(document, draft), pages: structuredClone(value.pages.filter((page) => active.has(page.pageId))) };
 }
 
-function projectDocument(document) {
+function projectDocument(document, draft = false) {
   const units = document.units.map((unit) => ({
     unitId: unit.unitId,
     unitNumber: unit.unitNumber,
     categories: {
       videos: unit.categories.videos.map((video) => {
+        if (draft && video.asset === null) return { id: video.id, title: video.title, readiness: "missing-media", video: null };
         if (!video.asset || !video.durationMs) throw new Error(`Unit Extra Video ${video.id} requires a managed MP4.`);
         return { id: video.id, title: video.title, video: { assetSlot: video.assetSlot, asset: video.asset, durationMs: video.durationMs, cues: video.cues } };
       }),
       audios: unit.categories.audios.map((audio) => {
+        if (draft && audio.asset === null) return { id: audio.id, title: audio.title, readiness: "missing-media", audio: null };
         if (!audio.asset) throw new Error(`Unit Extra Audio ${audio.id} requires a managed MP3.`);
         return { id: audio.id, title: audio.title, audio: { assetSlot: audio.assetSlot, asset: audio.asset } };
       }),
@@ -176,13 +188,23 @@ export function normalizePublishedUltimateB2UnitExtras(value) {
   return normalizePublishedDocument(value);
 }
 
-// Draft envelopes are authorized and membership-checked by the current server.
+// Current envelopes are membership-checked by the server.
 // Immutable v1/v2 readers continue to use the historical default above.
 export function normalizeCurrentPublishedUnitExtras(value) {
   return normalizePublishedDocument(value, null);
 }
 
-function normalizePublishedDocument(value, pageCatalog = ultimateB2StudentsBookAuthoringPages) {
+export function normalizeCurrentDraftUnitExtras(value) {
+  return normalizePublishedDocument(value, null, true);
+}
+
+function normalizeMissingDraftMedia(entry, kind, label) {
+  exact(entry, ["id", "title", "readiness", kind], label);
+  if (!isNativeChildId(entry.id, kind) || entry.readiness !== "missing-media" || entry[kind] !== null) throw new Error(`${label} incomplete media is invalid.`);
+  return { id: entry.id, title: title(entry.title, `${label} title`), readiness: "missing-media", [kind]: null };
+}
+
+function normalizePublishedDocument(value, pageCatalog = ultimateB2StudentsBookAuthoringPages, draft = false) {
   exact(value, ["schemaVersion", "units", "pages"], "Published Unit Extras");
   if (value.schemaVersion !== ULTIMATE_B2_UNIT_EXTRAS_SCHEMA_VERSION || !Array.isArray(value.units) || !Array.isArray(value.pages)) throw new Error("Published Unit Extras are invalid.");
   const units = value.units.map((unit, unitIndex) => {
@@ -194,6 +216,7 @@ function normalizePublishedDocument(value, pageCatalog = ultimateB2StudentsBookA
     if (!Array.isArray(unit.categories.videos) || unit.categories.videos.length > ULTIMATE_B2_UNIT_EXTRA_LIMITS.videosPerUnit) throw new Error(`${label} videos are invalid.`);
     const videos = unit.categories.videos.map((entry, videoIndex) => {
       const videoLabel = `${label} videos[${videoIndex}]`;
+      if (draft && Object.hasOwn(entry, "readiness")) return normalizeMissingDraftMedia(entry, "video", videoLabel);
       exact(entry, ["id", "title", "video"], videoLabel);
       if (!isNativeChildId(entry.id, "video")) throw new Error(`${videoLabel} identity is invalid.`);
       exact(entry.video, ["assetSlot", "asset", "durationMs", "cues"], `${videoLabel} media`);
@@ -203,14 +226,16 @@ function normalizePublishedDocument(value, pageCatalog = ultimateB2StudentsBookA
     });
     if (hasAudios && (!Array.isArray(unit.categories.audios) || unit.categories.audios.length > ULTIMATE_B2_UNIT_EXTRA_LIMITS.audiosPerUnit)) throw new Error(`${label} audios are invalid.`);
     const audios = (unit.categories.audios || []).map((entry, audioIndex) => {
-      const audioLabel = `${label} audios[${audioIndex}]`; exact(entry, ["id", "title", "audio"], audioLabel);
+      const audioLabel = `${label} audios[${audioIndex}]`;
+      if (draft && Object.hasOwn(entry, "readiness")) return normalizeMissingDraftMedia(entry, "audio", audioLabel);
+      exact(entry, ["id", "title", "audio"], audioLabel);
       if (!isNativeChildId(entry.id, "audio")) throw new Error(`${audioLabel} identity is invalid.`);
       exact(entry.audio, ["assetSlot", "asset"], `${audioLabel} media`);
       if (entry.audio.assetSlot !== entry.id) throw new Error(`${audioLabel} media identity is invalid.`);
       return { id: entry.id, title: title(entry.title, `${audioLabel} title`), audio: { assetSlot: entry.audio.assetSlot, asset: normalizeAssetReference(entry.audio.asset, entry.audio.assetSlot, "unit_extra_audio", `${audioLabel} asset`) } };
     });
-    if (new Set(videos.map((video) => video.id)).size !== videos.length || videos.some((video) => !video.video.asset)) throw new Error(`${label} videos are invalid.`);
-    if (new Set(audios.map((audio) => audio.id)).size !== audios.length || audios.some((audio) => !audio.audio.asset)) throw new Error(`${label} audios are invalid.`);
+    if (new Set(videos.map((video) => video.id)).size !== videos.length || videos.some((video) => !(draft && video.readiness === "missing-media") && !video.video.asset)) throw new Error(`${label} videos are invalid.`);
+    if (new Set(audios.map((audio) => audio.id)).size !== audios.length || audios.some((audio) => !(draft && audio.readiness === "missing-media") && !audio.audio.asset)) throw new Error(`${label} audios are invalid.`);
     // Absence is part of historical immutable identity; explicit audio fields
     // still undergo the same validation and must never be stripped.
     return { ...identity, categories: { videos, ...(hasAudios ? { audios } : {}) } };

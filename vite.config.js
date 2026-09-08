@@ -79,6 +79,9 @@ export default defineConfig(({ mode }) => {
     : isHostedInteractiveReview
       ? "src/apps/android-teacher-offline/hostedComponentReleaseProvider.js"
       : "src/apps/android-offline/noPublishedComponentReleaseProvider.js");
+  const unitExtrasDraftStatus = path.resolve(process.cwd(), isHostedInteractiveReview && buildProfile.authorizedTeacherPreview
+    ? "src/apps/android-teacher-offline/HostedUnitExtrasDraftStatus.jsx"
+    : "src/apps/android-offline/NoUnitExtrasDraftStatus.js");
   const publishedNativeActivityRunner = path.resolve(process.cwd(),
     appMode === "android-offline"
       ? "src/components/lms/activities/ultimate-b2/PublishedNativeStudentActivityRunner.jsx"
@@ -257,6 +260,10 @@ export default defineConfig(({ mode }) => {
         {
           find: "virtual:component-publication",
           replacement: publishedComponentReleaseProvider,
+        },
+        {
+          find: "virtual:unit-extras-draft-status",
+          replacement: unitExtrasDraftStatus,
         },
         {
           find: "virtual:published-native-activity-runner",

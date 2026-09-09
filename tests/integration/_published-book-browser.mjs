@@ -8,9 +8,10 @@ import { chromium, expect } from "@playwright/test";
 import { lmsCanonicalPageAssetPath } from "../../shared/lmsCanonicalPages.js";
 import { verifyPickerGeometry } from "./_published-picker-geometry.mjs";
 import { verifyStudentsBookWorkflow } from "./_published-students-workflow.mjs";
+import { verifyWorkbookRouteBrowser } from "./_published-workbook-route-browser.mjs";
 import worker from "../../cloudflare/lms/worker.js";
 import { hashToken, sessionCookieName, setSqlForTests } from "../../netlify/functions/_auth-utils.js";
-import { publishedManagedPageBytes, publishedManagedPageSha256 } from "../fixtures/published-managed-book.js";
+import { managedPageRouteIds, publishedManagedPageBytes, publishedManagedPageSha256 } from "../fixtures/published-managed-book.js";
 import pageAssets from "../../src/data/ultimate-b2/generated/students-book-page-assets.json" with { type: "json" };
 
 // Real application, route handlers, auth cookies, and isolated PostgreSQL.
@@ -73,6 +74,12 @@ export async function verifyPublishedBookBrowser({ pool, sql, teacher, student, 
     const catalogResponse = await teacherContext.request.get(`${origin}/.netlify/functions/book-content?action=published-books`);
     assert.equal(catalogResponse.status(), 200, await catalogResponse.text());
     assert.equal((await catalogResponse.json()).books.length, 2, await catalogResponse.text());
+    const routeWorkbook = (await catalogResponse.json()).books.find((book) => book.componentSlug === "ultimate-b2-workbook");
+    const workbookPageIds = await managedPageRouteIds("ultimate-b2-workbook");
+    assert.deepEqual(routeWorkbook.pages.map((page) => page.id), workbookPageIds);
+    assert.equal(workbookPageIds.length, 2);
+    assert.ok(workbookPageIds.every((id) => /^wb-page-[a-f0-9]{32}$/.test(id)));
+    await verifyWorkbookRouteBrowser({ pool, login, teacherContext, student, origin, book: routeWorkbook });
     const page = await teacherContext.newPage();
     page.on("pageerror", (error) => failures.push(error.message));
     await page.goto(`${origin}/#/teacher/assignments`);
@@ -127,7 +134,7 @@ export async function verifyPublishedBookBrowser({ pool, sql, teacher, student, 
     const update = await updateResponse; assert.equal(update.status(), 200, await update.text());
     await expect(editor).toHaveCount(0);
     const itemPages = async () => (await pool.query("select native_book_locator from homework_items where homework_id=$1 order by position", [stored[0].id])).rows.map((row) => row.native_book_locator.pageId);
-    assert.deepEqual(await itemPages(), ["wb-page-2", "wb-page-1"]);
+    assert.deepEqual(await itemPages(), [workbookPageIds[1], workbookPageIds[0]]);
     await page.reload();
     const reopenResponse = page.waitForResponse((response) => new URL(response.url()).searchParams.get("action") === "homework");
     await card.getByRole("button", { name: "Edit", exact: true }).click();
@@ -144,10 +151,10 @@ export async function verifyPublishedBookBrowser({ pool, sql, teacher, student, 
     await editor.locator('.homework-selected-activities li').last().getByRole("button", { name: "Up", exact: true }).click();
     await editor.getByRole("button", { name: "Save changes", exact: true }).click();
     await expect(editor).toHaveCount(0);
-    assert.deepEqual(await itemPages(), ["wb-page-1", "wb-page-2"]);
+    assert.deepEqual(await itemPages(), workbookPageIds);
     const assignments = (await pool.query("select assignment.id,assignment.native_book_locator from activity_assignments assignment join homework_items item on item.id=assignment.homework_item_id where assignment.homework_id=$1 order by item.position", [stored[0].id])).rows;
     assert.equal(assignments.length, 2);
-    assert.deepEqual(assignments.map((row) => row.native_book_locator.pageId), ["wb-page-1", "wb-page-2"]);
+    assert.deepEqual(assignments.map((row) => row.native_book_locator.pageId), workbookPageIds);
     const studentContext = await login(student);
     const studentPage = await studentContext.newPage();
     studentPage.on("pageerror", (error) => failures.push(error.message));
@@ -203,7 +210,7 @@ export async function verifyPublishedBookBrowser({ pool, sql, teacher, student, 
     const single = (await pool.query("select homework_id,native_book_locator from activity_assignments where teacher_id=$1 and title='Browser single assignment'", [teacher.id])).rows;
     assert.equal(single.length, 1);
     assert.equal(single[0].homework_id, null);
-    assert.equal(single[0].native_book_locator.pageId, "wb-page-1");
+    assert.equal(single[0].native_book_locator.pageId, workbookPageIds[0]);
     await studentPage.setViewportSize({ width: 390, height: 844 });
     await studentPage.goto(`${origin}/#/student/assignments/${assignments[0].id}`);
     await expect(studentPage.locator('[data-book-mode="assigned"]')).toBeVisible();

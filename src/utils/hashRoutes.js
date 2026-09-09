@@ -347,11 +347,18 @@ function baseRoute(hashView, route) {
   };
 }
 
-function publishedStudentsBookPageId(packageSlug, component, pageToken = "") {
+function publishedManagedPageId(packageSlug, component, pageToken = "") {
   // Managed page IDs are URL state, not proof of publication or access. The
   // published Interactive validates them against the selected immutable release.
-  return packageSlug === "ultimate-b2" && ["students-book", "ultimate-b2-students-book"].includes(getComponentRouteSlug(component || {}))
-    && /^sb-page-[a-f0-9]{32}$/.test(pageToken) ? pageToken : null;
+  if (packageSlug !== "ultimate-b2") return null;
+  const componentSlug = getComponentRouteSlug(component || {});
+  if (["students-book", "ultimate-b2-students-book"].includes(componentSlug)) {
+    return /^sb-page-[a-f0-9]{32}$/.test(pageToken) ? pageToken : null;
+  }
+  if (["workbook", "ultimate-b2-workbook"].includes(componentSlug)) {
+    return /^wb-page-[a-f0-9]{32}$/.test(pageToken) ? pageToken : null;
+  }
+  return null;
 }
 
 function parseCourseRoute(hashView) {
@@ -411,7 +418,7 @@ function parseCourseRoute(hashView) {
 
   if ((subview === "pages" || subview === "flipbook") && parts[5]) {
     const pageMatch = findPageByRouteToken(component, parts[5]);
-    const publishedPageId = publishedStudentsBookPageId(packageSlug, component, parts[5]);
+    const publishedPageId = parts.length === 6 ? publishedManagedPageId(packageSlug, component, parts[5]) : null;
     if (component.pageUnits?.length && !pageMatch && !publishedPageId) return null;
     return baseRoute(hashView, {
       view: "courses",
@@ -509,7 +516,7 @@ function parseTeacherRoute(hashView) {
     const subview = parts[5] || (component ? "exercises" : null);
     if (subview && !["exercises", "pages", "flipbook"].includes(subview)) return null;
     const pageMatch = component && parts[6] ? findPageByRouteToken(component, parts[6]) : null;
-    const publishedPageId = subview === "pages" || subview === "flipbook" ? publishedStudentsBookPageId(packageSlug, component, parts[6]) : null;
+    const publishedPageId = parts.length === 7 && (subview === "pages" || subview === "flipbook") ? publishedManagedPageId(packageSlug, component, parts[6]) : null;
     if (component?.pageUnits?.length && parts[6] && !pageMatch && !publishedPageId) return null;
     return baseRoute(hashView, {
       view: "teacher-books",

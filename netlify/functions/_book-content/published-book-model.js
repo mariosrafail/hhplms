@@ -23,6 +23,17 @@ export function normalizePublishedBookLocator(value) {
   return { pageId: value.pageId, hotspotId: value.hotspotId, ...(value.productReleaseId ? { productReleaseId: value.productReleaseId.toLowerCase() } : {}) };
 }
 
+function orderWorkbookPages(pages, units) {
+  if (!Array.isArray(units)) throw new Error("publication_page_unit_mismatch");
+  // Match the canonical Builder Unit order; page positions are local to a Unit.
+  const unitOrder = new Map([...units].sort((left, right) => left.sortOrder - right.sortOrder
+    || left.unitNumber - right.unitNumber || left.slug.localeCompare(right.slug))
+    .map((unit, index) => [unit.id, index]));
+  if (pages.some((page) => !unitOrder.has(page.unitId))) throw new Error("publication_page_unit_mismatch");
+  return pages.sort((left, right) => unitOrder.get(left.unitId) - unitOrder.get(right.unitId)
+    || left.sortOrder - right.sortOrder || left.stableKey.localeCompare(right.stableKey));
+}
+
 // Only verified public projections enter this adapter. Drafts and Teacher
 // documents are deliberately absent from its input and output contracts.
 export function publishedBookReadModel(row, projection, capabilities = {}, productReleaseId = null) {
@@ -39,7 +50,11 @@ export function publishedBookReadModel(row, projection, capabilities = {}, produ
   if (!Array.isArray(sourcePages)) throw new Error("publication_pages_unavailable");
   const sourceIds = new Set(sourcePages.map((page) => page.id));
   if (activePageIds && [...activePageIds].some((id) => !sourceIds.has(id))) throw new Error("publication_page_identity_mismatch");
-  const pages = sourcePages.filter((page) => !activePageIds || activePageIds.has(page.id)).map((page) => ({
+  const selectedPages = sourcePages.filter((page) => !activePageIds || activePageIds.has(page.id));
+  const orderedPages = componentSlug === "ultimate-b2-workbook"
+    ? orderWorkbookPages(selectedPages, projection.units)
+    : selectedPages.sort((left, right) => left.sortOrder - right.sortOrder);
+  const pages = orderedPages.map((page) => ({
     id: page.id,
     unitId: page.unitSlug || `unit-${page.unitNumber}`,
     unitTitle: page.unitTitle,
@@ -51,7 +66,7 @@ export function publishedBookReadModel(row, projection, capabilities = {}, produ
       ? { source: "canonical-published-page", logicalKey: canonicalPageImages.get(page.id), checksumSha256: page.image.checksumSha256, width: page.image.width, height: page.image.height }
       : { ...page.image },
     hotspots: [],
-  })).sort((left, right) => left.sortOrder - right.sortOrder);
+  }));
   const pagesById = new Map(pages.map((page) => [page.id, page]));
   for (const page of pages) {
     const extrasPage = projection.unitExtras?.pages.find((entry) => entry.pageId === page.id && entry.unitId === page.unitId);

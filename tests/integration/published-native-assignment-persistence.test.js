@@ -11,7 +11,7 @@ import { getAssignmentResults, submitActivity } from "../../netlify/functions/_b
 import { compilePublicationV2Fixture, publicationV2Fixture } from "../fixtures/publication-v2.js";
 import { applyCanonicalProductionMigrations } from "./_migration-test-helpers.mjs";
 import { listPublishedBooks, getStudentAssignmentDetail, getPublishedBookActivity } from "../../netlify/functions/_book-content/published-book-actions.js";
-import { managedPageRouteIds, publishedManagedBookFixture } from "../fixtures/published-managed-book.js";
+import { managedPageRouteIds, publishedManagedBookFixture, workbookOrderingLayout } from "../fixtures/published-managed-book.js";
 
 const { Pool } = pg;
 const databaseUrl = process.env.TEST_DATABASE_URL || "";
@@ -172,8 +172,9 @@ test("published native assignment remains release-pinned through submit, review,
 
   for (const componentSlug of ["ultimate-b2-workbook", "ultimate-b2-grammar-book"]) {
     const componentId = (await pool.query("select id from book_components where book_package_id=$1 and slug=$2", [scope.package_id, componentSlug])).rows[0].id;
-    const pageIds = componentSlug === "ultimate-b2-workbook" ? await managedPageRouteIds(componentSlug) : null;
-    const release = await insertRelease(pool, { packageId: scope.package_id, componentId, builderId, releaseNumber: 99, fixture: { compiled: publishedManagedBookFixture(componentSlug, { pageIds }) } });
+    const pageLayout = componentSlug === "ultimate-b2-workbook" ? workbookOrderingLayout : null;
+    const pageIds = pageLayout ? await managedPageRouteIds(componentSlug, pageLayout.length) : null;
+    const release = await insertRelease(pool, { packageId: scope.package_id, componentId, builderId, releaseNumber: 99, fixture: { compiled: publishedManagedBookFixture(componentSlug, { pageIds, pageLayout }) } });
     await publishRelease(pool, { packageId: scope.package_id, componentId, releaseId: release.releaseId, revision: 1, builderId });
     if (componentSlug.endsWith("grammar-book")) {
       assert.equal((await getPublishedBookActivity(sql, studentUser, { bookSlug: "ultimate-b2", componentSlug, releaseId: release.releaseId, activityId: "ultimate-b2-gb-unit-1-page-1-o1" })).statusCode, 404);

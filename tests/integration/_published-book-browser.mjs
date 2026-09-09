@@ -11,7 +11,7 @@ import { verifyStudentsBookWorkflow } from "./_published-students-workflow.mjs";
 import { verifyWorkbookRouteBrowser } from "./_published-workbook-route-browser.mjs";
 import worker from "../../cloudflare/lms/worker.js";
 import { hashToken, sessionCookieName, setSqlForTests } from "../../netlify/functions/_auth-utils.js";
-import { managedPageRouteIds, publishedManagedPageBytes, publishedManagedPageSha256 } from "../fixtures/published-managed-book.js";
+import { managedPageRouteIds, publishedManagedPageBytes, publishedManagedPageSha256, workbookOrderingLayout } from "../fixtures/published-managed-book.js";
 import pageAssets from "../../src/data/ultimate-b2/generated/students-book-page-assets.json" with { type: "json" };
 
 // Real application, route handlers, auth cookies, and isolated PostgreSQL.
@@ -75,9 +75,10 @@ export async function verifyPublishedBookBrowser({ pool, sql, teacher, student, 
     assert.equal(catalogResponse.status(), 200, await catalogResponse.text());
     assert.equal((await catalogResponse.json()).books.length, 2, await catalogResponse.text());
     const routeWorkbook = (await catalogResponse.json()).books.find((book) => book.componentSlug === "ultimate-b2-workbook");
-    const workbookPageIds = await managedPageRouteIds("ultimate-b2-workbook");
+    const workbookPageIds = await managedPageRouteIds("ultimate-b2-workbook", workbookOrderingLayout.length);
     assert.deepEqual(routeWorkbook.pages.map((page) => page.id), workbookPageIds);
-    assert.equal(workbookPageIds.length, 2);
+    assert.equal(workbookPageIds.length, 6);
+    assert.deepEqual(routeWorkbook.pages.map((page) => page.unitId), ["unit-1", "unit-1", "unit-2", "unit-2", "unit-3", "unit-3"]);
     assert.ok(workbookPageIds.every((id) => /^wb-page-[a-f0-9]{32}$/.test(id)));
     await verifyWorkbookRouteBrowser({ pool, login, teacherContext, student, origin, book: routeWorkbook });
     const page = await teacherContext.newPage();
@@ -151,10 +152,10 @@ export async function verifyPublishedBookBrowser({ pool, sql, teacher, student, 
     await editor.locator('.homework-selected-activities li').last().getByRole("button", { name: "Up", exact: true }).click();
     await editor.getByRole("button", { name: "Save changes", exact: true }).click();
     await expect(editor).toHaveCount(0);
-    assert.deepEqual(await itemPages(), workbookPageIds);
+    assert.deepEqual(await itemPages(), [workbookPageIds[0], workbookPageIds[1]]);
     const assignments = (await pool.query("select assignment.id,assignment.native_book_locator from activity_assignments assignment join homework_items item on item.id=assignment.homework_item_id where assignment.homework_id=$1 order by item.position", [stored[0].id])).rows;
     assert.equal(assignments.length, 2);
-    assert.deepEqual(assignments.map((row) => row.native_book_locator.pageId), workbookPageIds);
+    assert.deepEqual(assignments.map((row) => row.native_book_locator.pageId), [workbookPageIds[0], workbookPageIds[1]]);
     const studentContext = await login(student);
     const studentPage = await studentContext.newPage();
     studentPage.on("pageerror", (error) => failures.push(error.message));

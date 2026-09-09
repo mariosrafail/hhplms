@@ -5,7 +5,7 @@ import { expect } from "@playwright/test";
 // The caller supplies the real Worker, auth, compiled immutable release and
 // isolated PostgreSQL. Only the unrelated cover failures are simulated.
 export async function verifyWorkbookRouteBrowser({ pool, login, teacherContext, student, origin, book }) {
-  const before = (await pool.query("select release_sha256,public_projection_sha256 from book_component_releases where id=$1", [book.releaseId])).rows[0];
+  const before = (await pool.query("select release_sha256,public_projection_sha256,public_projection from book_component_releases where id=$1", [book.releaseId])).rows[0];
   const studentContext = await login(student);
   const [first, second] = book.pages;
   try {
@@ -31,20 +31,36 @@ export async function verifyWorkbookRouteBrowser({ pool, login, teacherContext, 
       await cards.filter({ hasText: book.componentTitle }).getByRole("button").first().click();
       const surface = page.locator('[data-book-mode="practice"]');
       const selector = surface.locator(".published-book-controls select").nth(1);
+      const unitSelector = surface.locator(".published-book-controls select").first();
       const retained = async (selected, { routed = true } = {}) => {
         if (routed) await expect.poll(() => new URL(page.url()).hash).toBe(`#${pageRoute(selected.id)}`);
         await expect(surface).toHaveAttribute("data-release-id", book.releaseId);
         await expect(page.getByRole("heading", { name: book.componentTitle, exact: true })).toBeVisible();
         await expect(selector).toHaveValue(selected.id);
+        await expect(unitSelector).toHaveValue(selected.unitId);
         await expect.poll(() => surface.locator(".published-page > img").evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
         await expect(page.locator(".book-component-card")).toHaveCount(0);
       };
       await retained(first, { routed: false });
+      assert.deepEqual(await selector.locator("option").evaluateAll((options) => options.map((option) => option.value)), book.pages.map((entry) => entry.id));
+      assert.deepEqual(await unitSelector.locator("option").evaluateAll((options) => options.map((option) => ({ value: option.value, title: option.textContent }))), [
+        { value: "unit-1", title: "Unit 1" }, { value: "unit-2", title: "Unit 2" }, { value: "unit-3", title: "Unit 3" },
+      ]);
       await expect.poll(() => [...coverFailures].sort()).toEqual(["ultimate-b2.students-book.cover", "ultimate-b2.workbook.cover"]);
-      await surface.getByRole("button", { name: "Next page", exact: true }).click();
-      await retained(second);
-      await surface.getByRole("button", { name: "Previous page", exact: true }).click();
-      await retained(first);
+      await expect(surface.getByRole("button", { name: "Previous page", exact: true })).toBeDisabled();
+      for (const next of book.pages.slice(1)) {
+        await surface.getByRole("button", { name: "Next page", exact: true }).click();
+        await retained(next);
+      }
+      await expect(surface.getByRole("button", { name: "Next page", exact: true })).toBeDisabled();
+      for (const previous of book.pages.slice(0, -1).reverse()) {
+        await surface.getByRole("button", { name: "Previous page", exact: true }).click();
+        await retained(previous);
+      }
+      for (const unitId of ["unit-3", "unit-2", "unit-1"]) {
+        await unitSelector.selectOption(unitId);
+        await retained(book.pages.find((entry) => entry.unitId === unitId));
+      }
       await selector.selectOption(second.id);
       await retained(second);
       await page.goBack();
@@ -90,7 +106,7 @@ export async function verifyWorkbookRouteBrowser({ pool, login, teacherContext, 
       await page.close();
     }
   } finally { await studentContext.close(); }
-  const after = (await pool.query("select release_sha256,public_projection_sha256 from book_component_releases where id=$1", [book.releaseId])).rows[0];
+  const after = (await pool.query("select release_sha256,public_projection_sha256,public_projection from book_component_releases where id=$1", [book.releaseId])).rows[0];
   assert.deepEqual(after, before, "Navigation must not alter the immutable release");
-  console.log("WORKBOOK_ROUTE_BROWSER Student/Teacher Next, Previous, selector, history, reload, native activity, missing-page boundary, no legacy fallback, Grammar hidden and independent cover 404 checks passed.");
+  console.log("WORKBOOK_ROUTE_BROWSER Student/Teacher canonical Unit/Page selectors, full cross-Unit Next/Previous, first-page Unit selection, history, reload, native activity, missing-page boundary, immutable projection, no legacy fallback, Grammar hidden and independent cover 404 checks passed.");
 }

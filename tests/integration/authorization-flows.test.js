@@ -14,7 +14,7 @@ import { handler as courseHandler } from "../../netlify/functions/course.js";
 import { handler as lessonHandler } from "../../netlify/functions/lesson.js";
 import { handler as activityHandler } from "../../netlify/functions/activity.js";
 import { handler as operationalHealthHandler } from "../../netlify/functions/operational-health.js";
-import { relationshipChecks } from "../../scripts/_tenant-integrity-checks.mjs";
+import { countRelationshipIssues, relationshipChecks } from "../../scripts/_tenant-integrity-checks.mjs";
 import { applyCanonicalProductionMigrations } from "./_migration-test-helpers.mjs";
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL || "";
@@ -848,7 +848,7 @@ test("handler-level authorization flows preserve tenant and resource state", { s
     );
     const checks = new Map(relationshipChecks);
     for (const name of ["hotspots_missing_content_context", "media_missing_content_context", "book_activities_missing_relationship"]) {
-      assert.equal(Number((await pool.query(checks.get(name))).rows[0].count), 0, name);
+      assert.equal(await countRelationshipIssues(pool, checks.get(name)), 0, name);
     }
 
     const customId = (await pool.query(
@@ -856,7 +856,7 @@ test("handler-level authorization flows preserve tenant and resource state", { s
        values ($1, null, 'custom', $2, 'Missing creator', 'multiple_choice', $3, 'multiple_choice', '{}', '{}') returning id`,
       [schoolA, bookLesson.id, `missing-creator-${schema}`],
     )).rows[0].id;
-    assert.equal(Number((await pool.query(checks.get("custom_activities_without_creator"))).rows[0].count), 1);
+    assert.equal(await countRelationshipIssues(pool, checks.get("custom_activities_without_creator")), 1);
     await pool.query("delete from activities where id = $1", [customId]);
   });
 });

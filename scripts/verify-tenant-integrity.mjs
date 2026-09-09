@@ -1,5 +1,5 @@
 import { createSafePool, loadProductionMigrationManifest, migrationChecksumMatches } from "./_staging-db.mjs";
-import { relationshipChecks } from "./_tenant-integrity-checks.mjs";
+import { countRelationshipIssues, relationshipChecks } from "./_tenant-integrity-checks.mjs";
 
 const { pool, safeLabel } = createSafePool("staging");
 let failures = 0;
@@ -61,8 +61,8 @@ try {
     for (const row of unresolved) fail(`${row.table_name} has ${row.null_school_rows} unresolved tenant row(s)`);
   } else pass("tenant_integrity_issues contains no unresolved rows");
 
-  for (const [name, sql] of relationshipChecks) {
-    const count = Number((await pool.query(sql)).rows[0].count);
+  for (const [name, check] of relationshipChecks) {
+    const count = await countRelationshipIssues(pool, check);
     if (count) fail(`${name}: ${count} inconsistent row(s)`);
     else pass(name);
   }

@@ -1,3 +1,51 @@
+import { loadPinnedNativeAssignmentTarget } from "../netlify/functions/_book-content/native-assignment-runtime.js";
+import { postgresTemplate } from "./_staging-db.mjs";
+
+async function activityAssignmentRelationshipIssues(queryable) {
+  const { rows } = await queryable.query(`
+    with relationships as (
+      select a.target_kind, a.native_release_id, a.native_activity_id,
+             (s.id is null
+              or (a.teacher_id is not null and t.id is null)
+              or (a.class_id is not null and c.id is null)
+              or (a.student_id is not null and student.id is null)
+              or case a.target_kind
+                when 'legacy_activity' then
+                  act.id is null or a.native_release_id is not null or a.native_activity_id is not null
+                when 'published_native' then
+                  a.activity_id is not null or a.native_release_id is null or a.native_activity_id is null
+                  or a.native_activity_id !~ '^[a-z0-9][a-z0-9-]{0,127}$'
+                else true
+              end) as missing_relationship
+      from activity_assignments a
+      left join schools s on s.id = a.school_id
+      left join activities act on act.id = a.activity_id
+      left join app_users t on t.id = a.teacher_id
+      left join classes c on c.id = a.class_id
+      left join app_users student on student.id = a.student_id
+    )
+    select * from relationships where missing_relationship or target_kind = 'published_native'
+  `);
+  const sql = postgresTemplate(queryable);
+  const targets = new Map();
+  let count = 0;
+  for (const row of rows) {
+    if (row.missing_relationship) { count += 1; continue; }
+    const key = JSON.stringify([row.native_release_id, row.native_activity_id]);
+    // Historical assignments resolve their immutable published release, not the
+    // current publication head or mutable authoring index. Integrity errors fail closed.
+    if (!targets.has(key)) targets.set(key, Boolean(await loadPinnedNativeAssignmentTarget(sql, row)));
+    if (!targets.get(key)) count += 1;
+  }
+  return count;
+}
+
+export async function countRelationshipIssues(queryable, check) {
+  return typeof check === "function"
+    ? check(queryable)
+    : Number((await queryable.query(check)).rows[0].count);
+}
+
 export const relationshipChecks = [
   ["users_without_school", "select count(*)::int as count from app_users where school_id is null"],
   ["classes_missing_school", `select count(*)::int as count from classes c left join schools s on s.id = c.school_id where s.id is null`],
@@ -28,7 +76,7 @@ export const relationshipChecks = [
   ["legacy_assignments_cross_school_owner", `select count(*)::int as count from assignments a join app_users u on u.id = a.assigned_by where a.school_id is distinct from u.school_id`],
   ["legacy_assignments_cross_school_class", `select count(*)::int as count from assignments a join classes c on a.target_type = 'class' and c.id = a.target_id where a.school_id is distinct from c.school_id`],
   ["legacy_assignments_cross_school_student", `select count(*)::int as count from assignments a join app_users s on a.target_type = 'student' and s.id = a.target_id where a.school_id is distinct from s.school_id`],
-  ["activity_assignments_missing_relationship", `select count(*)::int as count from activity_assignments a left join schools s on s.id = a.school_id left join activities act on act.id = a.activity_id left join app_users t on t.id = a.teacher_id left join classes c on c.id = a.class_id left join app_users student on student.id = a.student_id where s.id is null or act.id is null or (a.teacher_id is not null and t.id is null) or (a.class_id is not null and c.id is null) or (a.student_id is not null and student.id is null)`],
+  ["activity_assignments_missing_relationship", activityAssignmentRelationshipIssues],
   ["activity_assignments_invalid_target", `select count(*)::int as count from activity_assignments where (class_id is null and student_id is null) or (class_id is not null and student_id is not null)`],
   ["activity_assignments_cross_school_activity", `select count(*)::int as count from activity_assignments a join activities act on act.id = a.activity_id where act.school_id is not null and a.school_id is distinct from act.school_id`],
   ["activity_assignments_cross_school_class", `select count(*)::int as count from activity_assignments a join classes c on c.id = a.class_id where a.school_id is distinct from c.school_id`],

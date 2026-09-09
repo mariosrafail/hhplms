@@ -164,8 +164,9 @@ export async function fetchPackageTree(sql, query = {}) {
     where book_package_id = ${pkg.id}
     order by sort_order asc, title asc
   `;
-  const components = componentRows.filter((component) => isPhaseOneComponentVisible(pkg.slug, component.slug) && component.legacy_discovery_allowed !== false);
-  const componentIds = components.map((item) => item.id);
+  const components = componentRows.filter((component) => isPhaseOneComponentVisible(pkg.slug, component.slug));
+  // Publication can retire current legacy activities without retiring the book card.
+  const componentIds = components.filter((component) => component.legacy_discovery_allowed !== false).map((item) => item.id);
   const units = componentIds.length
     ? await sql`
         select *
@@ -233,6 +234,7 @@ export async function fetchPackageTree(sql, query = {}) {
       component_type: component.component_type,
       coverAssetPath: component.cover_asset_path,
       sortOrder: component.sort_order,
+      legacyDiscoveryAllowed: component.legacy_discovery_allowed !== false,
       units: units
         .filter((unit) => unit.book_component_id === component.id)
         .map((unit) => ({

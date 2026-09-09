@@ -32,7 +32,9 @@ export function BookPackageComponentGrid({ bookPackage, mode, onSelectBook }) {
                   <strong>{component.title}</strong>
                   <small>{component.subtitle}</small>
                   <em>
-                    {!unitCount
+                    {component.legacyDiscoveryAllowed === false
+                      ? "Open published Interactive"
+                      : !unitCount
                       ? "Content will be added when the publisher files are available."
                       : component.catalogKind === "recovered-students-book"
                       ? `${unitCount} implemented units / ${activeCount} activities available`

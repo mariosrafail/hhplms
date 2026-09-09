@@ -71,7 +71,7 @@ export function BookPackageBrowser({
     <section className={`book-package-browser ${mode === "teacher" ? "teacher-mode" : "student-mode"}`}>
       {selectedComponent && publishedInteractive ? (
         <PublishedBookInteractive bookSlug={getPackageRouteSlug(activePackage)} componentSlug={publishedComponentSlug} currentUser={currentUser} mode={mode}
-          onLegacyActivity={(activityId) => {
+          onLegacyActivity={selectedComponent.legacyDiscoveryAllowed === false ? undefined : (activityId) => {
             const exercise = selectedComponent.units.flatMap((unit) => unit.lessons.flatMap((lesson) => lesson.exercises)).find((item) => getExerciseActivityKey(item) === activityId);
             const launch = mode === "teacher" ? onPreviewExercise : onStartExercise;
             if (!exercise || exercise.locked || (mode !== "teacher" && !exercise.availableToStudent) || !launch) return false;

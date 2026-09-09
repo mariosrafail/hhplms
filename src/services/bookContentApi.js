@@ -121,13 +121,14 @@ export function normalizeBookPackageTree(bookPackage) {
         id: component.id,
         slug: component.slug,
         title: component.title,
-        subtitle: `${componentTypeLabels[component.componentType || component.component_type] || "Book component"} / structured activities`,
+        subtitle: `${componentTypeLabels[component.componentType || component.component_type] || "Book component"} / ${component.legacyDiscoveryAllowed === false ? "Published Interactive" : "structured activities"}`,
         type: componentTypeLabels[component.componentType || component.component_type] || component.componentType || component.component_type,
         componentType: component.componentType || component.component_type,
         sortOrder: component.sortOrder ?? component.sort_order,
         coverTone: coverTones[component.componentType || component.component_type] || "orange",
         coverAssetPath: component.coverAssetPath || component.cover_asset_path,
-        units: (component.units || []).map((unit) => ({
+        legacyDiscoveryAllowed: component.legacyDiscoveryAllowed !== false,
+        units: (component.legacyDiscoveryAllowed === false ? [] : component.units || []).map((unit) => ({
           id: unit.id,
           slug: unit.slug,
           title: unit.title === "Unit 2" && component.componentType === "students_book" ? "Unit 2 Reading" : unit.title,

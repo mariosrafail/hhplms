@@ -51,6 +51,54 @@ export async function verifyUnifiedStudentsBookBrowser({ pool, sql, actors, book
     const teacher = await login(actors.teacher); const student = await login(actors.student);
     const managed = book.pages.find((page) => page.id.startsWith("sb-page-"));
     const target = managed.hotspots[0].target;
+    const treeResponse = await student.request.get(api("tree", { packageId: book.packageId }));
+    assert.equal(treeResponse.status(), 200);
+    const tree = (await treeResponse.json()).bookPackage;
+    assert.deepEqual(tree.components.map((component) => component.slug), [book.componentSlug, "ultimate-b2-workbook"]);
+    assert.equal(tree.components[0].legacyDiscoveryAllowed, false);
+    assert.deepEqual(tree.components[0].units, []);
+    const catalogPage = await student.newPage();
+    catalogPage.on("pageerror", (error) => failures.push(error.message));
+    await catalogPage.goto(`${origin}/#/courses/ultimate-b2/components`);
+    const cards = catalogPage.locator(".book-component-card");
+    await expect(cards).toHaveCount(2);
+    const studentsCard = cards.filter({ hasText: tree.components[0].title });
+    await expect(studentsCard).toContainText("Open published Interactive");
+    await studentsCard.getByRole("button").first().click();
+    const interactive = catalogPage.locator('[data-book-mode="practice"]');
+    await expect(interactive).toHaveAttribute("data-release-id", book.releaseId);
+    await interactive.locator(".published-book-controls select").nth(1).selectOption(managed.id);
+    await expect(interactive.locator(".published-book-controls select").nth(1)).toHaveValue(managed.id);
+    const [activityResponse] = await Promise.all([
+      catalogPage.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return url.searchParams.get("action") === "published-book-activity" && url.searchParams.get("releaseId") === book.releaseId && url.searchParams.get("activityId") === target.nativeActivityId;
+      }),
+      interactive.locator(".published-page-hotspots").getByRole("button", { name: managed.hotspots[0].title, exact: true }).click(),
+    ]);
+    assert.equal(activityResponse.status(), 200);
+    await expect(interactive.getByRole("textbox").first()).toBeEditable();
+    await expect(interactive).not.toContainText("R2 Unit 10 protected model");
+    // A malformed/missing published target must never revive a recovered exercise.
+    // Change only this browser response; the immutable release stays untouched.
+    await catalogPage.route("**/.netlify/functions/book-content?action=published-books", async (route) => {
+      const response = await route.fetch();
+      const payload = await response.json();
+      const published = payload.books.find((entry) => entry.componentSlug === book.componentSlug);
+      const hotspot = published.pages.find((entry) => entry.id === managed.id).hotspots[0];
+      hotspot.target = null;
+      hotspot.activityId = "ultimate-b2-sb-u1-p1-o1";
+      await route.fulfill({ response, json: payload });
+    });
+    await catalogPage.reload();
+    await expect(interactive).toHaveAttribute("data-release-id", book.releaseId);
+    await interactive.locator(".published-book-controls select").nth(1).selectOption(managed.id);
+    await interactive.locator(".published-page-hotspots").getByRole("button", { name: managed.hotspots[0].title, exact: true }).click();
+    await expect(interactive.getByRole("alert")).toHaveText("This activity is unavailable in this view.");
+    await expect(interactive.getByRole("textbox")).toHaveCount(0);
+    await catalogPage.goto(`${origin}/#/courses/ultimate-b2/components/${book.componentSlug}/pages/sb-page-${"0".repeat(32)}`);
+    await expect(catalogPage.getByRole("alert")).toHaveText("This page is not available in the published book.");
+    await catalogPage.close();
     const imageUrl = api("published-release-asset", { bookSlug: book.bookSlug, componentSlug: book.componentSlug, releaseId: book.releaseId, sha256: managed.image.sha256, extension: managed.image.extension });
     assert.equal((await fetch(imageUrl)).status, 401);
     const imageResponse = await student.request.get(imageUrl); assert.equal(imageResponse.status(), 200, await imageResponse.text());

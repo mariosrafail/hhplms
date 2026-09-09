@@ -284,6 +284,7 @@ export function buildStudentsBookCatalog({ includeDisabled = false, databaseUnit
 }
 
 export function applyStudentsBookCatalog(component, databaseUnits = component?.units || []) {
+  if (component?.legacyDiscoveryAllowed === false) return component;
   const studentCatalog = buildStudentsBookCatalog({ databaseUnits });
   const teacherCatalog = buildStudentsBookCatalog({ includeDisabled: true, databaseUnits });
   return {

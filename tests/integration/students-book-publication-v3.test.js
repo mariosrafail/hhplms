@@ -11,6 +11,7 @@ import { captureStudentsBookPreservation, assertStudentsBookDatabasePreserved } 
 import { createAssignment, listAssignmentsForStudent } from "../../netlify/functions/_book-content/assignment-actions.js";
 import { createHomework, getTeacherHomework, updateHomework } from "../../netlify/functions/_book-content/homework-actions.js";
 import { fetchActivity, fetchPackageTree } from "../../netlify/functions/_book-content-utils.js";
+import { studentSafePackageTree } from "../../netlify/functions/_book-content/shared.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL || "";
 const enabled = Boolean(databaseUrl) && process.env.TEST_DATABASE_CONFIRMATION === "isolated-test-database";
@@ -80,14 +81,21 @@ async function seedLegacyTransition(pool, sql, component) {
   const beforeItems = (await pool.query("select * from homework_items where homework_id=$1 order by id", [homework.id])).rows;
   const beforeAssignments = (await pool.query("select * from activity_assignments where homework_id=$1 order by id", [homework.id])).rows;
   const beforeTree = await fetchPackageTree(sql, { packageId: component.book_package_id });
-  assert(beforeTree.components.some((entry) => entry.slug === component.slug));
+  const beforeComponent = beforeTree.components.find((entry) => entry.slug === component.slug);
+  assert.equal(beforeComponent.legacyDiscoveryAllowed, true);
+  assert(beforeComponent.units.flatMap((unit) => unit.lessons.flatMap((lesson) => lesson.exercises)).some((activity) => activity.id === ids[0]));
+  assert.deepEqual(beforeTree.components.map((entry) => entry.slug), [component.slug, "ultimate-b2-workbook"]);
   assert(await fetchActivity(sql, { activityId: ids[0], currentDiscovery: true }));
   return async () => {
     assert.equal((await pool.query("select builder_current_legacy_activity_allowed($1) allowed", [component.id])).rows[0].allowed, false);
     assert.equal(await fetchActivity(sql, { activityId: ids[0], currentDiscovery: true }), null);
     assert(await fetchActivity(sql, { activityId: ids[0] }), "Historical internal resolution remains available");
     const afterTree = await fetchPackageTree(sql, { packageId: component.book_package_id });
-    assert.deepEqual(afterTree.components, beforeTree.components.filter((entry) => entry.slug !== component.slug), "Other books and Grammar/Test visibility retain their prior policy");
+    assert.deepEqual(afterTree.components, beforeTree.components.map((entry) => entry.slug === component.slug
+      ? { ...entry, legacyDiscoveryAllowed: false, units: [] } : entry), "The published book card survives without its current legacy hierarchy; other component policies are unchanged");
+    const safeComponent = studentSafePackageTree(afterTree).components.find((entry) => entry.slug === component.slug);
+    assert.equal(safeComponent.legacyDiscoveryAllowed, false);
+    assert.deepEqual(safeComponent.units, []);
     const denied = await createAssignment(sql, { activityId: ids[0], classIds: [classId], idempotencyKey: randomUUID() }, teacher);
     assert.equal(denied.statusCode, 409); assert.equal(JSON.parse(denied.body).code, "students_book_native_publication_required");
     assert.equal((await createHomework(sql, { ...homeworkInput, idempotencyKey: randomUUID() }, teacher)).statusCode, 409);

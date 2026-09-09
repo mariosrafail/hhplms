@@ -112,6 +112,13 @@ function findMatchingDemoComponent(demoPackage, replacementComponent) {
 }
 
 function mergeComponentWithDemoFallback(replacementComponent, demoComponent) {
+  // Current publication policy also excludes recovered Teacher/page catalogs.
+  if (replacementComponent.legacyDiscoveryAllowed === false) return {
+    ...replacementComponent,
+    units: [],
+    teacherUnits: [],
+    pageUnits: [],
+  };
   if (!demoComponent) return replacementComponent;
   return {
     ...demoComponent,

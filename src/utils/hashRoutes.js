@@ -347,6 +347,13 @@ function baseRoute(hashView, route) {
   };
 }
 
+function publishedStudentsBookPageId(packageSlug, component, pageToken = "") {
+  // Managed page IDs are URL state, not proof of publication or access. The
+  // published Interactive validates them against the selected immutable release.
+  return packageSlug === "ultimate-b2" && ["students-book", "ultimate-b2-students-book"].includes(getComponentRouteSlug(component || {}))
+    && /^sb-page-[a-f0-9]{32}$/.test(pageToken) ? pageToken : null;
+}
+
 function parseCourseRoute(hashView) {
   const parts = hashView.split("/").filter(Boolean);
   if (parts[0] !== "courses") return null;
@@ -404,7 +411,8 @@ function parseCourseRoute(hashView) {
 
   if ((subview === "pages" || subview === "flipbook") && parts[5]) {
     const pageMatch = findPageByRouteToken(component, parts[5]);
-    if (component.pageUnits?.length && !pageMatch) return null;
+    const publishedPageId = publishedStudentsBookPageId(packageSlug, component, parts[5]);
+    if (component.pageUnits?.length && !pageMatch && !publishedPageId) return null;
     return baseRoute(hashView, {
       view: "courses",
       role: "student",
@@ -413,7 +421,7 @@ function parseCourseRoute(hashView) {
       selectedBookId,
       selectedBookSubview: subview,
       selectedPageUnitId: pageMatch?.unit?.id || null,
-      selectedPageId: pageMatch?.page?.id || null,
+      selectedPageId: publishedPageId || pageMatch?.page?.id || null,
       selectedPageNumber: Number.isInteger(Number(parts[5])) ? Number(parts[5]) : null,
     });
   }
@@ -501,7 +509,8 @@ function parseTeacherRoute(hashView) {
     const subview = parts[5] || (component ? "exercises" : null);
     if (subview && !["exercises", "pages", "flipbook"].includes(subview)) return null;
     const pageMatch = component && parts[6] ? findPageByRouteToken(component, parts[6]) : null;
-    if (component?.pageUnits?.length && parts[6] && !pageMatch) return null;
+    const publishedPageId = subview === "pages" || subview === "flipbook" ? publishedStudentsBookPageId(packageSlug, component, parts[6]) : null;
+    if (component?.pageUnits?.length && parts[6] && !pageMatch && !publishedPageId) return null;
     return baseRoute(hashView, {
       view: "teacher-books",
       role: "teacher",
@@ -510,7 +519,7 @@ function parseTeacherRoute(hashView) {
       selectedBookId: component ? getComponentRouteSlug(component) : null,
       selectedBookSubview: subview,
       selectedPageUnitId: pageMatch?.unit?.id || null,
-      selectedPageId: pageMatch?.page?.id || null,
+      selectedPageId: publishedPageId || pageMatch?.page?.id || null,
     });
   }
 

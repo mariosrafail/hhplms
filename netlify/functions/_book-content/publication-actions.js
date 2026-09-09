@@ -10,11 +10,20 @@ import { supportedPublishedBook } from "./published-book-model.js";
 import { deliverPublishedPinnedAsset } from "./published-pinned-asset-delivery.js";
 import { isPrivatePinnableComponentReleaseAssetRole } from "../../../src/data/ultimate-b2/componentPublicationAssetRoles.js";
 import { deliverCanonicalReleasePageAsset } from "../../../netlify-sites/ultimate-b2-builder/server/_canonical-release-page-delivery.js";
+import { loadVerifiedPublishedBookFamily } from "./published-book-releases.js";
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const privateJson = (statusCode, body) => json(statusCode, body, { "Cache-Control": "private, no-store", Vary: "Cookie" });
 
 async function activeReleaseRow(sql, { bookSlug, componentSlug }) {
+  if (bookSlug !== "ultimate-b2") {
+    const packages = await sql`select id from book_packages where slug=${bookSlug} limit 1`;
+    if (!packages[0]) return null;
+    // The HTTP caller has already proved entitlement. Verify the entire family
+    // before returning its member, including when a head is corrupt/incomplete.
+    const family = await loadVerifiedPublishedBookFamily(sql, null, { allowed: [packages[0].id] });
+    return family.find((member) => member.row.component_slug === componentSlug)?.row || null;
+  }
   const rows = await sql`
     select release.*
     from book_component_publication_heads head

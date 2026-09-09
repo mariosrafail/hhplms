@@ -101,6 +101,7 @@ export function runtimeSchemaContractData(migrations) {
     expectedMigrations: migrations.map(({ filename, compatibleChecksums }) => ({
       filename,
       compatibleChecksums: [...compatibleChecksums].sort(),
+      ...(filename === "062_b1_managed_publication.sql" ? { featureOptional: true } : {}),
     })),
     requiredTables: Object.entries(requiredRuntimeSchema).map(([table, columns]) => ({
       table,

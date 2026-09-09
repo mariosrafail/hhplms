@@ -47,10 +47,10 @@ test("shared product catalog separates registration, install, authoring, LMS vis
     ]);
     for (const component of book.components.slice(0, 3)) {
       assert.deepEqual({ review: component.reviewState, authoring: component.authoringState, adapter: component.authoringAdapterId, publication: component.publication }, {
-        review: "pending",
+        review: component.type === "grammar_book" ? "pending" : "installed",
         authoring: "active",
         adapter: component.slug,
-        publication: { readable: false, writable: false, compilerId: null },
+        publication: { readable: component.type !== "grammar_book", writable: false, compilerId: component.type === "grammar_book" ? null : `${component.slug}-v1` },
       });
     }
     assert.deepEqual({ review: book.components[3].reviewState, authoring: book.components[3].authoringState, adapter: book.components[3].authoringAdapterId, edition: book.components[3].teacherEditionId }, {

@@ -53,12 +53,17 @@ test("runtime readiness requires expected history but allows forward-compatible 
   }));
   assert.equal((await checkRuntimeSchemaReadiness(futureSql)).ready, true);
 
-  for (const missingIndex of [0, 5, runtimeSchemaContract.expectedMigrations.length - 1]) {
+  for (const missingIndex of [0, 5, runtimeSchemaContract.expectedMigrations.findLastIndex((entry) => !entry.featureOptional)]) {
     const history = readyState().history.filter((_row, index) => index !== missingIndex);
     const result = await checkRuntimeSchemaReadiness(fakeSql(readyState({ history })));
     assert.equal(result.ready, false);
     assert.equal(result.reason, "EXPECTED_MIGRATION_MISSING");
   }
+
+  const optional = runtimeSchemaContract.expectedMigrations.filter((entry) => entry.featureOptional).map((entry) => entry.filename);
+  assert.deepEqual(optional, ["062_b1_managed_publication.sql"]);
+  assert.equal((await checkRuntimeSchemaReadiness(fakeSql(readyState({ history: readyState().history.filter((row) => !optional.includes(row.filename)) })))).ready, true);
+  assert.equal((await checkRuntimeSchemaReadiness(fakeSql(readyState({ history: readyState().history.map((row) => optional.includes(row.filename) ? { ...row, checksum_sha256: "0".repeat(64) } : row) })))).ready, false);
 
   const corrupt = readyState().history.map((row, index) =>
     index === 2 ? { ...row, checksum_sha256: "0".repeat(64) } : row);

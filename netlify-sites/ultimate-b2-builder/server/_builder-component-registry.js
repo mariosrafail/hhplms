@@ -1,3 +1,5 @@
+import { newManagedPublicationComponents } from "../../../src/data/publicationRegistry.js";
+
 const component = ({
   bookSlug,
   componentSlug,
@@ -44,7 +46,7 @@ const component = ({
     nativeActivities: `${bookSlug}/${componentSlug}`,
     fonts: `${bookSlug}/${componentSlug}`,
   }),
-  publication: Object.freeze({ enabled: publication }),
+  publication: Object.freeze({ enabled: publication || newManagedPublicationComponents.some((entry) => entry.bookSlug === bookSlug && entry.componentSlug === componentSlug) }),
 });
 
 const registrations = [

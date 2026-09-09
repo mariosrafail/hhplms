@@ -43,7 +43,8 @@ export async function loadBuilderPages(sql, { bookSlug, componentSlug }) {
     left join lateral (
       select candidate.* from book_assets candidate
       where candidate.page_id=page.id and candidate.asset_role='page_image' and candidate.publication_status='draft'
-      order by candidate.updated_at desc limit 1
+        and (package.slug='ultimate-b2' or candidate.book_package_id=package.id and candidate.book_component_id=component.id)
+      order by candidate.updated_at desc,case when package.slug<>'ultimate-b2' then candidate.id end desc limit 1
     ) asset on true
     left join units unit on unit.id=page.unit_id and unit.book_component_id=page.book_component_id
     where package.slug=${bookSlug} and component.slug=${componentSlug}

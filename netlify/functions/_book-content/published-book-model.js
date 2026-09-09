@@ -2,14 +2,13 @@ import { canonicalStudentsBookPages } from "../../../netlify-sites/ultimate-b2-b
 import studentsBookRuntime from "../../../src/data/ultimate-b2/generated/students-book.runtime.json" with { type: "json" };
 import { STUDENTS_BOOK_V3_COMPILER, STUDENTS_BOOK_V3_SCHEMA, STUDENTS_BOOK_V3_COMPATIBILITY_SHA256 } from "../../../src/data/ultimate-b2/componentPublicationV3.js";
 
-export const LMS_PUBLISHED_COMPONENTS = Object.freeze([
-  "ultimate-b2-students-book", "ultimate-b2-workbook", "ultimate-b2-grammar-book",
-]);
+import { publicationComponents, findPublicationComponent } from "../../../src/data/publicationRegistry.js";
+export const LMS_PUBLISHED_COMPONENTS = Object.freeze(publicationComponents.map((entry) => entry.componentSlug));
 
 const canonicalPageImages = new Map(studentsBookRuntime.units.flatMap((unit) => unit.pages.map((page) => [page.id, page.pageImage.identity])));
 
 export function supportedPublishedBook(bookSlug, componentSlug) {
-  return bookSlug === "ultimate-b2" && LMS_PUBLISHED_COMPONENTS.includes(componentSlug);
+  return Boolean(findPublicationComponent(bookSlug, componentSlug));
 }
 
 export function normalizePublishedBookLocator(value) {
@@ -51,7 +50,7 @@ export function publishedBookReadModel(row, projection, capabilities = {}, produ
   const sourceIds = new Set(sourcePages.map((page) => page.id));
   if (activePageIds && [...activePageIds].some((id) => !sourceIds.has(id))) throw new Error("publication_page_identity_mismatch");
   const selectedPages = sourcePages.filter((page) => !activePageIds || activePageIds.has(page.id));
-  const orderedPages = componentSlug === "ultimate-b2-workbook"
+  const orderedPages = componentSlug === "ultimate-b2-workbook" || bookSlug !== "ultimate-b2"
     ? orderWorkbookPages(selectedPages, projection.units)
     : selectedPages.sort((left, right) => left.sortOrder - right.sortOrder);
   const pages = orderedPages.map((page) => ({

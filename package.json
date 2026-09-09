@@ -49,6 +49,7 @@
     "build": "vite build",
     "test:lms-native-drag-drop-layout": "node scripts/lms-native-drag-drop-playwright.mjs && node scripts/book-builder/native-runtime-regressions.mjs",
     "test:published-book-assignments": "node scripts/published-book-assignments-playwright.mjs",
+    "test:b1-publication": "node scripts/b1-publication-playwright.mjs",
     "verify:web-bundle-safety": "node scripts/verify-web-bundle-safety.mjs",
     "build:netlify:lms": "node scripts/netlify/build-review-target.mjs lms",
     "build:cloudflare:lms": "node scripts/cloudflare/build-lms.mjs",

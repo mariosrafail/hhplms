@@ -93,7 +93,7 @@ jobs:
   integration-database:
     needs: unit-and-build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:16
@@ -126,6 +126,10 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Verify published book assignment browser flows against isolated PostgreSQL
         run: npm run test:published-book-assignments
+      - run: npm run build:netlify:ultimate-b2-builder
+      - run: npm run build:netlify:ultimate-b2-interactive
+      - name: Verify B1 and B1 Plus publication through Builder and entitled LMS
+        run: npm run test:b1-publication
       - name: Verify current Unit Extras editor against isolated PostgreSQL
         run: npm run test:builder:extras
       - name: Remove temporary integration schemas

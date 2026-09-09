@@ -114,7 +114,8 @@ async function seedLegacyTransition(pool, sql, component) {
     assert(listed.some((entry) => entry.id === assignment.id));
     await assert.rejects(pool.query("insert into activity_assignments(school_id,activity_id,teacher_id,student_id,title) values($1,$2,$3,$4,'Bypass')", [teacher.school_id, ids[0], teacher.id, student.id]), (error) => error.code === "PZ004");
     await assert.rejects(pool.query("insert into homework_items(homework_id,position,target_kind,activity_id) values($1,3,'legacy_activity',$2)", [homework.id, ids[2]]), (error) => error.code === "PZ004");
-    const otherPolicies = (await pool.query("select builder_current_legacy_activity_allowed(id) allowed from book_components where id<>$1", [component.id])).rows;
-    assert(otherPolicies.length > 1 && otherPolicies.every((entry) => entry.allowed));
+    const otherPolicies = (await pool.query("select slug,builder_current_legacy_activity_allowed(id) allowed from book_components where id<>$1", [component.id])).rows;
+    const managedOnly = new Set(["ultimate-b1-students-book", "ultimate-b1-workbook", "ultimate-b1-plus-students-book", "ultimate-b1-plus-workbook"]);
+    assert(otherPolicies.length > 1 && otherPolicies.every((entry) => entry.allowed === !managedOnly.has(entry.slug)));
   };
 }

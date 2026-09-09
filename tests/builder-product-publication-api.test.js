@@ -158,7 +158,7 @@ test("product route is distinct from component routes and requires auth, schema,
   assert.equal((await handler(event(base, "GET", null, { cookie: "" }))).statusCode, 401);
   assert.equal((await handler(event(`${base}/prepare`, "POST", { clientMutationId: randomUUID(), releaseNote: "" }, { origin: "https://attacker.example" }))).statusCode, 403);
   assert.equal((await harness({ ready: async () => false }).handler(event(base))).statusCode, 409);
-  assert.equal((await handler(event("/builder/api/publication/books/ultimate-b1"))).statusCode, 404);
+  assert.equal((await handler(event("/builder/api/publication/books/ultimate-c1"))).statusCode, 404);
 });
 
 test("Prepare compiles, source-verifies, and pins Students, Workbook, and Grammar as one ordered family without CopyObject", async () => {

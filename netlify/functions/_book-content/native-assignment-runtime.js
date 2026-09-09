@@ -416,7 +416,7 @@ export async function resolveNativeAssignmentTarget(sql, currentUser, rawTarget,
   if (!allowed.includes(String(row.book_package_id))) return { error: "This account cannot access the published activity", statusCode: 403 };
   if (row.id !== rawTarget.releaseId.toLowerCase() || target.verified.publicProjection.bookSlug !== row.package_slug
     || target.verified.publicProjection.componentSlug !== row.component_slug) return { error: "Published target identity does not match its component", statusCode: 409, code: "publication_identity_mismatch" };
-  if (requireActive && (row.product_release_id || locator?.productReleaseId) && supportedPublishedBook(row.package_slug, row.component_slug)) {
+  if (requireActive && (row.package_slug !== "ultimate-b2" || row.product_release_id || locator?.productReleaseId) && supportedPublishedBook(row.package_slug, row.component_slug)) {
       if (!requestCache.has("family")) requestCache.set("family", loadVerifiedPublishedBookFamily(sql, currentUser, { allowed }));
       const family = await requestCache.get("family");
       if (!family.some((member) => member.row.id === row.id && (!locator?.productReleaseId || member.productReleaseId === locator.productReleaseId))) return { error: "The selected publication changed. Refresh the book before assigning.", statusCode: 409 };
@@ -505,7 +505,7 @@ export async function listPublishedNativeAssignmentTargets(sql, currentUser) {
     for (const row of b2Rows) console.error(releaseVerificationDiagnostic(row, error));
     throw error;
   }
-  const releases = [...rows.filter((row) => row.package_slug !== "ultimate-b2").map((row) => ({ row })), ...family];
+  const releases = [...rows.filter((row) => !supportedPublishedBook(row.package_slug, row.component_slug)).map((row) => ({ row })), ...family];
   const targets = [];
   for (const release of releases) {
     const { row } = release;

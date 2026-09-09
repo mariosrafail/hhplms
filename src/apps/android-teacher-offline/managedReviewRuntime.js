@@ -3,6 +3,7 @@ import { createHostedStartupAssets } from "./interactiveStartupAssets.js";
 import { hostedTeacherUiAssetPath } from "../../data/ultimate-b2/hostedTeacherUiDocument.js";
 import { findManagedHostedComponent } from "../../data/managedHostedComponentCatalog.js";
 import { createHostedReviewUiManifestProvider } from "./hostedReviewUiManifestProvider.js";
+import { newManagedPublicationComponents } from "../../data/publicationRegistry.js";
 
 const emptyUnits = () => Array.from({ length: 10 }, (_, index) => Object.freeze({ id: `unit-${index + 1}`, number: index + 1, title: `Unit ${index + 1}`, pages: Object.freeze([]) }));
 
@@ -16,7 +17,13 @@ function componentConfig(identity) {
 
 function createManagedHostedStartupAssets(config) {
   const identity = { bookSlug: config.bookSlug, componentSlug: config.uiOwnerComponentSlug };
+  const newPublication = newManagedPublicationComponents.some((entry) => entry.bookSlug === config.bookSlug && entry.componentSlug === config.componentSlug);
   return createHostedStartupAssets(Object.freeze({
+    // Managed release descriptors are not an offline pack manifest. Page URLs
+    // have already been resolved through exact member authorization.
+    runtimeAssets(pack) {
+      return newPublication ? (pack?.pageUnits || []).flatMap((unit) => unit.pages.flatMap((page) => page.images.map((url) => ({ url, kind: "image" })))) : [];
+    },
     uiAssetUrls(uiManifest, _pack, runtimeContext) {
       return Object.values(uiManifest?.assets || {}).map((asset) => runtimeContext?.kind === HOSTED_VIEWER_RUNTIME_MODES.RELEASE_PREVIEW
         ? hostedReleasePath(runtimeContext, identity, `assets/${asset.sha256}.${asset.extension}`)
@@ -92,7 +99,8 @@ export function createManagedReviewContentPackProvider(identity) {
           manifest: Object.freeze({ packageId: config.componentSlug, componentId, schemaVersion: 1 }),
           catalog: Object.freeze({ schemaVersion: 1, packageId: config.componentSlug, componentId, title: `${config.bookTitle} ${config.componentTitle}`, units: Object.freeze([]) }),
           activities: Object.freeze({ schemaVersion: 1, packageId: config.componentSlug, activities: Object.freeze(Object.values(projection.nativeActivities || {}).map((entry) => Object.freeze({ id: entry.document.activityId, stableActivityId: entry.document.activityId, title: entry.document.metadata.title, activityType: entry.kind, availability: "enabled" }))) }),
-          assetsManifest: Object.freeze({ schemaVersion: 1, resolver: "authorized-release-assets", assets: Object.freeze(projection.assets || []) }),
+          assetsManifest: Object.freeze({ schemaVersion: 1, resolver: "authorized-release-assets", assets: Object.freeze(config.bookSlug === "ultimate-b2" ? projection.assets || [] : []) }),
+          ...(config.bookSlug !== "ultimate-b2" ? { releaseAssets: Object.freeze(projection.assets || []) } : {}),
           pageUnits: managedPageUnitsFromRelease(projection, config, context),
         });
       }

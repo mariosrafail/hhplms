@@ -4,6 +4,7 @@ import { createCloudflareR2ReleaseStorage } from "../../../lib/book-assets/cloud
 import { materializeCanonicalReleaseAssets, canonicalPublicationAssetFetcher } from "./_builder-canonical-release-assets.js";
 import { createBookAssetStorage } from "../../../lib/book-assets/storage.js";
 import { findProductBook, findProductComponent } from "../../../src/data/bookProductCatalog.js";
+import { findPublicationProduct } from "../../../src/data/publicationRegistry.js";
 import {
   ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID,
   ULTIMATE_B2_PRODUCT_RELEASE_COMPONENTS,
@@ -31,6 +32,19 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const exact = (value, keys) => value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).sort().join("\0") === [...keys].sort().join("\0");
 
+function safeReadinessError(error) {
+  const code = error?.code || error?.message;
+  const messages = {
+    managed_pages_empty: "Add and finalize at least one page in this component.",
+    managed_page_not_ready: "Finalize each active page image and its Unit metadata.",
+    native_activity_not_found: "Save both Public and Teacher documents for every linked activity.",
+    native_activity_pair_invalid: "Correct the linked activity documents and placement.",
+    native_activity_not_ready: "Complete every linked activity in Activity Builder.",
+    native_activity_asset_invalid: "Finalize the assets referenced by linked activities.",
+  };
+  return { code: Object.hasOwn(messages, code) ? code : "managed_content_invalid", message: messages[code] || "Check Units, active pages, hotspots and linked activities in this component." };
+}
+
 export function parseBuilderProductPublicationRoute(event) {
   const pathname = String(event.path || "").split("?")[0];
   const match = pathname.match(/(?:\/builder\/api\/publication|\/\.netlify\/functions\/builder-publication(?:\/product)?)\/books\/([^/]+)(?:\/(prepare|publish))?\/?$/);
@@ -47,13 +61,14 @@ function body(event, keys) {
 
 function productConfiguration(bookSlug) {
   const product = findProductBook(bookSlug);
-  if (!product || bookSlug !== "ultimate-b2") return null;
-  const components = ULTIMATE_B2_PRODUCT_RELEASE_COMPONENTS.map((identity) => {
+  const contract = findPublicationProduct(bookSlug);
+  if (!product || !contract) return null;
+  const components = contract.members.map((identity) => {
     const component = findProductComponent(bookSlug, identity.componentSlug);
     const compiler = component?.publication?.readable ? resolvePublicationCompiler(component.publication.compilerId) : null;
     return component && compiler ? { ...identity, component, compiler } : null;
   });
-  return components.every(Boolean) ? { product, components } : null;
+  return components.every(Boolean) ? { product, components, contract } : null;
 }
 
 async function compileProduct(sql, configuration, dependencies) {
@@ -172,21 +187,32 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
       const sql = dependencies.getDatabase();
       const auth = await dependencies.authorize(event, sql);
       if (auth.error) return auth.error;
-      if (!await dependencies.ready(sql)) return json(409, { error: "publication_schema_unavailable" });
+      if (!await dependencies.ready(sql, parsedRoute.bookSlug)) return json(409, { error: "publication_schema_unavailable" });
       const pinSchemaReady = await dependencies.pinReady(sql);
       if (event.httpMethod === "GET" && parsedRoute.action === "status") {
         const [status, compiledMembers, modeRows] = await Promise.all([
           dependencies.status(sql, parsedRoute.bookSlug),
-          dependencies.compileProduct(sql, configuration, dependencies),
+          parsedRoute.bookSlug === "ultimate-b2" ? dependencies.compileProduct(sql, configuration, dependencies)
+            : Promise.all(configuration.components.map(async (component) => {
+              try { return (await dependencies.compileProduct(sql, { ...configuration, components: [component] }, dependencies))[0]; }
+              catch (error) { return { componentSlug: component.component.slug, blocker: safeReadinessError(error) }; }
+            })),
           pinSchemaReady ? dependencies.loadAssetModes(sql, { bookSlug: parsedRoute.bookSlug }) : Promise.resolve([]),
         ]);
-        const currentSources = new Map(compiledMembers.map((entry) => [entry.componentSlug, entry.compiled.sourceSnapshotSha256]));
+        const currentSources = new Map(compiledMembers.filter((entry) => entry.compiled).map((entry) => [entry.componentSlug, entry.compiled.sourceSnapshotSha256]));
+        if (parsedRoute.bookSlug !== "ultimate-b2") {
+          for (const release of status.releases) {
+            await dependencies.verifyCandidate(sql, release, dependencies);
+            const rows = await dependencies.loadComponentRows(sql, { bookSlug: parsedRoute.bookSlug, productReleaseId: release.id });
+            release.reviewPages = Object.fromEntries(rows.map((row) => [row.component_slug, verifyImmutableComponentRelease(row).publicProjection.pages.map((page) => ({ pageId: page.id, unitNumber: page.unitNumber, pageLabel: page.label, sectionTitle: page.sectionTitle }))]));
+          }
+        }
         const decorate = (release) => release ? { ...withAssetModes(release, modeRows, { legacySchema: !pinSchemaReady }), state: releaseState(release, currentSources) } : null;
         return json(200, {
           bookSlug: parsedRoute.bookSlug,
-          compilerId: ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID,
-          releaseSchemaVersion: ULTIMATE_B2_PRODUCT_RELEASE_SCHEMA_VERSION,
-          components: compiledMembers.map((entry) => ({ componentSlug: entry.componentSlug, compilerId: entry.compiled.compilerId, releaseSchemaVersion: entry.compiled.releaseSchemaVersion, currentSourceSha256: entry.compiled.sourceSnapshotSha256, ...(entry.compiled.reconciliation ? { reconciliation: entry.compiled.reconciliation } : {}) })),
+          compilerId: configuration.contract.compilerId,
+          releaseSchemaVersion: configuration.contract.releaseSchemaVersion,
+          components: compiledMembers.map((entry) => entry.blocker ? { componentSlug: entry.componentSlug, ready: false, blocker: entry.blocker } : ({ componentSlug: entry.componentSlug, ready: true, compilerId: entry.compiled.compilerId, releaseSchemaVersion: entry.compiled.releaseSchemaVersion, currentSourceSha256: entry.compiled.sourceSnapshotSha256, ...(entry.compiled.reconciliation ? { reconciliation: entry.compiled.reconciliation } : {}) })),
           headRevision: status.headRevision,
           published: decorate(status.published),
           releases: status.releases.map(decorate),
@@ -214,8 +240,8 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
         const result = await dependencies.create(sql, {
           productReleaseId: dependencies.randomUuid(),
           bookSlug: parsedRoute.bookSlug,
-          compilerId: ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID,
-          releaseSchemaVersion: ULTIMATE_B2_PRODUCT_RELEASE_SCHEMA_VERSION,
+          compilerId: configuration.contract.compilerId,
+          releaseSchemaVersion: configuration.contract.releaseSchemaVersion,
           members,
           requestSha256,
           releaseNote: parsed.value.releaseNote,
@@ -236,7 +262,7 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
         const candidate = await dependencies.loadRelease(sql, { bookSlug: parsedRoute.bookSlug, productReleaseId: parsed.value.productReleaseId });
         if (!candidate) return json(404, { error: "release_not_found" });
         try { await dependencies.verifyCandidate(sql, candidate, dependencies); } catch { return json(409, { error: "release_integrity_failed" }); }
-        if (candidate.compilerId !== ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID) return json(409, { error: "legacy_release_read_only" });
+        if (candidate.compilerId !== configuration.contract.compilerId) return json(409, { error: "legacy_release_read_only" });
         const requestSha256 = sha256(stableBuilderJson({ productReleaseId: parsed.value.productReleaseId, expectedHeadRevision: parsed.value.expectedHeadRevision }));
         const replay = await dependencies.loadMutation(sql, { bookSlug: parsedRoute.bookSlug, clientMutationId: parsed.value.clientMutationId });
         if (!replay && !candidate.current) {
@@ -263,7 +289,8 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
           ...(error.providerCode ? { providerCode: error.providerCode } : {}),
         } : {}),
       });
-      const safeCode = ["students_book_page_expansion_required", "students_book_page_asset_invalid", "placement_unavailable", "native_activity_not_found", "native_activity_pair_invalid", "native_activity_not_ready", "native_activity_asset_invalid", "managed_page_not_ready", "release_asset_unavailable", "publication_compiler_mismatch", "release_pin_conflict", "release_pin_integrity_failed"].includes(error?.code || error?.message) ? (error.code || error.message) : null;
+      const candidateCode = error?.code === "PZ005" ? error.message : error?.code || error?.message;
+      const safeCode = ["stale_release_preview", "managed_pages_empty", "students_book_page_expansion_required", "students_book_page_asset_invalid", "placement_unavailable", "native_activity_not_found", "native_activity_pair_invalid", "native_activity_not_ready", "native_activity_asset_invalid", "managed_page_not_ready", "release_asset_unavailable", "publication_compiler_mismatch", "release_pin_conflict", "release_pin_integrity_failed"].includes(candidateCode) ? candidateCode : null;
       return safeCode ? json(409, { error: safeCode, ...(error.activityId ? { activityId: error.activityId } : {}), ...(error.issues?.length ? { issues: error.issues } : {}), ...(error.reconciliation ? { reconciliation: error.reconciliation } : {}) }) : json(500, { error: "builder_product_publication_failed" });
     }
   };

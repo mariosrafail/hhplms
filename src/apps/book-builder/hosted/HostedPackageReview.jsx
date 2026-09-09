@@ -50,9 +50,10 @@ export function HostedPackageReview({ tool, pages, selectedPageId = "", bookSlug
   const memberAvailable = useCallback((release) => !release?.members || release.members.some((member) => member.componentSlug === componentSlug && member.status === "included"), [componentSlug]);
   const nextSession = useCallback(() => {
     const sourceMode = tool === "publication" && currentContext.release && memberAvailable(currentContext.release) ? "release" : "draft";
-    const contextPage = normalizedPages.find((page) => page.pageId === currentContext.pageId);
-    return { sourceMode, toolContext: currentContext, pageId: contextPage?.pageId || lastPage?.pageId || "" };
-  }, [currentContext, lastPage, memberAvailable, normalizedPages, tool]);
+    const candidates = sourceMode === "release" ? currentContext.release.reviewPages?.[componentSlug] || normalizedPages : normalizedPages;
+    const contextPage = candidates.find((page) => page.pageId === currentContext.pageId) || candidates.find((page) => page.pageId === lastPage?.pageId) || candidates[0];
+    return { sourceMode, toolContext: currentContext, pageId: contextPage?.pageId || "" };
+  }, [componentSlug, currentContext, lastPage, memberAvailable, normalizedPages, tool]);
   const openReview = useCallback(() => {
     setSession(nextSession());
     setViewerStarted(true);
@@ -64,7 +65,8 @@ export function HostedPackageReview({ tool, pages, selectedPageId = "", bookSlug
   }, []);
   useEffect(() => { if (dialogRef.current?.open) setSession(nextSession()); }, [bookSlug, componentSlug, contextKey, nextSession]);
 
-  const selectedPage = normalizedPages.find((page) => page.pageId === session.pageId) || lastPage;
+  const reviewPages = session.sourceMode === "release" ? session.toolContext?.release?.reviewPages?.[componentSlug] || normalizedPages : normalizedPages;
+  const selectedPage = reviewPages.find((page) => page.pageId === session.pageId) || reviewPages[0] || null;
   const release = session.toolContext?.release || null;
   const releaseMemberAvailable = memberAvailable(release);
   const releaseMember = release?.members?.find((candidate) => candidate.componentSlug === componentSlug) || null;
@@ -80,7 +82,7 @@ export function HostedPackageReview({ tool, pages, selectedPageId = "", bookSlug
         <header><div><span>Canonical deployed Viewer</span><h2 id="unified-builder-review-title">{sourceTitle}</h2></div><button type="button" onClick={closeReview}>Close Review</button></header>
         <div className="unified-builder-review-controls">
           <div role="group" aria-label="Review source"><button type="button" aria-pressed={session.sourceMode === "draft"} onClick={() => setSession((current) => ({ ...current, sourceMode: "draft" }))}>Saved Draft</button><button type="button" aria-pressed={session.sourceMode === "release"} disabled={!release || !releaseMemberAvailable} title={release && !releaseMemberAvailable ? `This component was not included in historical Release #${release.number}.` : undefined} onClick={() => setSession((current) => ({ ...current, sourceMode: "release" }))}>{release ? releaseMemberAvailable ? `Release #${release.number} · Immutable` : `Unavailable in Release #${release.number}` : "No release prepared"}</button></div>
-          {session.sourceMode === "release" && intent?.view === "page" ? <label>Review page<select value={selectedPage?.pageId || ""} onChange={(event) => { const pageId = event.target.value; rememberPage(pageId); setSession((current) => ({ ...current, pageId })); }}>{normalizedPages.map((page) => <option key={page.pageId} value={page.pageId}>{pageLabel(page)}</option>)}</select></label> : null}
+          {session.sourceMode === "release" && intent?.view === "page" ? <label>Review page<select value={selectedPage?.pageId || ""} onChange={(event) => { const pageId = event.target.value; rememberPage(pageId); setSession((current) => ({ ...current, pageId })); }}>{reviewPages.map((page) => <option key={page.pageId} value={page.pageId}>{pageLabel(page)}</option>)}</select></label> : null}
         </div>
         <div className="unified-builder-review-messages">
           {session.toolContext.dirty && session.sourceMode === "draft" ? <p className="unified-builder-review-notice" role="status">Unsaved changes are not included in Review. Save them first.</p> : null}

@@ -38,7 +38,7 @@ export async function servePinnedReleaseSourceAsset({ event, context, release, p
   const range = requestedRange(request.headers.get("range"), Number(pin.byte_size));
   if (range === false) return unavailable(416, "invalid_range", { "Content-Range": `bytes */${pin.byte_size}` });
   try {
-    const unified = release?.compiler_id === "ultimate-b2-students-book-v3";
+    const unified = release?.compiler_id === "ultimate-b2-students-book-v3" || ["ultimate-b1-students-book-v1", "ultimate-b1-workbook-v1", "ultimate-b1-plus-students-book-v1", "ultimate-b1-plus-workbook-v1"].includes(release?.compiler_id);
     if (unified && pin.storage_bucket !== context.cloudflare.releaseSourceAssetsBucket) return unavailable();
     if (unified && asset.role === "managed_page_image") {
       const page = projection.pages.find((entry) => entry.image.sha256 === asset.sha256 && entry.image.extension === asset.extension);

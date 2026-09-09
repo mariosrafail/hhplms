@@ -1,4 +1,5 @@
 import { isPhaseOneComponentVisible } from "../config/bookCatalogVisibility.js";
+import { newManagedPublicationComponents } from "./publicationRegistry.js";
 
 export const BOOK_COMPONENT_TYPES = Object.freeze([
   "students_book",
@@ -13,6 +14,7 @@ const VALID_AUTHORING_STATES = new Set(["active", "pending"]);
 
 function component(bookSlug, suffix, title, type, teacherEditionId, options = {}) {
   const slug = `${bookSlug}-${suffix}`;
+  const managedPublication = newManagedPublicationComponents.find((entry) => entry.bookSlug === bookSlug && entry.componentSlug === slug);
   return {
     id: slug,
     slug,
@@ -22,13 +24,13 @@ function component(bookSlug, suffix, title, type, teacherEditionId, options = {}
     teacherEditionId,
     registered: true,
     lmsVisible: isPhaseOneComponentVisible(bookSlug, slug),
-    reviewState: options.reviewState || "pending",
+    reviewState: managedPublication ? "installed" : options.reviewState || "pending",
     authoringState: options.authoringState || "pending",
     authoringAdapterId: options.authoringAdapterId || null,
     publication: Object.freeze({
-      readable: options.publication?.readable === true,
+      readable: Boolean(managedPublication) || options.publication?.readable === true,
       writable: options.publication?.writable === true,
-      compilerId: options.publication?.compilerId || null,
+      compilerId: managedPublication?.compilerId || options.publication?.compilerId || null,
     }),
   };
 }

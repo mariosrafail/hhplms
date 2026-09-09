@@ -81,12 +81,12 @@ test("isolated Students Book expansion retains exact authored records and histor
   changed.builder_component_documents[position] = JSON.stringify(document);
   assert.throws(() => assertStudentsBookDatabasePreserved(expanded, changed), /Preservation failed/);
   const publicationMigration = (await loadProductionMigrationManifest()).find((entry) => entry.filename === "061_students_book_publication_v3.sql");
-  await applyCanonicalProductionMigrations(pool);
+  await applyCanonicalProductionMigrations(pool, { through: "061_students_book_publication_v3.sql" });
   const versioned = await captureStudentsBookPreservation(pool);
   assertStudentsBookDatabasePreserved(expanded, versioned, { migration: publicationMigration });
   await assertPreservedSyntheticMediaReadable(pool, fixture.media, controls);
   await assertPreservedLearningReadable(learning);
-  await applyCanonicalProductionMigrations(pool);
+  await applyCanonicalProductionMigrations(pool, { through: "061_students_book_publication_v3.sql" });
   assertStudentsBookDatabasePreserved(versioned, await captureStudentsBookPreservation(pool));
   t.diagnostic(`Synthetic preservation: ${fixture.activities.length} Students Book active pairs plus ${controls.reduce((count, control) => count + control.index.length, 0)} in ${controls.length} other components; protected unlinked activities; Unit Extras/Teacher UI; product family and pins; submitted/reviewed Homework; all existing table rows compared`);
 });

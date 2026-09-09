@@ -8,6 +8,7 @@ import { builderDocumentSha256, stableBuilderJson } from "./_builder-content-sec
 import { resolveNativeActivityKind } from "./_native-activity-registry.js";
 import { collectNativeEntriesForPublication, validateNativePublicationAssetRows } from "./_builder-publication-compiler-v2.js";
 import { resolveNativeActivityAdapter } from "./_native-activity-adapters.js";
+import { findPublicationComponentBySlug } from "../../../src/data/publicationRegistry.js";
 
 export const ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION = "1.0";
 export const ULTIMATE_B2_MANAGED_COMPONENT_COMPILERS = Object.freeze({
@@ -39,9 +40,9 @@ function source(value, label) {
 }
 
 function componentIdentity(componentSlug) {
-  const compilerId = ULTIMATE_B2_MANAGED_COMPONENT_COMPILERS[componentSlug];
-  if (!compilerId) throw new Error("Managed publication component is unsupported.");
-  return { bookSlug: "ultimate-b2", componentSlug, compilerId, releaseSchemaVersion: ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION };
+  const registration = findPublicationComponentBySlug(componentSlug);
+  if (!registration?.managed) throw new Error("Managed publication component is unsupported.");
+  return registration;
 }
 
 function normalizeAssetDescriptor(value, expectedRole = null) {
@@ -123,7 +124,7 @@ export function normalizeManagedPublicProjection(value, componentSlug, expectedC
 function normalizePublicProjection(value, componentSlug, expectedCompatibility = null, profile = "current") {
   componentIdentity(componentSlug);
   exact(value, ["schemaVersion", "bookSlug", "componentSlug", "compatibility", "units", "pages", "hotspots", "nativeActivities", "assets", ...(Object.hasOwn(value, "activityOrder") ? ["activityOrder"] : [])], "Managed public release");
-  if (value.schemaVersion !== ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION || value.bookSlug !== "ultimate-b2" || value.componentSlug !== componentSlug
+  if (value.schemaVersion !== ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION || value.bookSlug !== componentIdentity(componentSlug).bookSlug || value.componentSlug !== componentSlug
     || !SHA256.test(String(value.compatibility || "")) || (expectedCompatibility && value.compatibility !== expectedCompatibility)) throw new Error("Managed public release identity is invalid.");
   const units = Array.isArray(value.units) ? value.units.map(normalizeUnit) : null;
   const pages = Array.isArray(value.pages) ? value.pages.map((page) => normalizePage(page, componentSlug)) : null;
@@ -131,7 +132,7 @@ function normalizePublicProjection(value, componentSlug, expectedCompatibility =
   const unitIds = new Set(units.map((unit) => unit.id));
   if (pages.some((page) => !unitIds.has(page.unitId))) throw new Error("Managed release page Unit is invalid.");
   const { publicActivities } = normalizeNativeMaps(value.nativeActivities, null, profile);
-  const hotspots = validateAndNormalizeManagedComponentHotspotManifest(value.hotspots, { componentSlug, pages, activities: Object.values(publicActivities).map((entry) => ({ activityId: entry.document.activityId, title: entry.document.metadata.title })) });
+  const hotspots = validateAndNormalizeManagedComponentHotspotManifest(value.hotspots, { bookSlug: componentIdentity(componentSlug).bookSlug, componentSlug, pages, activities: Object.values(publicActivities).map((entry) => ({ activityId: entry.document.activityId, title: entry.document.metadata.title })) });
   const assets = Array.isArray(value.assets) ? value.assets.map((asset) => normalizeAssetDescriptor(asset)) : null;
   if (!assets || new Set(assets.map((asset) => `${asset.sha256}.${asset.extension}.${asset.role}`)).size !== assets.length) throw new Error("Managed release assets are invalid.");
   const expectedPageAssets = [...new Set(pages.map((page) => `${page.image.sha256}.${page.image.extension}.${page.image.role}`))].sort();
@@ -149,7 +150,7 @@ export function normalizeManagedTeacherProjection(value, componentSlug, publicPr
 
 function normalizeTeacherProjection(value, componentSlug, publicProjection, profile = "current") {
   exact(value, ["schemaVersion", "bookSlug", "componentSlug", "nativeActivities"], "Managed Teacher release");
-  if (value.schemaVersion !== ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION || value.bookSlug !== "ultimate-b2" || value.componentSlug !== componentSlug) throw new Error("Managed Teacher release identity is invalid.");
+  if (value.schemaVersion !== ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION || value.bookSlug !== componentIdentity(componentSlug).bookSlug || value.componentSlug !== componentSlug) throw new Error("Managed Teacher release identity is invalid.");
   return { schemaVersion: value.schemaVersion, bookSlug: value.bookSlug, componentSlug, nativeActivities: normalizeNativeMaps(publicProjection.nativeActivities, value.nativeActivities, profile).teacherActivities };
 }
 
@@ -184,11 +185,21 @@ export function compileUltimateB2ManagedComponentRelease(sources, componentSlug)
     throw new Error("Managed native activity identity is outside its component.");
   }
   const normalizedPages = publicationPages(sources, componentSlug);
+  if (identity.bookSlug !== "ultimate-b2" && !normalizedPages.pages.length) throw new Error("managed_pages_empty");
+  if (identity.bookSlug !== "ultimate-b2") {
+    normalizedPages.units.sort((left, right) => left.sortOrder - right.sortOrder || left.unitNumber - right.unitNumber || left.slug.localeCompare(right.slug));
+    const unitOrder = new Map(normalizedPages.units.map((unit, index) => [unit.id, index]));
+    normalizedPages.pages.sort((left, right) => unitOrder.get(left.unitId) - unitOrder.get(right.unitId) || left.sortOrder - right.sortOrder || left.stableKey.localeCompare(right.stableKey));
+  }
   const nativeActivities = sources.native?.activities || {};
   const hotspotSource = sources.documents?.hotspots || null;
   const activityCatalog = Object.values(nativeActivities).filter((entry) => entry.public).map((entry) => ({ activityId: entry.index.activityId, title: entry.public.payload.metadata.title }));
-  const hotspots = validateAndNormalizeManagedComponentHotspotManifest(hotspotSource?.payload || createEmptyManagedComponentHotspotManifest(componentSlug), { componentSlug, pages: normalizedPages.pages, activities: activityCatalog });
+  const hotspots = validateAndNormalizeManagedComponentHotspotManifest(hotspotSource?.payload || createEmptyManagedComponentHotspotManifest(identity), { bookSlug: identity.bookSlug, componentSlug, pages: normalizedPages.pages, activities: activityCatalog });
   const selectedNative = collectNativeEntriesForPublication(sources, hotspots);
+  if (identity.bookSlug !== "ultimate-b2" && selectedNative.some(([id, entry]) => {
+    const lifecycle = sources.documents?.activityLifecycle?.payload?.activities?.[id];
+    return lifecycle && (lifecycle.status !== "active" || lifecycle.pageId !== entry.publicDocument.placement.pageId);
+  })) throw new Error("native_activity_not_ready");
   const nativeAssetSources = validateNativePublicationAssetRows(selectedNative, sources.native?.assetRows || []);
   const nativeKinds = new Set(selectedNative.map(([, entry]) => entry.publicDocument.kind));
   const compatibilitySha256 = compatibility(componentSlug, nativeKinds, selectedNative.some(([, entry]) => usesNativeComposition(entry.publicDocument, entry.teacherDocument)));
@@ -198,7 +209,7 @@ export function compileUltimateB2ManagedComponentRelease(sources, componentSlug)
   const sourceSnapshot = normalizeManagedReleaseSourceSnapshot({
     schemaVersion: ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION,
     pages: { revision: Number(sources.pages?.revision || 0), sha256: pageSourceSha256 },
-    hotspots: hotspotSource ? { revision: hotspotSource.revision, sha256: hotspotSource.sha256 } : { revision: 0, sha256: builderDocumentSha256(createEmptyManagedComponentHotspotManifest(componentSlug)) },
+    hotspots: hotspotSource ? { revision: hotspotSource.revision, sha256: hotspotSource.sha256 } : { revision: 0, sha256: builderDocumentSha256(createEmptyManagedComponentHotspotManifest(identity)) },
     activityLifecycle: sources.documents?.activityLifecycle ? { revision: sources.documents.activityLifecycle.revision, sha256: sources.documents.activityLifecycle.sha256 } : { revision: 0, sha256: builderDocumentSha256(createEmptyUltimateB2ActivityLifecycle()) },
     nativeIndex: sources.native?.index ? { revision: sources.native.index.revision, sha256: sources.native.index.sha256 } : { revision: 0, sha256: builderDocumentSha256(createEmptyNativeActivityIndex()) },
     nativeActivities: Object.fromEntries(selectedNative.map(([activityId, entry]) => [activityId, { kind: entry.publicDocument.kind, public: { revision: entry.source.public.revision, sha256: entry.source.public.sha256 }, teacher: { revision: entry.source.teacher.revision, sha256: entry.source.teacher.sha256 } }])),
@@ -207,7 +218,7 @@ export function compileUltimateB2ManagedComponentRelease(sources, componentSlug)
   const publicProjection = normalizeManagedPublicProjection({ bookSlug: identity.bookSlug, componentSlug, schemaVersion: identity.releaseSchemaVersion, compatibility: compatibilitySha256, units: normalizedPages.units, pages: normalizedPages.pages, hotspots, nativeActivities: publicNative, activityOrder: projectComponentActivityOrder(componentActivityOrderEntries([], { activities: Object.values(sources.native?.activities || {}).map((entry) => entry.index) }, createEmptyUltimateB2ActivityLifecycle()), new Set(Object.keys(publicNative))), assets: assets.filter((asset) => asset.role !== "native_teacher_answer") }, componentSlug, compatibilitySha256);
   const teacherProjection = normalizeManagedTeacherProjection({ schemaVersion: identity.releaseSchemaVersion, bookSlug: identity.bookSlug, componentSlug, nativeActivities: teacherNative }, componentSlug, publicProjection);
   const assetManifest = assets;
-  return {
+  const compiled = {
     compilerId: identity.compilerId,
     releaseSchemaVersion: identity.releaseSchemaVersion,
     compatibility: compatibilitySha256,
@@ -222,6 +233,14 @@ export function compileUltimateB2ManagedComponentRelease(sources, componentSlug)
     releaseSha256: builderDocumentSha256({ compatibility: compatibilitySha256, sourceSnapshot, publicProjection, teacherProjection }),
     stableJson: stableBuilderJson({ compatibility: compatibilitySha256, sourceSnapshot, publicProjection, teacherProjection }),
   };
+  if (identity.bookSlug !== "ultimate-b2") verifyUltimateB2ManagedComponentRelease({
+    compiler_id: compiled.compilerId, release_schema_version: compiled.releaseSchemaVersion, runtime_compatibility_sha256: compiled.compatibility,
+    source_snapshot: sourceSnapshot, source_snapshot_sha256: compiled.sourceSnapshotSha256,
+    public_projection: publicProjection, public_projection_sha256: compiled.publicProjectionSha256,
+    teacher_projection: teacherProjection, teacher_projection_sha256: compiled.teacherProjectionSha256,
+    asset_manifest: assetManifest, release_sha256: compiled.releaseSha256,
+  }, componentSlug);
+  return compiled;
 }
 
 export function verifyUltimateB2ManagedComponentRelease(release, componentSlug) {
@@ -241,6 +260,26 @@ export function verifyUltimateB2ManagedComponentRelease(release, componentSlug) 
   const kinds = new Set(entries.map(([, entry]) => entry.kind));
   const expectedCompatibility = compatibility(componentSlug, kinds, entries.some(([id, entry]) => usesNativeComposition(entry.document, release.teacher_projection?.nativeActivities?.[id]?.document)));
   if (release.public_projection?.compatibility !== expectedCompatibility || release.runtime_compatibility_sha256 !== expectedCompatibility) throw new Error("release_integrity_failed");
+  if (identity.bookSlug !== "ultimate-b2") {
+    const verified = verifyManagedRepresentation(release, componentSlug, expectedCompatibility);
+    const adapter = resolveNativeActivityAdapter(identity.bookSlug, componentSlug);
+    const { publicProjection: projection, sourceSnapshot } = verified;
+    const units = new Map(projection.units.map((unit) => [unit.id, unit]));
+    const route = new RegExp(`^${identity.pagePrefix}-page-[a-f0-9]{32}$`);
+    if (!projection.pages.length || new Set(projection.units.map((unit) => unit.unitNumber)).size !== 10
+      || projection.pages.some((page) => !route.test(page.id)
+      || page.unitSlug !== units.get(page.unitId)?.slug || page.unitNumber !== units.get(page.unitId)?.unitNumber
+      || page.unitTitle !== units.get(page.unitId)?.title)
+      || entries.some(([id, entry]) => !adapter.ownsActivityId(id) || entry.document.activityId !== id)
+      || entries.some(([id, entry]) => !resolveNativeActivityKind(entry.kind).assessReadiness(entry.document, verified.teacherProjection.nativeActivities[id].document).ready)
+      || Object.entries(projection.hotspots.pages).some(([pageId, hotspots]) => hotspots.some((hotspot) => projection.nativeActivities[hotspot.activityKey]?.document.placement.pageId !== pageId))
+      || Object.keys(sourceSnapshot.nativeActivities).sort().join('\0') !== Object.keys(projection.nativeActivities).sort().join('\0')
+      || Object.entries(sourceSnapshot.nativeActivities).some(([id, entry]) => entry.kind !== projection.nativeActivities[id].kind)
+      || sourceSnapshot.pages.sha256 !== builderDocumentSha256({ units: projection.units, pages: projection.pages })
+      || stableBuilderJson(projection) !== stableBuilderJson(release.public_projection)
+      || stableBuilderJson(verified.teacherProjection) !== stableBuilderJson(release.teacher_projection)) throw new Error("release_integrity_failed");
+    return verified;
+  }
   if (!kinds.has("drag-drop")) return verifyManagedRepresentation(release, componentSlug, expectedCompatibility);
 
   const matches = [];

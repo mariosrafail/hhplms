@@ -54,9 +54,24 @@ for (const role of ["student", "teacher"]) {
     }
     for (const packageSlug of ["ultimate-b1", "ultimate-b1-plus"]) {
       const route = routes.parseHashRoute(`${prefix}/${packageSlug}/components/${packageSlug}-workbook/pages/${workbookPages[0]}`);
-      assert.equal(route.selectedPageId, null, "No managed Workbook allowance in another package's empty catalog");
+      assert.equal(route.valid, false, "Cross-book managed prefixes are rejected even for empty shells");
     }
   });
+
+  for (const bookSlug of ["ultimate-b1", "ultimate-b1-plus"]) for (const suffix of ["students-book", "workbook"]) {
+    test(`${role}: ${bookSlug} ${suffix} accepts only its real managed creation route`, async () => {
+      const component = `${bookSlug}-${suffix}`;
+      const [pageId] = await managedPageRouteIds(component);
+      const base = `${prefix}/${bookSlug}/components/${component}`;
+      for (const subview of ["pages", "flipbook"]) {
+        const route = routes.parseHashRoute(`${base}/${subview}/${pageId}`);
+        assert.equal(route.valid, true); assert.equal(route.selectedPageId, pageId); assert.equal(route.selectedPackageSlug, bookSlug);
+        for (const invalid of [workbookPages[0], studentsPages[0], "opaque-id", "1", pageId.toUpperCase(), `${pageId}/extra`, `${pageId}%2Fextra`, pageId.slice(1), `${pageId}0`]) {
+          assert.equal(routes.parseHashRoute(`${base}/${subview}/${invalid}`).valid, false, invalid);
+        }
+      }
+    });
+  }
 
   test(`${role}: existing static Workbook page identities and numbers remain valid`, () => {
     for (const [id, number] of [["wb-listening-20", 20], ["wb-consolidation-21", 21]]) {

@@ -1,3 +1,4 @@
+import { findPublicationProduct } from "../publicationRegistry.js";
 export const ULTIMATE_B2_PRODUCT_RELEASE_SCHEMA_VERSION = "1.0";
 export const ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID = "ultimate-b2-product-v1";
 export const ULTIMATE_B2_LEGACY_PRODUCT_RELEASE_COMPILER_ID = "ultimate-b2-product-legacy-v1";
@@ -45,21 +46,23 @@ export function normalizeProductReleaseMember(value, expected = null) {
   return Object.freeze({ ...member, memberSha256: value.memberSha256 });
 }
 
-function normalizedMembers(values) {
-  if (!Array.isArray(values) || values.length !== ULTIMATE_B2_PRODUCT_RELEASE_COMPONENTS.length) throw new Error("Product release member set is incomplete.");
-  const members = values.map((value, index) => normalizeProductReleaseMember(value, ULTIMATE_B2_PRODUCT_RELEASE_COMPONENTS[index]));
+function normalizedMembers(values, contract) {
+  if (!Array.isArray(values) || values.length !== contract.members.length) throw new Error("Product release member set is incomplete.");
+  const members = values.map((value, index) => normalizeProductReleaseMember(value, contract.members[index]));
+  if (contract.bookSlug !== "ultimate-b2" && members.some((member, index) => member.compilerId !== contract.members[index].compilerId || member.releaseSchemaVersion !== contract.members[index].releaseSchemaVersion)) throw new Error("Product release member compiler is invalid.");
   if (new Set(members.map((member) => member.componentSlug)).size !== members.length) throw new Error("Product release members must be unique.");
   return Object.freeze(members);
 }
 
 export function normalizeProductReleaseEnvelope(value) {
   exact(value, ["id", "number", "bookSlug", "compilerId", "releaseSchemaVersion", "sourceSnapshotSha256", "releaseSha256", "releaseNote", "createdAt", "members"], "Product release");
-  if (!UUID.test(String(value.id || "")) || value.bookSlug !== "ultimate-b2" || !Number.isSafeInteger(value.number) || value.number < 1
-    || ![ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID, ULTIMATE_B2_LEGACY_PRODUCT_RELEASE_COMPILER_ID].includes(value.compilerId)
+  const contract = findPublicationProduct(value.bookSlug);
+  if (!UUID.test(String(value.id || "")) || !contract || !Number.isSafeInteger(value.number) || value.number < 1
+    || !(value.compilerId === contract.compilerId || value.bookSlug === "ultimate-b2" && value.compilerId === ULTIMATE_B2_LEGACY_PRODUCT_RELEASE_COMPILER_ID)
     || value.releaseSchemaVersion !== ULTIMATE_B2_PRODUCT_RELEASE_SCHEMA_VERSION || !SHA256.test(String(value.sourceSnapshotSha256 || ""))
     || !SHA256.test(String(value.releaseSha256 || "")) || typeof value.releaseNote !== "string" || value.releaseNote.length > 240
     || !Number.isFinite(Date.parse(value.createdAt || ""))) throw new Error("Product release identity is invalid.");
-  const members = normalizedMembers(value.members);
-  if (value.compilerId === ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID && members.some((member) => member.status !== "included")) throw new Error("Current product releases require every member.");
+  const members = normalizedMembers(value.members, contract);
+  if (value.compilerId === contract.compilerId && members.some((member) => member.status !== "included")) throw new Error("Current product releases require every member.");
   return Object.freeze({ ...value, id: value.id.toLowerCase(), members });
 }

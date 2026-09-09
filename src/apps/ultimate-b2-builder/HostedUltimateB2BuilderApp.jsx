@@ -27,11 +27,11 @@ function UltimateB2ActivityWorkspace({ nativeActivities, bookSlug, componentSlug
 }
 
 export function UltimateB2StudentsBookHostedWorkspace({ tool = "hotspots", nativeActivities = null, bookSlug = "ultimate-b2", componentSlug = "ultimate-b2-students-book" }) {
-  return <div className="ultimate-b2-builder-app" data-build-profile="book-builder-hosted-review" data-component-adapter={componentSlug}>{tool === "hotspots" ? <HostedUltimateB2HotspotBuilder bookSlug={bookSlug} componentSlug={componentSlug} /> : null}{tool === "activities" ? <UltimateB2ActivityWorkspace nativeActivities={nativeActivities} bookSlug={bookSlug} componentSlug={componentSlug} /> : null}{tool === "publication" ? <HostedPublicationWorkspace /> : null}</div>;
+  return <div className="ultimate-b2-builder-app" data-build-profile="book-builder-hosted-review" data-component-adapter={componentSlug}>{tool === "hotspots" ? <HostedUltimateB2HotspotBuilder bookSlug={bookSlug} componentSlug={componentSlug} /> : null}{tool === "activities" ? <UltimateB2ActivityWorkspace nativeActivities={nativeActivities} bookSlug={bookSlug} componentSlug={componentSlug} /> : null}{tool === "publication" ? <HostedPublicationWorkspace bookSlug={bookSlug} componentSlug={componentSlug} /> : null}</div>;
 }
 
 export function UltimateB2ManagedComponentHostedWorkspace({ tool = "hotspots", nativeActivities = null, bookSlug = "ultimate-b2", componentSlug }) {
-  return <div className="ultimate-b2-builder-app" data-build-profile="book-builder-hosted-review" data-component-adapter={componentSlug}>{tool === "hotspots" ? <HostedUltimateB2HotspotBuilder bookSlug={bookSlug} componentSlug={componentSlug} /> : null}{tool === "activities" ? <UltimateB2ActivityWorkspace nativeActivities={nativeActivities} bookSlug={bookSlug} componentSlug={componentSlug} /> : null}{tool === "publication" ? <HostedPublicationWorkspace /> : null}</div>;
+  return <div className="ultimate-b2-builder-app" data-build-profile="book-builder-hosted-review" data-component-adapter={componentSlug}>{tool === "hotspots" ? <HostedUltimateB2HotspotBuilder bookSlug={bookSlug} componentSlug={componentSlug} /> : null}{tool === "activities" ? <UltimateB2ActivityWorkspace nativeActivities={nativeActivities} bookSlug={bookSlug} componentSlug={componentSlug} /> : null}{tool === "publication" ? <HostedPublicationWorkspace bookSlug={bookSlug} componentSlug={componentSlug} /> : null}</div>;
 }
 
 export function UltimateB2PagesHostedWorkspace({ bookSlug = "ultimate-b2", componentSlug }) {

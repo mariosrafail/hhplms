@@ -6,6 +6,7 @@ import { PublishedBookInteractive } from "./PublishedBookInteractive.jsx";
 import { getComponentRouteSlug, getPackageRouteSlug } from "../../../utils/hashRoutes.js";
 import { findBookComponentById, isBookMatch, getExerciseActivityKey } from "./bookBrowserUtils.js";
 import { filterPhaseOneComponents, isPhaseOneComponentVisible } from "../../../config/bookCatalogVisibility.js";
+import { findPublicationComponent } from "../../../data/publicationRegistry.js";
 
 export function BookPackageBrowser({
   mode = "student",
@@ -35,12 +36,12 @@ export function BookPackageBrowser({
   const selectedComponentId = controlledSelectedComponentId !== undefined ? controlledSelectedComponentId : uncontrolledSelectedComponentId;
   const selectedComponent = useMemo(() => findBookComponentById(activePackage, selectedComponentId), [activePackage, selectedComponentId]);
   const componentRouteSlug = getComponentRouteSlug(selectedComponent || {});
-  const publishedComponentSlug = selectedComponent?.slug?.startsWith("ultimate-b2-") ? selectedComponent.slug
-    : componentRouteSlug.startsWith("ultimate-b2-") ? componentRouteSlug : `ultimate-b2-${componentRouteSlug}`;
+  const packageSlug = getPackageRouteSlug(activePackage);
+  const publishedComponentSlug = findPublicationComponent(packageSlug, selectedComponent?.slug)?.componentSlug
+    || findPublicationComponent(packageSlug, componentRouteSlug)?.componentSlug || `${packageSlug}-${componentRouteSlug}`;
   const publishedInteractive = !String(import.meta.env.VITE_APP_MODE || "web").includes("offline")
-    && getPackageRouteSlug(activePackage) === "ultimate-b2"
     && isPhaseOneComponentVisible(activePackage, selectedComponent || {})
-    && ["ultimate-b2-students-book", "ultimate-b2-workbook"].includes(publishedComponentSlug);
+    && Boolean(findPublicationComponent(packageSlug, publishedComponentSlug));
 
   const selectComponent = (componentId) => {
     if (controlledSelectedComponentId === undefined) {
@@ -71,7 +72,7 @@ export function BookPackageBrowser({
     <section className={`book-package-browser ${mode === "teacher" ? "teacher-mode" : "student-mode"}`}>
       {selectedComponent && publishedInteractive ? (
         <PublishedBookInteractive bookSlug={getPackageRouteSlug(activePackage)} componentSlug={publishedComponentSlug} currentUser={currentUser} mode={mode}
-          onLegacyActivity={selectedComponent.legacyDiscoveryAllowed === false ? undefined : (activityId) => {
+          onLegacyActivity={packageSlug !== "ultimate-b2" || selectedComponent.legacyDiscoveryAllowed === false ? undefined : (activityId) => {
             const exercise = selectedComponent.units.flatMap((unit) => unit.lessons.flatMap((lesson) => lesson.exercises)).find((item) => getExerciseActivityKey(item) === activityId);
             const launch = mode === "teacher" ? onPreviewExercise : onStartExercise;
             if (!exercise || exercise.locked || (mode !== "teacher" && !exercise.availableToStudent) || !launch) return false;

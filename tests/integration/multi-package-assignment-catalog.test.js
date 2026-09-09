@@ -71,7 +71,8 @@ test("authorized B1, B1+, and B2 legacy catalog enforces package boundaries acro
     await admin.query(`drop schema if exists "${schema}" cascade`);
     await admin.end();
   });
-  await applyCanonicalProductionMigrations(pool);
+  // Exercise the historical mutable catalog before managed-only publication is installed.
+  await applyCanonicalProductionMigrations(pool, { through: "061_students_book_publication_v3.sql" });
 
   const teacher = (await pool.query("select id,school_id from app_users where role='teacher' and school_id is not null limit 1")).rows[0];
   assert.ok(teacher);
@@ -207,4 +208,15 @@ test("authorized B1, B1+, and B2 legacy catalog enforces package boundaries acro
     activityId: activitiesByPackage.get("ultimate-b1")[0].id,
   }, { ...unauthorizedTeacher, role: "teacher" }));
   assert.equal(denied.status, 403);
+  const historicalHomework = await getTeacherHomework(sql, created.body.homework.id, teacher.id, teacherUser);
+  await applyCanonicalProductionMigrations(pool);
+  assert.deepEqual(await getTeacherHomework(sql, created.body.homework.id, teacher.id, teacherUser), historicalHomework);
+  for (const scope of scopes) {
+    const current = buildHomeworkActivityOptions([assignmentTree(await fetchPackageTree(sql, { packageId: scope.package_id }))]);
+    const ids = new Set(activitiesByPackage.get(scope.package_slug).map((activity) => String(activity.id)));
+    assert.equal(current.filter((option) => ids.has(String(option.activityId))).length, scope.package_slug === "ultimate-b2" ? 2 : 0);
+  }
+  const blocked = parse(await createHomework(sql, { ...b1Request, idempotencyKey: "new-mutable-b1-rejected" }, teacherUser));
+  assert.notEqual(blocked.status, 201);
+  assert.equal(Number((await pool.query("select count(*) from homeworks where idempotency_key='new-mutable-b1-rejected'")).rows[0].count), 0);
 });

@@ -77,7 +77,7 @@ test("the server registry exposes exactly six managed B1/B1+ tuples and keeps Te
     assert.equal(registration.mode, "managed");
     assert.equal(registration.pageCatalog.pagePrefix, identity.pagePrefix);
     assert.equal(registration.nativeActivity.activityPrefix, identity.activityPrefix);
-    assert.deepEqual(registration.publication, { enabled: false });
+    assert.deepEqual(registration.publication, { enabled: !identity.componentSlug.endsWith("-grammar-book") });
     assert.equal(registration.content.unitExtras, false);
     assert.deepEqual(resolveBuilderPageComponent(identity.bookSlug, identity.componentSlug).baseline, []);
 
@@ -280,7 +280,7 @@ test("the shared native catalog collector admits exact B1/B1+ tuples without ope
   assert.equal(queried.length, queryCount, "closed component registries must reject before SQL");
 });
 
-test("preview actions cover exact active tuples, switch only within one package, and leave publication closed", async () => {
+test("preview actions cover exact active tuples and registered immutable components", async () => {
   const tokenEvent = (token) => ({ queryStringParameters: { previewAuthorization: token } });
   for (const identity of components) {
     const intent = { ...identity, view: "library", pageId: null, activityId: null, releaseId: null };
@@ -299,7 +299,12 @@ test("preview actions cover exact active tuples, switch only within one package,
     for (const action of ["unit-extras-draft", "unit-extra-draft-asset", "open-response-teacher", "release-public"]) {
       assert.equal(verifyBuilderPreviewAuthorization(tokenEvent(issued.token), scoped(action), { environment: previewEnvironment, now: previewNow }), false, `${identity.componentSlug}:${action}`);
     }
-    assert.throws(() => issueBuilderPreviewAuthorization({ ...intent, releaseId: "10000000-0000-4000-8000-000000000099" }, { environment: previewEnvironment, now: previewNow, nonce: "release-disabled" }));
+    const releaseIntent = { ...intent, releaseId: "10000000-0000-4000-8000-000000000099" };
+    if (identity.componentSlug.endsWith("-grammar-book")) assert.throws(() => issueBuilderPreviewAuthorization(releaseIntent, { environment: previewEnvironment, now: previewNow, nonce: "release-disabled" }));
+    else {
+      const preview = issueBuilderPreviewAuthorization(releaseIntent, { environment: previewEnvironment, now: previewNow, nonce: "registered-release" });
+      assert.equal(verifyBuilderPreviewAuthorization(tokenEvent(preview.token), { ...scoped("release-public"), releaseId: releaseIntent.releaseId }, { environment: previewEnvironment, now: previewNow }), true);
+    }
   }
   assert.throws(() => issueBuilderPreviewAuthorization({ bookSlug: "ultimate-b1", componentSlug: "ultimate-b1-test-book", view: "library", pageId: null, activityId: null, releaseId: null }, { environment: previewEnvironment, now: previewNow, nonce: "test-book-disabled" }));
   assert.throws(() => issueBuilderPreviewAuthorization({ bookSlug: "ultimate-b1", componentSlug: "ultimate-b1-plus-workbook", view: "library", pageId: null, activityId: null, releaseId: null }, { environment: previewEnvironment, now: previewNow, nonce: "forged-tuple" }));
@@ -455,14 +460,14 @@ test("package UI documents, mutation routes, candidates, sessions, and public ob
   assert.equal(workerKey, buildBookAssetHostedTeacherUiPublicKey({ bookSlug: "ultimate-b1-plus", componentSlug: "ultimate-b1-plus-students-book", checksum, extension: "png" }));
 });
 
-test("B1/B1+ and Test Book publication routes fail closed before storage or compilation", async () => {
+test("B1/B1+ standalone component mutations and Grammar/Test publication remain closed", async () => {
   let databaseCalls = 0;
   const handler = createBuilderPublicationHandler({
     getDatabase: () => { databaseCalls += 1; throw new Error("disabled publication must not reach storage"); },
     logger: { error() {} },
   });
   for (const identity of components) {
-    const response = await handler(event(`/builder/api/publication/books/${identity.bookSlug}/components/${identity.componentSlug}`));
+    const response = await handler(event(`/builder/api/publication/books/${identity.bookSlug}/components/${identity.componentSlug}/prepare`, { method: "POST", body: {} }));
     assert.equal(response.statusCode, 404);
     assert.deepEqual(JSON.parse(response.body), { error: "publication_component_not_found" });
   }

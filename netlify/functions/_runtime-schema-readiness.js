@@ -68,6 +68,9 @@ async function inspectRuntimeSchema(sql, contract) {
   }
   for (const expected of contract.expectedMigrations) {
     const checksums = applied.get(expected.filename);
+    // Additive publication capability has its own bounded readiness probe.
+    // Existing B2/authentication remain available before the feature migration.
+    if (!checksums?.length && expected.featureOptional === true) continue;
     if (!checksums?.length) return failure("EXPECTED_MIGRATION_MISSING", { migration: expected.filename });
     if (checksums.length !== 1 || !expected.compatibleChecksums.includes(checksums[0])) {
       return failure("EXPECTED_MIGRATION_CHECKSUM_MISMATCH", { migration: expected.filename });

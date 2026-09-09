@@ -3,6 +3,8 @@ import { loadProductRelease, loadProductReleaseComponentRows } from "../../../ne
 import { verifyProductReleaseEnvelope } from "../../../netlify-sites/ultimate-b2-builder/server/_builder-product-publication-domain.js";
 import { accessiblePackageIds } from "./shared.js";
 import { LMS_PUBLISHED_COMPONENTS } from "./published-book-model.js";
+import { publicationProducts } from "../../../src/data/publicationRegistry.js";
+import { findProductComponent } from "../../../src/data/bookProductCatalog.js";
 
 function exactProductEnvelope(product) {
   return {
@@ -22,10 +24,15 @@ export async function loadVerifiedPublishedBookFamily(sql, currentUser, { allowe
            head.product_release_id
     from book_packages package
     left join book_product_publication_heads head on head.book_package_id=package.id
-    where package.slug='ultimate-b2' and package.status='active' and package.id=any(${allowed}::uuid[])
+    where package.slug=any(${publicationProducts.map((product) => product.bookSlug)}::text[]) and package.status='active' and package.id=any(${allowed}::uuid[])
   `;
   if (!heads.length) return [];
-  const head = heads[0];
+  const families = [];
+  for (const head of heads) families.push(...await loadFamily(sql, head, componentRows));
+  return families;
+}
+
+async function loadFamily(sql, head, componentRows) {
   if (head.product_release_id) {
     const product = await loadProductRelease(sql, { bookSlug: head.package_slug, productReleaseId: head.product_release_id });
     if (!product) throw new Error("publication_family_unavailable");
@@ -43,14 +50,15 @@ export async function loadVerifiedPublishedBookFamily(sql, currentUser, { allowe
         || row.release_schema_version !== member.releaseSchemaVersion || row.release_sha256 !== member.releaseSha256
         || row.runtime_compatibility_sha256 !== member.compatibility) throw new Error("publication_family_mismatch");
       result.push({ row: { ...row, package_slug: head.package_slug, package_title: head.package_title,
-        component_title: { "ultimate-b2-students-book": "Students Book", "ultimate-b2-workbook": "Workbook", "ultimate-b2-grammar-book": "Grammar Book" }[row.component_slug] }, verified: verifyImmutableComponentRelease(row), productReleaseId: product.id });
+        component_title: findProductComponent(head.package_slug, row.component_slug)?.title }, verified: verifyImmutableComponentRelease(row), productReleaseId: product.id });
     }
     if (rows.length !== result.length) throw new Error("publication_family_mismatch");
     return result;
   }
   // Historical component-only publications retain their original access path.
   // A product family, once present, is never assembled from component latests.
-  const rows = componentRows || await sql`
+  if (head.package_slug !== "ultimate-b2") return [];
+  const rows = componentRows?.filter((row) => row.package_slug === "ultimate-b2") || await sql`
     select release.*, package.slug as package_slug, package.title as package_title,
            component.slug as component_slug, component.title as component_title
     from book_component_publication_heads head

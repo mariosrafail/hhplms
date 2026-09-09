@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
 
 import { normalizeProductReleaseEnvelope } from "../../../src/data/ultimate-b2/productPublication.js";
+import { findPublicationProduct, findPublicationComponentBySlug } from "../../../src/data/publicationRegistry.js";
 
 const sha256 = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 const absent = (value) => value === null || value === undefined ? "-" : String(value);
 
 export function productReleaseMemberFingerprintInput(member) {
   return [
-    "ultimate-b2-product-member-v1",
+    `${findPublicationComponentBySlug(member.componentSlug)?.bookSlug || (() => { throw new Error("Unsupported product member"); })()}-product-member-v1`,
     member.order,
     member.componentSlug,
     member.status,
@@ -26,7 +27,7 @@ export function productReleaseMemberSha256(member) {
 
 export function productReleaseSourceFingerprintInput({ bookSlug, releaseNumber, members }) {
   return [
-    "ultimate-b2-product-source-v1",
+    `${findPublicationProduct(bookSlug)?.bookSlug || (() => { throw new Error("Unsupported product"); })()}-product-source-v1`,
     bookSlug,
     releaseNumber,
     ...members.map((member) => `${member.componentSlug}\t${member.memberSha256}`),
@@ -39,7 +40,7 @@ export function productReleaseSourceSha256(value) {
 
 export function productReleaseFingerprintInput({ compilerId, releaseSchemaVersion, bookSlug, releaseNumber, sourceSnapshotSha256, releaseNote, members }) {
   return [
-    "ultimate-b2-product-release-v1",
+    `${findPublicationProduct(bookSlug)?.bookSlug || (() => { throw new Error("Unsupported product"); })()}-product-release-v1`,
     compilerId,
     releaseSchemaVersion,
     bookSlug,

@@ -152,7 +152,7 @@ test("B1/B1+ adapters are exact managed tuples with no publication and package t
   assert.match(shell, /<HostedPackageReview key=\{reviewScope\}/);
 });
 
-test("neutral managed workspaces import no B2 catalog, activity dataset, or publication UI", async () => {
+test("neutral managed workspaces reuse scoped publication without B2 content or Extras", async () => {
   const sources = await Promise.all([
     "src/apps/book-builder/hosted/HostedManagedComponentWorkspace.jsx",
     "src/apps/book-builder/hosted/HostedActivityWorkspace.jsx",
@@ -160,11 +160,11 @@ test("neutral managed workspaces import no B2 catalog, activity dataset, or publ
     "src/apps/book-builder/hosted/activityBuilderNavigation.js",
   ].map(read));
   const source = sources.join("\n");
-  assert.doesNotMatch(source, /android-content-packs\/ultimate-b2|data\/ultimate-b2|HostedOpenResponseEditor|HostedPublicationWorkspace|UnitExtrasEditor/);
+  assert.doesNotMatch(source, /android-content-packs\/ultimate-b2|data\/ultimate-b2|HostedOpenResponseEditor|UnitExtrasEditor/);
   assert.match(source, /No activities yet/);
   assert.match(source, /empty document remains valid/);
   assert.match(sources[0], /tool === "pages"[\s\S]*tool === "hotspots"[\s\S]*tool === "activities"/);
-  assert.doesNotMatch(sources[0], /tool === "publication"/);
+  assert.match(sources[0], /tool === "publication"[\s\S]*HostedPublicationWorkspace bookSlug=\{bookSlug\} componentSlug=\{componentSlug\}/);
 });
 
 test("generic hosted Review routing round-trips strict token-free Viewer intents", () => {

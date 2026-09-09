@@ -124,7 +124,8 @@ test("runtime readiness recovers, remains forward-compatible, and works through 
     migrations.map(({ filename }) => filename),
   );
 
-  const latest = migrations.at(-1);
+  // 062 is an optional feature capability; loss of required history still blocks auth.
+  const latest = migrations.find((migration) => migration.filename === '061_students_book_publication_v3.sql');
   await setup.query("delete from eduforge_migration_history where filename=$1", [latest.filename]);
   resetRuntimeSchemaReadinessCache(readinessSql);
   assert.equal((await checkRuntimeSchemaReadiness(readinessSql)).ready, false);

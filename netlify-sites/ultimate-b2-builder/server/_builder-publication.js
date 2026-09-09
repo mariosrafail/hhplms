@@ -1,3 +1,4 @@
+import { newManagedPublicationComponents } from "../../../src/data/publicationRegistry.js";
 import { deliverNativeTeacherAnswer } from "./_builder-native-answer-delivery.js";
 import { createHash } from "node:crypto";
 import { createBookAssetStorage } from "../../../lib/book-assets/storage.js";
@@ -132,7 +133,7 @@ export function createBuilderPublicationHandler(overrides = {}) {
               if (!pin || pin.component_release_id !== release.id || pin.asset_role !== asset.role || pin.checksum_sha256 !== asset.sha256
                 || pin.extension !== asset.extension || pin.media_type !== asset.mediaType || Number(pin.byte_size) < 1
                 || pin.storage_profile !== "private") return json(409, { error: "release_pin_integrity_failed" });
-              if (release.compiler_id === "ultimate-b2-students-book-v3") {
+              if (release.compiler_id === "ultimate-b2-students-book-v3" || newManagedPublicationComponents.some((entry) => entry.compilerId === release.compiler_id)) {
                 try { verifiedPublicAssetPin({ row: release, projection: verified.publicProjection, asset, pin }); }
                 catch { return json(409, { error: "release_pin_integrity_failed" }); }
               }
@@ -145,7 +146,9 @@ export function createBuilderPublicationHandler(overrides = {}) {
           return { statusCode: 302, headers: { Location: target.publicPath, "Cache-Control": "private, no-store", Vary: "Cookie", "X-Content-Type-Options": "nosniff" }, body: "" };
         }
         if (parsedRoute.action === "public") return json(200, { releaseId: release.id, releaseNumber: Number(release.release_number), releaseSha256: release.release_sha256, compatibility: release.runtime_compatibility_sha256, compilerId: release.compiler_id, releaseSchemaVersion: release.release_schema_version, projection: verified.publicProjection }, { "Cache-Control": "private, no-store", Vary: "Cookie" });
-        if (parsedRoute.action === "teacher-ui") return json(200, { releaseId: release.id, releaseNumber: Number(release.release_number), document: release.teacher_projection.ui });
+        if (parsedRoute.action === "teacher-ui") return release.teacher_projection.ui
+          ? json(200, { releaseId: release.id, releaseNumber: Number(release.release_number), document: release.teacher_projection.ui })
+          : json(404, { error: "release_teacher_ui_not_included" });
         if (parsedRoute.action === "native-teacher") {
           const native = verified.teacherProjection?.nativeActivities?.[parsedRoute.activityId];
           return native ? json(200, { releaseId: release.id, releaseNumber: Number(release.release_number), activityId: parsedRoute.activityId, kind: native.kind, document: native.document }, { "Cache-Control": "private, no-store", Vary: "Cookie" }) : json(404, { error: "release_native_teacher_not_found" });

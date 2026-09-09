@@ -31,6 +31,8 @@ import { COMPONENT_PUBLICATION_ASSET_ROLES } from "../../../src/data/ultimate-b2
 import { STUDENTS_BOOK_V3_COMPILER, STUDENTS_BOOK_V3_SCHEMA, normalizeStudentsBookV3Sources, normalizeStudentsBookV3Public, normalizeStudentsBookV3Teacher } from "../../../src/data/ultimate-b2/componentPublicationV3.js";
 import { compileStudentsBookReleaseV3, studentsBookV3Compatibility } from "./_builder-publication-compiler-v3.js";
 import { collectStudentsBookPublicationV3Sources } from "./_builder-publication-sources-v3.js";
+import { newManagedPublicationComponents, findPublicationComponentBySlug } from "../../../src/data/publicationRegistry.js";
+import { collectManagedPublicationSources } from "./_builder-publication-store.js";
 
 function expectedAssetManifest(publicProjection, teacherProjection) {
   return [
@@ -142,11 +144,11 @@ const v2 = Object.freeze({
 });
 
 function managed(componentSlug) {
-  const compilerId = ULTIMATE_B2_MANAGED_COMPONENT_COMPILERS[componentSlug];
+  const { compilerId, bookSlug } = findPublicationComponentBySlug(componentSlug);
   return Object.freeze({
     compilerId,
     releaseSchemaVersion: ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION,
-    collect(sql) { return collectUltimateB2ManagedPublicationSources(sql, componentSlug); },
+    collect(sql) { return collectManagedPublicationSources(sql, bookSlug, componentSlug); },
     compile(sources) { return compileUltimateB2ManagedComponentRelease(sources, componentSlug); },
     verifyRelease(release) { return verifyUltimateB2ManagedComponentRelease(release, componentSlug); },
   });
@@ -172,7 +174,9 @@ const v3 = Object.freeze({
     return { compatibility, sourceSnapshot, publicProjection, teacherProjection };
   },
 });
-const registry = Object.freeze({ [v1.compilerId]: v1, [v2.compilerId]: v2, [v3.compilerId]: v3, [workbook.compilerId]: workbook, [grammarBook.compilerId]: grammarBook });
+const registry = Object.freeze({ [v1.compilerId]: v1, [v2.compilerId]: v2, [v3.compilerId]: v3, [workbook.compilerId]: workbook, [grammarBook.compilerId]: grammarBook,
+  ...Object.fromEntries(newManagedPublicationComponents.map((entry) => [entry.compilerId, managed(entry.componentSlug)])),
+});
 
 export function resolvePublicationCompiler(compilerId, releaseSchemaVersion = null) {
   const compiler = registry[compilerId] || null;

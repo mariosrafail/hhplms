@@ -1,6 +1,7 @@
 import { lazy } from "react";
 
 import { NATIVE_ACTIVITY_KINDS } from "../../../data/native-activities/nativeActivityKinds.js";
+import { findPublicationComponent } from "../../../data/publicationRegistry.js";
 
 const UltimateB2StudentsBookHostedWorkspace = lazy(() => import(
   "../../ultimate-b2-builder/HostedUltimateB2BuilderApp.jsx"
@@ -37,7 +38,7 @@ function managedAdapter({ id, bookSlug, bookTitle, componentSlug, componentTitle
     bookSlug,
     componentSlug,
     nativeActivities: Object.freeze({ enabled: true, kinds: NATIVE_ACTIVITY_KINDS, placements: Object.freeze([]), managed: true }),
-    capabilities: managedCapabilities,
+    capabilities: findPublicationComponent(bookSlug, componentSlug) ? Object.freeze({ ...managedCapabilities, publication: Object.freeze({ readable: true, writable: true }) }) : managedCapabilities,
     Workspace(props) { return <HostedManagedComponentWorkspace {...props} bookTitle={bookTitle} componentTitle={componentTitle} />; },
   });
 }

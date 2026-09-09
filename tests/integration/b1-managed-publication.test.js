@@ -212,6 +212,8 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
   await pool.query('insert into book_component_publication_heads(book_component_id,book_package_id,release_id,head_revision,published_by_builder_user_id) values($1,$2,$3,1,$4)', [b2Scope.id, b2Scope.book_package_id, legacy.releaseId, actor]);
   await pool.query('insert into book_component_publication_events(book_component_id,book_package_id,release_id,expected_head_revision,resulting_head_revision,request_sha256,client_mutation_id,published_by_builder_user_id) values($1,$2,$3,0,1,$4,$5,$6)', [b2Scope.id, b2Scope.book_package_id, legacy.releaseId, historical.releaseSha256, randomUUID(), actor]);
   const allPackages = [...packages, { id: b2Scope.book_package_id, slug: 'ultimate-b2' }];
+  const entitlementBooks = response(await listPublishedBooks(sql, student)).books;
+  assert.equal(entitlementBooks.length, 4);
   const accessUser = { id: randomUUID(), school_id: student.school_id, role: 'student', status: 'active' };
   await pool.query("insert into app_users(id,school_id,role,full_name,email,password_hash,status) values($1,$2,'student','Entitlement fixture',$3,'synthetic','active')", [accessUser.id, accessUser.school_id, `${accessUser.id}@example.test`]);
   for (let mask = 0; mask < 8; mask++) {
@@ -220,7 +222,7 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
     for (const pack of entitled) await pool.query("insert into book_access(user_id,book_package_id,role_scope) values($1,$2,'student')", [accessUser.id, pack.id]);
     const visible = response(await listPublishedBooks(sql, accessUser)).books;
     assert.deepEqual([...new Set(visible.map((book) => book.bookSlug))].sort(), entitled.map((pack) => pack.slug).sort());
-    for (const book of initialBooks) {
+    for (const book of entitlementBooks) {
       const query = { bookSlug: book.bookSlug, componentSlug: book.componentSlug, releaseId: book.releaseId, activityId: book.pages[0].hotspots[0].activityId, sha256: book.pages[0].image.sha256, extension: 'png' };
       if (!entitled.some((pack) => pack.slug === book.bookSlug)) for (const action of ['active-component-release', 'published-book-activity', 'published-release-asset']) {
         assert.equal((await routePublishedBookRead(sql, accessUser, { httpMethod: 'GET' }, { ...query, action }, {})).statusCode, 403, action);
@@ -229,6 +231,11 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
     }
   }
   const sb = initialBooks.find((book) => book.componentSlug === 'ultimate-b1-students-book');
+  const otherHeads = async () => ({
+    products: (await pool.query("select * from book_product_publication_heads where book_package_id<>(select id from book_packages where slug='ultimate-b1') order by book_package_id")).rows,
+    components: (await pool.query("select * from book_component_publication_heads where book_package_id<>(select id from book_packages where slug='ultimate-b1') order by book_component_id")).rows,
+  });
+  const originalOtherHeads = await otherHeads();
   const absent = await pool.connect();
   try {
     await absent.query('begin');
@@ -284,6 +291,9 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
   assert.equal(latestSb.pages[1].hotspots[1].target.nativeActivityId, originalId);
   assert.equal(latestSb.pages[0].hotspots[0].left, 21);
   assert.equal(latest.find((book) => book.bookSlug === 'ultimate-b1-plus').productReleaseId, plus.productReleaseId);
+  assert.deepEqual(await otherHeads(), originalOtherHeads, 'B1 R2 does not change any B1 Plus or B2 publication head');
+  const currentActivity = response(await getPublishedBookActivity(sql, student, { bookSlug: 'ultimate-b1', componentSlug: sb.componentSlug, releaseId: latestSb.releaseId, activityId: originalId }));
+  assert.equal(currentActivity.target.entry.document.metadata.title, 'R2 activity');
   assert.deepEqual((await pool.query('select * from activity_assignments where id=$1', [assignment.id])).rows[0], originalAssignment);
   const oldActivity = response(await getPublishedBookActivity(sql, student, { bookSlug: 'ultimate-b1', componentSlug: sb.componentSlug, releaseId: activity.releaseId, activityId: activity.nativeActivityId }));
   assert.ok(!JSON.stringify(oldActivity).includes('R2 activity'));

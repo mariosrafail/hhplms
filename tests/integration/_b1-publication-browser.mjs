@@ -107,6 +107,9 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
         const frameUrl = new URL(await page.locator('.unified-builder-review-dialog iframe').getAttribute('src'));
         assert.equal(frameUrl.searchParams.get('bookSlug'), book);
         assert.equal(frameUrl.searchParams.get('componentSlug'), `${book}-${suffix}`);
+        await frame.locator('.teacher-offline-page-hotspot').first().click();
+        await expect(frame.locator('.published-native-activity')).toBeVisible();
+        await expect(frame.locator('.published-native-activity')).toHaveAttribute('data-release-id', frameUrl.searchParams.get('releaseId'));
         await page.getByRole('button', { name: 'Close Review', exact: true }).click();
         for (const original of originalPages) await pool.query('update book_pages set source_metadata=$2::jsonb where id=$1', [original.id, JSON.stringify(original.source_metadata)]);
       }

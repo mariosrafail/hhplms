@@ -569,8 +569,7 @@ try {
       await page.locator(`[data-component-pages="${component.componentSlug}"]`).waitFor();
       assert.equal(new URL(page.url()).hash, `#/books/${shell.bookSlug}/components/${component.componentSlug}`);
       assert.equal(await page.getByRole("link", { name: shell.bookTitle, exact: true }).count(), 1);
-      const publicationTools = component.componentTitle === "Grammar Book" ? [] : ["Publication"];
-      assert.deepEqual(await page.locator(".hosted-builder-tool-tabs a strong").allTextContents(), ["Pages", "Hotspot Builder", "Activity Builder", ...publicationTools]);
+      assert.deepEqual(await page.locator(".hosted-builder-tool-tabs a strong").allTextContents(), ["Pages", "Hotspot Builder", "Activity Builder", ...(component.componentTitle === "Grammar Book" ? [] : ["Publication"])]);
       const unitSections = page.locator(".component-pages-groups > section[data-page-unit]");
       await expect(unitSections).toHaveCount(10);
       assert.equal(await page.locator(".component-page-card").count(), 0);

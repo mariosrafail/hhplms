@@ -15,7 +15,7 @@ PR-014 Phase 1 adds read-only evidence gathering only. It does not remove identi
 Run only from an approved operator environment containing:
 
 - `DATABASE_URL`: hosted production PostgreSQL connection.
-- `PRODUCTION_DATABASE_FINGERPRINT`: SHA-256 of the normalized production database identity.
+- `PRODUCTION_DATABASE_FINGERPRINT`: SHA-256 of the production database identity under the shared [operator database identity contract](database-identity-contract.md).
 - `PRODUCTION_ENVIRONMENT_CONFIRMATION=hosted-production`.
 - `PRODUCTION_DATABASE_CONFIRMATION=read-only-production-preflight`.
 - `PRODUCTION_APP_URL`: HTTPS production application URL.

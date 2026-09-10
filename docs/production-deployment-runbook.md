@@ -62,7 +62,7 @@ Record variable presence and scope, never values, in release evidence.
 - `PRODUCTION_APP_URL`: HTTPS public production application URL.
 - Existing application runtime secrets, including ordinary, Platform Admin, account-lifecycle, invitation, email-dispatch, monitoring, storage, and mail credentials where enabled.
 
-The production preflight fails on missing or incorrect confirmations, malformed/loopback/non-production database identities, fingerprint mismatch, non-HTTPS application URLs, and placeholder values. It never prints the database URL, username, password, or raw fingerprint.
+The production preflight fails on missing or incorrect confirmations, malformed/loopback/non-production database identities, fingerprint mismatch, non-HTTPS application URLs, and placeholder values. It never prints the database URL, username, password, or raw fingerprint. The shared [operator database identity contract](database-identity-contract.md) defines effective-name decoding, case-changing-name rejection, unsupported target overrides, and explicit in-memory port pinning.
 
 ## 4. Pre-deployment sequence
 

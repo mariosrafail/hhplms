@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { databaseFingerprint } from "./_database-identity.mjs";
 import { createSafePool, loadProductionMigrationManifest, requireSafeDatabase } from "./_staging-db.mjs";
 import { migrationManifestSummary } from "./_migration-readiness.mjs";
 import { requireQaPassword } from "./_staging-qa-data.mjs";
@@ -24,12 +24,6 @@ function parsedUrl(value, name, protocols) {
   try { url = new URL(value); } catch { throw new Error(`${name} must be a valid URL`); }
   if (!protocols.includes(url.protocol)) throw new Error(`${name} uses an unsupported protocol`);
   return url;
-}
-
-function databaseFingerprint(value) {
-  const url = parsedUrl(value, "STAGING_DATABASE_URL", ["postgres:", "postgresql:"]);
-  const identity = `${url.hostname.toLowerCase()}:${url.port || "5432"}/${url.pathname.replace(/^\//, "").toLowerCase()}`;
-  return createHash("sha256").update(identity).digest("hex");
 }
 
 export function parseStagingProductionDatabaseFingerprints(value) {

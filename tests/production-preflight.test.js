@@ -60,7 +60,7 @@ test("neutral hosted database identity passes and excludes credentials", () => {
   assert.equal(productionDatabaseIdentity(first), "ep-neutral-123.provider.net:5432/appdb");
   assert.equal(productionDatabaseFingerprint(first), productionDatabaseFingerprint(second));
   const result = validateProductionEnvironment(productionEnvironment(first));
-  assert.equal(result.connectionString, first);
+  assert.equal(result.connectionString, "postgresql://first:one@ep-neutral-123.provider.net:5432/appdb?sslmode=require");
   assert.equal(result.fingerprintPrefix.length, 12);
 });
 

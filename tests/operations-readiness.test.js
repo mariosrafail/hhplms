@@ -16,17 +16,16 @@ import { config as cleanupSchedule } from "../netlify/functions/scheduled-lifecy
 import { inviteRequestFingerprint } from "../netlify/functions/_class-utils.js";
 import { loadProductionMigrationManifest, migrationManifestSummary } from "../scripts/_migration-readiness.mjs";
 
-function fingerprint(urlText) {
-  const url = new URL(urlText);
-  return createHash("sha256").update(`${url.hostname.toLowerCase()}:${url.port || "5432"}/${url.pathname.replace(/^\//, "").toLowerCase()}`).digest("hex");
+function fingerprint(identity) {
+  return createHash("sha256").update(identity).digest("hex");
 }
 
 function hostedStagingEnvironment(overrides = {}) {
   const db = "postgresql://qa:runtime-value@db.staging.test/hhplms_staging";
   const productionFingerprints = [
-    fingerprint("postgresql://prod:not-used@db.production.test/hhplms_production"),
-    fingerprint("postgresql://prod:not-used@db-primary.production.test/hhplms_production"),
-    fingerprint("postgresql://prod:not-used@db-pool.production.test/hhplms_production"),
+    fingerprint("db.production.test:5432/hhplms_production"),
+    fingerprint("db-primary.production.test:5432/hhplms_production"),
+    fingerprint("db-pool.production.test:5432/hhplms_production"),
   ];
   return {
     STAGING_DATABASE_URL: db,
@@ -138,7 +137,7 @@ test("staging preflight accepts visible staging hosts and only the exact known C
 
 test("staging preflight rejects collisions in every production fingerprint set position", async () => {
   const environment = hostedStagingEnvironment();
-  const stagingFingerprint = fingerprint(environment.STAGING_DATABASE_URL);
+  const stagingFingerprint = fingerprint("db.staging.test:5432/hhplms_staging");
   const safe = environment.STAGING_PRODUCTION_DATABASE_FINGERPRINTS.split(",");
   for (const fingerprints of [
     [stagingFingerprint, ...safe],
@@ -195,7 +194,7 @@ test("canonical migration pool cannot bypass hosted staging safety", async () =>
   const valid = hostedStagingEnvironment();
   const unsafeEnvironments = [
     { ...valid, DATABASE_URL: "postgresql://qa:other@db.staging.test/hhplms_other_staging" },
-    { ...valid, STAGING_PRODUCTION_DATABASE_FINGERPRINTS: fingerprint(valid.STAGING_DATABASE_URL) },
+    { ...valid, STAGING_PRODUCTION_DATABASE_FINGERPRINTS: fingerprint("db.staging.test:5432/hhplms_staging") },
     { ...valid, STAGING_PRODUCTION_DATABASE_FINGERPRINTS: undefined },
     { ...valid, STAGING_PRODUCTION_DATABASE_FINGERPRINTS: `${"a".repeat(64)},` },
     { ...valid, STAGING_PRODUCTION_DATABASE_FINGERPRINTS_CONFIRMATION: "partial-production-database-identity-set" },

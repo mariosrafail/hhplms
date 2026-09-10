@@ -1,4 +1,5 @@
 import pg from "pg";
+import { parseDatabaseTarget } from "./_database-identity.mjs";
 export {
   loadProductionMigrationFiles,
   loadProductionMigrationManifest,
@@ -15,26 +16,6 @@ const confirmations = {
   test: ["TEST_DATABASE_URL", "TEST_DATABASE_CONFIRMATION", "isolated-test-database"],
 };
 
-function databaseIdentity(url) {
-  return `${url.hostname.toLowerCase()}:${url.port || "5432"}${url.pathname}`;
-}
-
-function parsePostgresUrl(value, variableName) {
-  let url;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error(`${variableName} must be a valid PostgreSQL URL`);
-  }
-  if (!["postgres:", "postgresql:"].includes(url.protocol)) {
-    throw new Error(`${variableName} must use postgres:// or postgresql://`);
-  }
-  if (!url.hostname || !url.pathname || url.pathname === "/") {
-    throw new Error(`${variableName} must identify a host and database`);
-  }
-  return url;
-}
-
 export function requireSafeDatabase(kind = "staging", environment = process.env) {
   const definition = confirmations[kind];
   if (!definition) throw new Error(`Unsupported database safety mode: ${kind}`);
@@ -45,16 +26,16 @@ export function requireSafeDatabase(kind = "staging", environment = process.env)
     throw new Error(`${confirmationName} must equal ${expectedConfirmation}`);
   }
 
-  const url = parsePostgresUrl(rawUrl, urlName);
+  const target = parseDatabaseTarget(rawUrl);
   const runtimeRaw = environment.DATABASE_URL;
   if (runtimeRaw) {
-    const runtimeUrl = parsePostgresUrl(runtimeRaw, "DATABASE_URL");
-    if (databaseIdentity(runtimeUrl) === databaseIdentity(url)) {
+    const runtimeTarget = parseDatabaseTarget(runtimeRaw);
+    if (runtimeTarget.identity === target.identity) {
       throw new Error(`${urlName} identifies the same database as DATABASE_URL`);
     }
   }
 
-  const productionSignal = `${url.hostname}${url.pathname}`.toLowerCase();
+  const productionSignal = `${target.host}/${target.database}`;
   if (/(^|[._/-])(prod|production)([._/-]|$)/.test(productionSignal)) {
     throw new Error(`${urlName} appears to identify a production database`);
   }
@@ -64,8 +45,8 @@ export function requireSafeDatabase(kind = "staging", environment = process.env)
   }
 
   return {
-    connectionString: rawUrl,
-    safeLabel: `${url.hostname}/${url.pathname.replace(/^\//, "")}`,
+    connectionString: target.connectionString,
+    safeLabel: `${target.host}/${target.database}`,
     kind,
   };
 }

@@ -1,10 +1,10 @@
 import pg from "pg";
+import { databaseFingerprint, databaseIdentity, parseDatabaseTarget } from "./_database-identity.mjs";
 import {
   assertMigrationHistoryReady,
   compareMigrationHistory,
   loadProductionMigrationManifest,
   migrationManifestSummary,
-  sha256,
 } from "./_migration-readiness.mjs";
 
 const { Pool } = pg;
@@ -45,14 +45,11 @@ function parseUrl(value, name, protocols) {
 }
 
 export function productionDatabaseIdentity(value) {
-  const url = parseUrl(value, "DATABASE_URL", ["postgres:", "postgresql:"]);
-  const databaseName = decodeURIComponent(url.pathname.replace(/^\/+/, "")).toLowerCase();
-  if (!url.hostname || !databaseName) throw productionError("DATABASE_URL must identify a host and database");
-  return `${url.hostname.toLowerCase()}:${url.port || "5432"}/${databaseName}`;
+  return databaseIdentity(value);
 }
 
 export function productionDatabaseFingerprint(value) {
-  return sha256(productionDatabaseIdentity(value));
+  return databaseFingerprint(value);
 }
 
 export function validateProductionEnvironment(environment = process.env) {
@@ -72,9 +69,9 @@ export function validateProductionEnvironment(environment = process.env) {
     throw productionError("PRODUCTION_DATABASE_CONFIRMATION must equal read-only-production-preflight");
   }
 
-  const databaseUrl = parseUrl(environment.DATABASE_URL, "DATABASE_URL", ["postgres:", "postgresql:"]);
-  const identity = productionDatabaseIdentity(environment.DATABASE_URL);
-  if (loopbackHosts.has(databaseUrl.hostname.toLowerCase()) || databaseUrl.hostname.startsWith("127.")) {
+  const target = parseDatabaseTarget(environment.DATABASE_URL);
+  const identity = target.identity;
+  if (loopbackHosts.has(target.host) || target.host.startsWith("127.")) {
     throw productionError("DATABASE_URL must not identify a loopback database");
   }
   if (nonProductionMarker.test(identity)) {
@@ -100,7 +97,7 @@ export function validateProductionEnvironment(environment = process.env) {
   }
 
   return {
-    connectionString: environment.DATABASE_URL,
+    connectionString: target.connectionString,
     appOrigin: appUrl.origin,
     fingerprintPrefix: configuredFingerprint.slice(0, 12),
   };

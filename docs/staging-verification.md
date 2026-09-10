@@ -21,6 +21,8 @@ $env:ACCOUNT_EMAIL_MODE = "preview"
 
 The runtime and staging URLs may use different credentials or query parameters, but their host, port, and database identity must match. `STAGING_PRODUCTION_DATABASE_FINGERPRINTS` is a comma-separated, provider-agnostic deny-set derived from current provider control-plane metadata: include the SHA-256 identity fingerprint for every plausible production connection identity, including direct, pooled, primary, replica, or legacy host/port/database variants. Refresh and re-confirm the complete set immediately before migration. The preflight rejects an absent, empty, malformed, duplicate, or unconfirmed set and rejects the staging identity if it matches any entry. Fingerprints are identity metadata rather than credentials, but the preflight reports only their count and never returns their values; connection strings remain secret. This staging-only deny-set does not replace production's singular `PRODUCTION_DATABASE_FINGERPRINT`, which must continue to exactly match the production runtime identity. The host or database name must visibly contain `staging`, `stage`, `qa`, `sandbox`, `preview`, or `test`; names containing `prod` or `production` are rejected. Connection strings and passwords are never printed.
 
+The shared [operator database identity contract](database-identity-contract.md) defines decoding, lowercase-name rejection, unsupported target overrides, and explicit in-memory port pinning. Only non-target query differences are permitted.
+
 Run the complete non-destructive sequence:
 
 ```powershell

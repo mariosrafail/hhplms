@@ -22,6 +22,10 @@ follow. No hosted migration is performed by CI. Worker configuration and object
 key policies remain unchanged; no remote preflight/sync/deployment is local
 validation.
 
+The migration fault test uses the existing physical history table name. Its
+path is registered for that exact token in the existing branding compatibility
+exception; the audit pattern, other paths and visible-branding rules are unchanged.
+
 ## Draft placement and immutable image identity
 
 `book_pages.unit_id` is the authoritative current placement. The page revision

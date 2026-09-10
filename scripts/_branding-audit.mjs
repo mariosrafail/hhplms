@@ -26,6 +26,7 @@ export const BRANDING_COMPATIBILITY_EXCEPTIONS = Object.freeze([
       "scripts/verify-tenant-integrity.mjs",
       "tests/_runtime-schema-test-helper.js",
       "tests/integration/_migration-test-helpers.mjs",
+      "tests/integration/b1-migration-atomicity.test.js",
       "tests/integration/_students-book-preservation.mjs",
       "tests/integration/students-book-preservation.test.js",
       "tests/integration/builder-product-publication-persistence.test.js",

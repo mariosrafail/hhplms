@@ -21,6 +21,7 @@ import {
 } from "../../netlify-sites/ultimate-b2-builder/server/_builder-product-publication-domain.js";
 import { publicationAssetPinFingerprint } from "../../netlify-sites/ultimate-b2-builder/server/_builder-publication-pins.js";
 import { loadProductionMigrationManifest } from "../../scripts/_migration-readiness.mjs";
+import { mutateBuilderPage } from "../../netlify-sites/ultimate-b2-builder/server/_builder-pages-store.js";
 
 const { Pool } = pg;
 const databaseUrl = process.env.TEST_DATABASE_URL || "";
@@ -332,4 +333,20 @@ test("migrations 048/049/050 preserve truthful legacy families and publish exact
   `, [concurrent.map((result) => result.product_release_id)]);
   assert.equal(concurrentPinCount.rows[0].count, 6);
   assert.equal((await pool.query("update book_assets set publication_status='archived' where id=$1 returning publication_status", [pinnedAssetId])).rows[0].publication_status, "archived");
+  if (migrations.some((migration) => migration.filename === '062_b1_managed_publication.sql')) {
+    const frozenPins = (await pool.query('select * from book_component_release_asset_pins order by component_release_id,pin_sha256')).rows;
+    const frozenReleases = (await pool.query('select * from book_component_releases order by id')).rows;
+    await pool.query("update book_assets set publication_status='draft' where id=$1", [pinnedAssetId]);
+    const targetUnit = (await pool.query('select id from units where book_component_id=$1 and unit_number=2', [scope.component_id])).rows[0].id;
+    const revision = Number((await pool.query('select revision from builder_component_page_revisions where book_component_id=$1', [scope.component_id])).rows[0]?.revision || 0);
+    const input = { bookSlug: 'ultimate-b2', componentSlug: 'ultimate-b2-workbook', pageKey: 'ultimate-b2-workbook/pages/pin-page', action: 'metadata', expectedRevision: revision,
+      clientMutationId: randomUUID(), pageMetadata: { label: 'Moved pinned page', printedLabel: '', sortOrder: 1, unitId: targetUnit }, builderUserId: actor };
+    assert.equal((await mutateBuilderPage(sql, input)).outcome, 'saved');
+    assert.equal((await mutateBuilderPage(sql, input)).outcome, 'idempotent');
+    assert.equal((await pool.query('select unit_id from book_pages where id=$1', [pageId])).rows[0].unit_id, targetUnit);
+    assert.equal((await pool.query('select unit_id from book_assets where id=$1', [pinnedAssetId])).rows[0].unit_id, scope.unit_id);
+    assert.equal((await pool.query("update book_assets set publication_status='archived' where id=$1 returning publication_status", [pinnedAssetId])).rows[0].publication_status, 'archived');
+    assert.deepEqual((await pool.query('select * from book_component_release_asset_pins order by component_release_id,pin_sha256')).rows, frozenPins);
+    assert.deepEqual((await pool.query('select * from book_component_releases order by id')).rows, frozenReleases);
+  }
 });

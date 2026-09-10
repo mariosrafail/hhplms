@@ -21,6 +21,9 @@ import { captureStudentsBookPreservation, assertStudentsBookDatabasePreserved, s
 import { addManagedImageFixture } from './_b1-publication-assets.mjs';
 import { getPublishedNativeTeacherAnswer, getPublishedReleaseAsset } from '../../netlify/functions/_book-content/publication-actions.js';
 import { publicationAssetPinFingerprint } from '../../netlify-sites/ultimate-b2-builder/server/_builder-publication-pins.js';
+import { verifyB1PagePlacement } from './_b1-page-placement-regression.mjs';
+import { verifyB1LockOrder } from './_b1-lock-regression.mjs';
+import { verifyB1PublicationConcurrency } from './_b1-publication-concurrency.mjs';
 
 const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.TEST_DATABASE_CONFIRMATION === 'isolated-test-database';
 const event = (path, body) => ({ path, httpMethod: body ? 'POST' : 'GET', headers: { host: 'builder.example', origin: 'https://builder.example', 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) });
@@ -53,7 +56,7 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
   const admin = new pg.Pool({ connectionString: url.toString(), max: 1 });
   await admin.query(`create schema "${schema}"`);
   url.searchParams.set('options', `-c search_path=${schema}`);
-  const pool = new pg.Pool({ connectionString: url.toString(), max: 3 });
+  const pool = new pg.Pool({ connectionString: url.toString(), max: 5 });
   t.after(async () => { await pool.end(); await admin.query(`drop schema "${schema}" cascade`); await admin.end(); });
   const sql = async (strings, ...values) => (await pool.query(strings.reduce((text, part, i) => text + (i ? `$${i}` : '') + part, ''), values)).rows;
   await applyCanonicalProductionMigrations(pool, { through: '061_students_book_publication_v3.sql' });
@@ -137,6 +140,7 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
   const packages = (await pool.query("select id,slug from book_packages where slug in ('ultimate-b1','ultimate-b1-plus')")).rows;
   for (const pack of packages) await pool.query("insert into book_access(user_id,book_package_id,role_scope) values($1,$2,'teacher'),($3,$2,'student') on conflict do nothing", [teacher.id, pack.id, student.id]);
   assert.deepEqual(response(await listPublishedBooks(sql, student)).books, []);
+  await verifyB1PagePlacement({ t, pool, actor, teacher, student, storage, media, pageBytes, drafts });
   const r1 = await prepare('ultimate-b1');
   const r1Input = structuredClone(lastInput);
   for (const member of r1Input.members) {
@@ -307,4 +311,6 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
     const { verifyB1PublicationBrowser } = await import('./_b1-publication-browser.mjs');
     await verifyB1PublicationBrowser({ pool, sql, actor, teacher, student, media });
   }
+  await verifyB1PublicationConcurrency({ t, pool, sql, actor, storage, drafts });
+  await verifyB1LockOrder({ t, pool, sql, actor, drafts });
 });

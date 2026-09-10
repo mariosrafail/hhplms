@@ -3,7 +3,7 @@ export const runtimeSchemaContract = Object.freeze({
   "version": 1,
   "expectedMigrationCount": 62,
   "latestMigration": "062_b1_managed_publication.sql",
-  "manifestFingerprint": "42d59464b0798415707fba0c995a34dff636b5b2845e2b30f44929275a3c6ee9",
+  "manifestFingerprint": "90ee7b6cc9e9a8d65f5fc6fa0113301db23b27de5671f395a3fda8bb79f37ec3",
   "expectedMigrations": [
     {
       "filename": "001_init_lms_demo.sql",
@@ -435,8 +435,8 @@ export const runtimeSchemaContract = Object.freeze({
     {
       "filename": "062_b1_managed_publication.sql",
       "compatibleChecksums": [
-        "141ab8bae37874f888935c4224e542ca98140614ae6b0fbcdda33ee02114404a",
-        "6a0317282226f0c8fa37a2ad765f63621cfd714d69fd96335eb638983ae8f0f4"
+        "7a989913670d9dae0b8572ed04ba2551f6437ff1cfaf0c84f35b4778307969ee",
+        "9d0487c1a24c0edb69f80bbfedcb055da0cf61b5aa7193bf68d1c3ba44e4d62c"
       ],
       "featureOptional": true
     }

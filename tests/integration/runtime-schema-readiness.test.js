@@ -135,6 +135,18 @@ test("runtime readiness recovers, remains forward-compatible, and works through 
   );
   assert.equal((await checkRuntimeSchemaReadiness(readinessSql)).ready, true);
 
+  const feature = migrations.find((migration) => migration.filename === '062_b1_managed_publication.sql');
+  if (feature) {
+    await setup.query('update eduforge_migration_history set checksum_sha256=$2 where filename=$1', [feature.filename, '0'.repeat(64)]);
+    // The canonical fresh-check boundary clears the successful cache above;
+    // cacheTtlMs controls newly cached results, not an earlier cache entry.
+    resetRuntimeSchemaReadinessCache(readinessSql);
+    assert.equal((await checkRuntimeSchemaReadiness(readinessSql, { cacheTtlMs: 0 })).ready, false);
+    await setup.query('update eduforge_migration_history set checksum_sha256=$2 where filename=$1', [feature.filename, feature.checksum]);
+    resetRuntimeSchemaReadinessCache(readinessSql);
+    assert.equal((await checkRuntimeSchemaReadiness(readinessSql, { cacheTtlMs: 0 })).ready, true);
+  }
+
   await setup.query(
     "update eduforge_migration_history set checksum_sha256=$2 where filename=$1",
     [migrations[2].filename, "0".repeat(64)],

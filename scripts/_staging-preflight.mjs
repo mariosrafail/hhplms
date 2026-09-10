@@ -5,14 +5,49 @@ import { requireQaPassword } from "./_staging-qa-data.mjs";
 
 const requiredNames = [
   "STAGING_DATABASE_URL", "STAGING_DATABASE_CONFIRMATION", "STAGING_ENVIRONMENT_CONFIRMATION",
-  "DATABASE_URL", "APP_PUBLIC_URL", "STAGING_PRODUCTION_APP_URL", "STAGING_PRODUCTION_DATABASE_FINGERPRINTS",
-  "STAGING_PRODUCTION_DATABASE_FINGERPRINTS_CONFIRMATION",
+  "DATABASE_URL", "APP_PUBLIC_URL",
   "AUTH_RATE_LIMIT_SALT", "PLATFORM_ADMIN_RATE_LIMIT_SALT", "ACCOUNT_RATE_LIMIT_SALT", "INVITE_RATE_LIMIT_SALT", "ACCOUNT_EMAIL_DISPATCH_SECRET",
   "OPERATIONAL_MONITORING_SECRET", "ACCOUNT_EMAIL_MODE",
 ];
 const placeholderPattern = /(replace|placeholder|example\.invalid|changeme|change-me|your[_-]|dummy|secret123)/i;
 const commonMailboxDomains = new Set(["gmail.com", "outlook.com", "hotmail.com", "yahoo.com", "icloud.com"]);
 const explicitKnownHostedStagingOrigins = new Set(["https://lms.hhplms.workers.dev"]);
+const productionModes = {
+  "active-production": {
+    fingerprintName: "STAGING_PRODUCTION_DATABASE_FINGERPRINTS",
+    confirmationName: "STAGING_PRODUCTION_DATABASE_FINGERPRINTS_CONFIRMATION",
+    confirmation: "complete-production-database-identity-set",
+    confirmationDescription: "the complete production database identity set",
+    additionalRequiredNames: ["STAGING_PRODUCTION_APP_URL"],
+    forbiddenNames: ["STAGING_PROTECTED_DATABASE_FINGERPRINTS", "STAGING_PROTECTED_DATABASE_FINGERPRINTS_CONFIRMATION"],
+    collisionMessage: "Staging database matches a known production database fingerprint",
+    countName: "production_database_fingerprint_count",
+  },
+  "no-active-production": {
+    fingerprintName: "STAGING_PROTECTED_DATABASE_FINGERPRINTS",
+    confirmationName: "STAGING_PROTECTED_DATABASE_FINGERPRINTS_CONFIRMATION",
+    confirmation: "complete-protected-database-identity-set",
+    confirmationDescription: "the complete protected database identity set",
+    additionalRequiredNames: [],
+    forbiddenNames: ["STAGING_PRODUCTION_DATABASE_FINGERPRINTS", "STAGING_PRODUCTION_DATABASE_FINGERPRINTS_CONFIRMATION", "STAGING_PRODUCTION_APP_URL"],
+    collisionMessage: "Staging database matches a protected database fingerprint",
+    countName: "protected_database_fingerprint_count",
+  },
+};
+
+function stagingProductionMode(environment) {
+  // Only omission preserves the legacy active-production contract. Blank or
+  // unknown values must never select a less restrictive mode accidentally.
+  const status = environment.STAGING_ACTIVE_PRODUCTION_STATUS === undefined
+    ? "active-production" : environment.STAGING_ACTIVE_PRODUCTION_STATUS;
+  if (typeof status !== "string" || !Object.hasOwn(productionModes, status)) {
+    throw new Error("STAGING_ACTIVE_PRODUCTION_STATUS must equal active-production or no-active-production");
+  }
+  const definition = productionModes[status];
+  const mixed = definition.forbiddenNames.filter((name) => environment[name] !== undefined);
+  if (mixed.length) throw new Error(`Staging production modes must not be mixed; remove variables: ${mixed.join(", ")}`);
+  return { status, ...definition };
+}
 
 function required(environment, names = requiredNames) {
   const missing = names.filter((name) => !String(environment[name] || "").trim());
@@ -26,20 +61,24 @@ function parsedUrl(value, name, protocols) {
   return url;
 }
 
-export function parseStagingProductionDatabaseFingerprints(value) {
+function parseStagingDatabaseFingerprints(value, name) {
   const source = String(value ?? "");
-  if (!source.trim()) throw new Error("STAGING_PRODUCTION_DATABASE_FINGERPRINTS must contain at least one fingerprint");
+  if (!source.trim()) throw new Error(`${name} must contain at least one fingerprint`);
   const fingerprints = source.split(",").map((entry) => entry.trim().toLowerCase());
   if (fingerprints.some((entry) => !entry)) {
-    throw new Error("STAGING_PRODUCTION_DATABASE_FINGERPRINTS must not contain empty entries");
+    throw new Error(`${name} must not contain empty entries`);
   }
   if (fingerprints.some((entry) => !/^[a-f0-9]{64}$/.test(entry))) {
-    throw new Error("STAGING_PRODUCTION_DATABASE_FINGERPRINTS entries must be SHA-256 fingerprints");
+    throw new Error(`${name} entries must be SHA-256 fingerprints`);
   }
   if (new Set(fingerprints).size !== fingerprints.length) {
-    throw new Error("STAGING_PRODUCTION_DATABASE_FINGERPRINTS must not contain duplicate fingerprints");
+    throw new Error(`${name} must not contain duplicate fingerprints`);
   }
   return Object.freeze([...fingerprints].sort());
+}
+
+export function parseStagingProductionDatabaseFingerprints(value) {
+  return parseStagingDatabaseFingerprints(value, "STAGING_PRODUCTION_DATABASE_FINGERPRINTS");
 }
 
 export function validateDedicatedStagingRecipient(value, confirmation) {
@@ -53,23 +92,26 @@ export function validateDedicatedStagingRecipient(value, confirmation) {
 }
 
 export async function checkStagingDeployment(environment = process.env) {
-  required(environment);
+  const mode = stagingProductionMode(environment);
+  required(environment, [...requiredNames, mode.fingerprintName, mode.confirmationName, ...mode.additionalRequiredNames]);
   requireQaPassword(environment);
   if (environment.STAGING_ENVIRONMENT_CONFIRMATION !== "hosted-nonproduction-staging") throw new Error("Hosted staging confirmation is invalid");
-  if (environment.STAGING_PRODUCTION_DATABASE_FINGERPRINTS_CONFIRMATION !== "complete-production-database-identity-set") {
-    throw new Error("STAGING_PRODUCTION_DATABASE_FINGERPRINTS_CONFIRMATION must confirm the complete production database identity set");
+  if (environment[mode.confirmationName] !== mode.confirmation) {
+    throw new Error(`${mode.confirmationName} must confirm ${mode.confirmationDescription}`);
   }
-  const productionDatabaseFingerprints = parseStagingProductionDatabaseFingerprints(environment.STAGING_PRODUCTION_DATABASE_FINGERPRINTS);
+  const deniedDatabaseFingerprints = parseStagingDatabaseFingerprints(environment[mode.fingerprintName], mode.fingerprintName);
   requireSafeDatabase("staging", { ...environment, DATABASE_URL: "" });
   if (databaseFingerprint(environment.DATABASE_URL) !== databaseFingerprint(environment.STAGING_DATABASE_URL)) {
     throw new Error("Hosted staging DATABASE_URL must identify the verified staging database");
   }
-  if (productionDatabaseFingerprints.includes(databaseFingerprint(environment.STAGING_DATABASE_URL))) {
-    throw new Error("Staging database matches a known production database fingerprint");
+  if (deniedDatabaseFingerprints.includes(databaseFingerprint(environment.STAGING_DATABASE_URL))) {
+    throw new Error(mode.collisionMessage);
   }
   const app = parsedUrl(environment.APP_PUBLIC_URL, "APP_PUBLIC_URL", ["https:"]);
-  const productionApp = parsedUrl(environment.STAGING_PRODUCTION_APP_URL, "STAGING_PRODUCTION_APP_URL", ["https:"]);
-  if (app.origin === productionApp.origin) throw new Error("Hosted staging and production application URLs must differ");
+  if (mode.status === "active-production") {
+    const productionApp = parsedUrl(environment.STAGING_PRODUCTION_APP_URL, "STAGING_PRODUCTION_APP_URL", ["https:"]);
+    if (app.origin === productionApp.origin) throw new Error("Hosted staging and production application URLs must differ");
+  }
   const isVisiblyStagingHostname = /(staging|stage|qa|sandbox|preview|test)/i.test(app.hostname);
   if (!isVisiblyStagingHostname && !explicitKnownHostedStagingOrigins.has(app.origin)) {
     throw new Error("APP_PUBLIC_URL hostname must visibly identify staging or match the known hosted staging origin");
@@ -94,7 +136,8 @@ export async function checkStagingDeployment(environment = process.env) {
     environment: "hosted-staging",
     app_host: app.hostname,
     email_mode: environment.ACCOUNT_EMAIL_MODE,
-    production_database_fingerprint_count: productionDatabaseFingerprints.length,
+    active_production_status: mode.status,
+    [mode.countName]: deniedDatabaseFingerprints.length,
     migration_count: manifest.migrationCount,
     latest_migration: manifest.latestMigration,
     manifest_fingerprint: manifest.manifestFingerprint,

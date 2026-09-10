@@ -4,13 +4,14 @@ This procedure is only for a manually provisioned, isolated PostgreSQL staging d
 
 ## Safe setup and automated verification
 
-In a fresh operator environment, configure every hosted staging variable documented in `.env.example` without saving credentials in the repository. The essential identity contract includes:
+In a fresh operator environment, configure the common hosted staging variables and exactly one production-status mode documented in `.env.example` without saving credentials in the repository. The active-production identity contract includes:
 
 ```powershell
 $env:STAGING_DATABASE_URL = "postgresql://USER:PASSWORD@STAGING_HOST/STAGING_DATABASE?sslmode=require"
 $env:DATABASE_URL = $env:STAGING_DATABASE_URL
 $env:STAGING_DATABASE_CONFIRMATION = "isolated-staging-database"
 $env:STAGING_ENVIRONMENT_CONFIRMATION = "hosted-nonproduction-staging"
+$env:STAGING_ACTIVE_PRODUCTION_STATUS = "active-production"
 $env:STAGING_PRODUCTION_DATABASE_FINGERPRINTS = "SHA256_OF_PRIMARY_PRODUCTION_HOST_PORT_DATABASE,SHA256_OF_OTHER_PRODUCTION_HOST_PORT_DATABASE"
 $env:STAGING_PRODUCTION_DATABASE_FINGERPRINTS_CONFIRMATION = "complete-production-database-identity-set"
 $env:HHPLMS_STAGING_QA_PASSWORD = "password123"
@@ -21,7 +22,23 @@ $env:ACCOUNT_EMAIL_MODE = "preview"
 
 The runtime and staging URLs may use different credentials or query parameters, but their host, port, and database identity must match. `STAGING_PRODUCTION_DATABASE_FINGERPRINTS` is a comma-separated, provider-agnostic deny-set derived from current provider control-plane metadata: include the SHA-256 identity fingerprint for every plausible production connection identity, including direct, pooled, primary, replica, or legacy host/port/database variants. Refresh and re-confirm the complete set immediately before migration. The preflight rejects an absent, empty, malformed, duplicate, or unconfirmed set and rejects the staging identity if it matches any entry. Fingerprints are identity metadata rather than credentials, but the preflight reports only their count and never returns their values; connection strings remain secret. This staging-only deny-set does not replace production's singular `PRODUCTION_DATABASE_FINGERPRINT`, which must continue to exactly match the production runtime identity. The host or database name must visibly contain `staging`, `stage`, `qa`, `sandbox`, `preview`, or `test`; names containing `prod` or `production` are rejected. Connection strings and passwords are never printed.
 
-The shared [operator database identity contract](database-identity-contract.md) defines decoding, lowercase-name rejection, unsupported target overrides, and explicit in-memory port pinning. Only non-target query differences are permitted.
+### Production-status modes
+
+`STAGING_ACTIVE_PRODUCTION_STATUS=active-production` retains the production deny-set, completeness confirmation, and HTTPS production app URL requirements above. Staging and production app origins must differ. Omitting the status preserves this legacy active-production contract; blank, padded, or unknown values are rejected. A protected set never implicitly selects a different mode.
+
+Use `no-active-production` only when current provider control-plane evidence with adequate account coverage identifies no separately active production runtime. A provider's deployment slot named "Production" alone does not establish a separate business production environment. Keep all common staging variables, but replace the three `STAGING_PRODUCTION_*` variables above with this distinct contract:
+
+```powershell
+$env:STAGING_ACTIVE_PRODUCTION_STATUS = "no-active-production"
+$env:STAGING_PROTECTED_DATABASE_FINGERPRINTS = "SHA256_OF_PROTECTED_HOST_PORT_DATABASE,SHA256_OF_OTHER_PROTECTED_HOST_PORT_DATABASE"
+$env:STAGING_PROTECTED_DATABASE_FINGERPRINTS_CONFIRMATION = "complete-protected-database-identity-set"
+```
+
+The protected deny-set must be non-empty and conservatively cover every historical/non-current no-touch target established by provider evidence, including direct, pooled, replica, backup, proof, and history connection identities where present. These targets are protected; they are **not asserted to be active production**. Derive their fingerprints with the shared identity contract, and refresh and re-confirm completeness before a separately authorized migration. The current staging identity must not appear in the set. Missing, malformed, duplicate, empty-entry, or unconfirmed sets fail closed. No production app URL is required or accepted: do not invent one.
+
+In either mode, all variables belonging exclusively to the other mode must be absent, not empty or whitespace. Even an accidentally supplied blank variable is rejected. When active production is established later, explicitly switch modes and replace the protected contract with a freshly verified complete production contract; do not mix them. Preflight returns the selected `active_production_status` and only its `production_database_fingerprint_count` or `protected_database_fingerprint_count`, never the deny-set values. Runtime/staging identity equality, target isolation, app-origin restrictions, secrets, QA password, email, and migration-manifest checks remain in force in both modes. Migration revalidates this complete contract before opening a pool.
+
+The shared [operator database identity contract](database-identity-contract.md) defines decoding, lowercase-name rejection, unsupported target overrides, and explicit in-memory port pinning. Only non-target query differences are permitted. Neither mode changes that canonicalizer or authorizes touching any protected target. Selecting a mode does not establish recovery readiness or authorize migration/publication; those require separate operational review.
 
 Run the complete non-destructive sequence:
 

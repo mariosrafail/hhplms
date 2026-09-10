@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import sharp from "sharp";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import { ultimateB2TeacherAppBuilderPlugin } from "../scripts/ultimate-b2/teacher-app-builder-vite-plugin.mjs";
 import { teacherPackAssetSources } from "../scripts/android-teacher/pack-asset-sources.mjs";

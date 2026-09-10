@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { before, after } from "node:test";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 import { managedPageRouteIds, publishedManagedBookFixture } from "./fixtures/published-managed-book.js";
 import { publishedBookReadModel } from "../netlify/functions/_book-content/published-book-model.js";
 

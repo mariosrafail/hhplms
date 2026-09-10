@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 
 import sharp from "sharp";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import { buildUltimateB2TeacherSolutionPayload } from "../netlify/functions/_ultimate-b2-teacher-solutions.js";
 import authoring from "../src/data/ultimate-b2/authoring/unit-01-reading-exercise-2.listening.json" with { type: "json" };

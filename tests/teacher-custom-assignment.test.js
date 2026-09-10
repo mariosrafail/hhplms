@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 test("teacher custom assignment route and compatibility alias select the custom assignment section", async () => {
   const vite = await createServer({

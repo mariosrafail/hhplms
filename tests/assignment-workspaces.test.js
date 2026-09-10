@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 import { deriveStudentAssignmentPresentation } from "../src/components/lms/student/portal/studentAssignmentPresentation.js";
 import { assignmentReviewAction, filterAssignmentResultRows, teacherScorePolicy } from "../src/components/lms/teacher/assignmentReviewPresentation.js";
 

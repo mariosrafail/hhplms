@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import { completeSentencesPublisherImportEndpoint, debateClubPublisherImportEndpoint, ultimateB2ReadingExerciseBuilderPlugin } from "../scripts/ultimate-b2/reading-exercise-builder-vite-plugin.mjs";
 import completeSentences from "../src/data/ultimate-b2/authoring/unit-01-reading-exercise-4.complete-sentences.json" with { type: "json" };

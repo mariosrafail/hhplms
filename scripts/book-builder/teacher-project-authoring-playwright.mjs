@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { chromium } from "@playwright/test";
 import sharp from "sharp";
-import { createServer } from "vite";
+import { createServer } from "../../tests/_vite-test-server.mjs";
 
 import { createBookBuilderStudioFixture } from "../../tests/helpers/book-builder-studio-fixture.mjs";
 import { bookBuilderReviewStudioPlugin } from "./review-studio-api.mjs";

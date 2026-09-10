@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 
 import sharp from "sharp";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import {
   OPEN_RESPONSE_IMPORT_LIMITS,

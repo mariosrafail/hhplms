@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { chromium } from "@playwright/test";
-import { createServer } from "vite";
+import { createServer } from "../../tests/_vite-test-server.mjs";
 
 import { isPathWithin } from "../../lib/book-builder/path-safety.js";
 import { rescanProject } from "../../lib/book-builder/scanner-service.js";

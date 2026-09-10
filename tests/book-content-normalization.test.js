@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { before, after } from "node:test";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 import { applyStudentsBookCatalog } from "../src/data/ultimate-b2/studentsBookCatalog.js";
 
 // Load the real browser modules with their canonical Vite virtual-asset aliases.

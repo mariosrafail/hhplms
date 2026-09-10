@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 import sharp from "sharp";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import { validateAndNormalizeUltimateB2HotspotManifest } from "../scripts/ultimate-b2/hotspot-manifest.mjs";
 import { ultimateB2ImageBuilderPlugin } from "../scripts/ultimate-b2/image-builder-vite-plugin.mjs";

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 const activityId = "ultimate-b2-sb-u1-p1-o99";
 const titleSentinel = "INTERACTIVE_METADATA_TITLE_SENTINEL";

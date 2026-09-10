@@ -23,7 +23,7 @@ import { createUltimateB2HostedOpenResponseSeed } from "../../src/data/ultimate-
 import { findStudentsBookImplementation } from "../../src/data/ultimate-b2/studentsBookCatalog.js";
 
 import { localPlaywrightLaunchOptions } from "../android-teacher/playwright-launch-options.mjs";
-import { assertAhemRendering, createVideoCompanionUploader, logicalFontSize, uploadReadableText, verifyReadableTextStartsOffAndBlocksIncompleteSave } from "./hosted-native-activity-authoring-helpers.mjs";
+import { assertAhemRendering, createVideoCompanionUploader, logicalFontSize, uploadReadableText, verifyReadableTextStartsOffAndBlocksIncompleteSave, waitForHostedViewerFrame } from "./hosted-native-activity-authoring-helpers.mjs";
 import { exerciseCompleteSentencesAuthoring, exerciseCompleteSentencesBulkHotspotImport, handleCompleteSentencesFontRequest } from "./hosted-native-activity-complete-sentences.mjs";
 import { exerciseDragDropPanelTransitionGuard, exerciseDragDropProxy, exerciseDragDropResetGuard, exerciseValidatedDragDrop, measureDragDrop } from "./hosted-native-activity-drag-drop.mjs";
 import { exerciseDragDropExtensions } from "./hosted-native-activity-drag-drop-extensions.mjs";
@@ -345,7 +345,7 @@ try {
   assert.equal(activityPlayerUrl.search, "");
   assert.equal(activityPlayerUrl.hash, "#/books/ultimate-b2/components/ultimate-b2-students-book/review?view=library");
   assert.doesNotMatch(activityPlayer.url(), /previewAuthorization|token|secret/i);
-  await activityPlayer.locator(".hosted-builder-review-page iframe").waitFor();
+  await waitForHostedViewerFrame(activityPlayer.locator(".hosted-builder-review-page iframe"));
   const activityPlayerFrameUrl = new URL(await activityPlayer.locator(".hosted-builder-review-page iframe").getAttribute("src"));
   assert.equal(activityPlayerFrameUrl.origin, "https://hhplms-viewer.netlify.app");
   assert.equal(activityPlayerFrameUrl.searchParams.get("view"), "library");
@@ -769,7 +769,7 @@ try {
   assert.equal(new URL(pagePlayer.url()).origin, origin);
   assert.equal(new URL(pagePlayer.url()).hash, "#/books/ultimate-b2/components/ultimate-b2-students-book/review?view=library");
   assert.doesNotMatch(pagePlayer.url(), /previewAuthorization|token|secret/i);
-  await pagePlayer.locator(".hosted-builder-review-page iframe").waitFor();
+  await waitForHostedViewerFrame(pagePlayer.locator(".hosted-builder-review-page iframe"));
   const pagePlayerFrameUrl = new URL(await pagePlayer.locator(".hosted-builder-review-page iframe").getAttribute("src"));
   assert.equal(pagePlayerFrameUrl.origin, "https://hhplms-viewer.netlify.app");
   assert.equal(pagePlayerFrameUrl.searchParams.get("view"), "library");

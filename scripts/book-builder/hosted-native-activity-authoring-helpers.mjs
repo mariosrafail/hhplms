@@ -1,4 +1,10 @@
 import assert from "node:assert/strict";
+import { expect } from "@playwright/test";
+
+export async function waitForHostedViewerFrame(iframe) {
+  await iframe.waitFor();
+  await expect(iframe).toHaveAttribute("src", /^https:\/\/hhplms-viewer\.netlify\.app\//);
+}
 
 export async function assertAhemRendering(locator, label) {
   await locator.waitFor();

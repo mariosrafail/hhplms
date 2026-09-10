@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import {
   ACTIVITY_MODES,

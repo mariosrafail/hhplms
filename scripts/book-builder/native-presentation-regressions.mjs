@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
-import { createServer } from "vite";
+import { createServer } from "../../tests/_vite-test-server.mjs";
 import react from "@vitejs/plugin-react";
 import sharp from "sharp";
 import { expect } from "@playwright/test";

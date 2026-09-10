@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { chromium } from "@playwright/test";
-import { createServer } from "vite";
+import { createServer } from "../../tests/_vite-test-server.mjs";
 
 import { createBookBuilderStudioFixture, prepareBookBuilderStudioAuthoringFixture, SYNTHETIC_TEACHER_SECRET } from "../../tests/helpers/book-builder-studio-fixture.mjs";
 import { bookBuilderReviewStudioPlugin } from "./review-studio-api.mjs";

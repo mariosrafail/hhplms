@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import sharp from "sharp";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import { buildUltimateB2TeacherSolutionPayload } from "../netlify/functions/_ultimate-b2-teacher-solutions.js";
 import { ultimateB2Page5BuilderPlugin } from "../scripts/ultimate-b2/page5-builder-vite-plugin.mjs";

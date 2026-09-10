@@ -2,7 +2,7 @@ import { runNativeMultiPartRegressions } from "./native-multi-part-regressions.m
 import { runHistoricalFocusRegressions } from "./native-historical-focus-regressions.mjs";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
-import { createServer } from "vite";
+import { createServer } from "../../tests/_vite-test-server.mjs";
 import react from "@vitejs/plugin-react";
 import { chromium, expect } from "@playwright/test";
 import { runNativePresentationRegressions } from "./native-presentation-regressions.mjs";

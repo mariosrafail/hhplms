@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promis
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import {
   assertStudentSafe,

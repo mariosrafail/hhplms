@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { createServer } from "vite";
+import { createServer } from "./_vite-test-server.mjs";
 
 import { extractMultipleChoiceAuthoring } from "../scripts/ultimate-b2/extract-multiple-choice-authoring.mjs";
 import { ultimateB2MultipleChoiceBuilderPlugin } from "../scripts/ultimate-b2/multiple-choice-builder-vite-plugin.mjs";

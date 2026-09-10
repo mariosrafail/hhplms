@@ -119,7 +119,10 @@ export async function verifyB1PagePlacement({ t, pool, actor, teacher, student, 
         const resolved = await listAssignmentsForStudent(sql, student.id, student, { assignmentId: assignment.id, includeBook: true });
         assert.equal(resolved[0].book.releaseId, assignment.releaseId);
         assert.equal(resolved[0].book.pages.find((item) => item.id === assignment.pageId).unitNumber, 2);
-        assert.notEqual(resolved[0].book.pages.find((item) => item.id === assignment.pageId).image.sha256, image.sha256);
+        const historicalImage = resolved[0].book.pages.find((item) => item.id === assignment.pageId).image;
+        assert.notEqual(historicalImage.sha256, image.sha256);
+        const historicalDelivery = await getPublishedReleaseAsset(sql, { bookSlug: book, componentSlug: assignment.component, releaseId: assignment.releaseId, sha256: historicalImage.sha256, extension: 'png' }, { storage: { ...storage, openReadStream: async ({ objectKey }) => ({ body: new Response(media.get(objectKey)).body, byteSize: pageBytes.length, contentType: 'image/png', checksumSha256: historicalImage.sha256, contentRange: null }) } });
+        assert.equal(historicalDelivery.status, 200); assert.deepEqual(Buffer.from(await historicalDelivery.arrayBuffer()), pageBytes);
       }
       assert.deepEqual((await client.query("select id,unit_id,page_id,object_key,checksum_sha256,source_metadata from book_assets where asset_role='page_image' order by id")).rows.filter((row) => originalAssets.some((old) => old.id === row.id)), originalAssets);
       assert.deepEqual((await immutable()).releases.filter((row) => frozen.releases.some((old) => old.id === row.id)), frozen.releases);

@@ -9,6 +9,16 @@ export const FORBIDDEN_VISIBLE_BRANDING_PATTERN = new RegExp(
 
 export const BRANDING_COMPATIBILITY_EXCEPTIONS = Object.freeze([
   {
+    token: `${retiredProductSlug}-dev-staging`,
+    reason: "current Neon staging project display name",
+    paths: ["docs/HHPLMS_OPERATING_CONTEXT.md"],
+  },
+  {
+    token: `${retiredProductSlug}_staging`,
+    reason: "current Neon staging database identifier",
+    paths: ["docs/HHPLMS_OPERATING_CONTEXT.md"],
+  },
+  {
     token: `${retiredProductSlug}_migration_history`,
     reason: "deployed PostgreSQL migration-history table name",
     paths: [

@@ -47,6 +47,36 @@ test("branding audit preserves the existing login hash-domain exceptions", () =>
   }
 });
 
+test("branding audit permits the two staging identifiers only in the operating context", () => {
+  const path = "docs/HHPLMS_OPERATING_CONTEXT.md";
+  for (const token of [`${retiredSlug}-dev-staging`, `${retiredSlug}_staging`]) {
+    assert.deepEqual(findBrandingViolations([{ path, content: `Identifier: \`${token}\`.` }]), []);
+    for (const unrelatedPath of ["src/example.js", "docs/example.md", "AGENTS.md"]) {
+      assert.equal(findBrandingViolations([{ path: unrelatedPath, content: token }]).length, 1);
+    }
+  }
+});
+
+test("branding audit still rejects generic retired branding beside approved staging identifiers", () => {
+  const path = "docs/HHPLMS_OPERATING_CONTEXT.md";
+  for (const label of [retiredName, retiredSlug, `${retiredSlug}-other`]) {
+    assert.equal(findBrandingViolations([{ path, content: `${label} visible label` }]).length, 1);
+    assert.equal(findBrandingViolations([{
+      path,
+      content: `${retiredSlug}-dev-staging / ${retiredSlug}_staging: ${label} visible label`,
+    }]).length, 1);
+  }
+});
+
+test("branding audit rejects prefixed, suffixed and case-altered staging identifiers", () => {
+  const path = "docs/HHPLMS_OPERATING_CONTEXT.md";
+  for (const token of [`${retiredSlug}-dev-staging`, `${retiredSlug}_staging`]) {
+    for (const variant of [`${token}_other`, `${token}-extra`, `other_${token}`, `extra-${token}`, token.toUpperCase()]) {
+      assert.equal(findBrandingViolations([{ path, content: variant }]).length, 1, variant);
+    }
+  }
+});
+
 test("branding audit permits only the stable Builder hash domain in its approved limiter", () => {
   const token = `${retiredSlug}:builder-auth`;
   assert.deepEqual(BRANDING_COMPATIBILITY_EXCEPTIONS.find((entry) => entry.token === token), {

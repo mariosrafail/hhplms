@@ -19,10 +19,18 @@ function createManagedHostedStartupAssets(config) {
   const identity = { bookSlug: config.bookSlug, componentSlug: config.uiOwnerComponentSlug };
   const newPublication = newManagedPublicationComponents.some((entry) => entry.bookSlug === config.bookSlug && entry.componentSlug === config.componentSlug);
   return createHostedStartupAssets(Object.freeze({
-    // Managed release descriptors are not an offline pack manifest. Page URLs
-    // have already been resolved through exact member authorization.
-    runtimeAssets(pack) {
-      return newPublication ? (pack?.pageUnits || []).flatMap((unit) => unit.pages.flatMap((page) => page.images.map((url) => ({ url, kind: "image" })))) : [];
+    runtimeAssets(pack, _uiManifest, contentContext) {
+      if (!newPublication) return [];
+      return (pack?.pageUnits || []).flatMap((unit) => unit.pages.flatMap((page) => page.images.map((url) => {
+        // Immutable member URLs are already authorized; never replace their pins/token.
+        if (pack.assetsManifest?.resolver === "authorized-release-assets") return { url, kind: "image" };
+        const route = /^\/preview\/pages\/books\/([a-z0-9-]+)\/components\/([a-z0-9-]+)\/pages\/([a-z0-9-]+)\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/preview(?:\?[^#]*)?$/.exec(url);
+        if (!route || route[1] !== config.bookSlug || route[2] !== config.componentSlug || route[3] !== page.id
+          || contentContext?.kind !== HOSTED_VIEWER_RUNTIME_MODES.BUILDER_PREVIEW || !contentContext.authorization) {
+          throw new Error("Managed page startup requires its scoped content preview context and page path.");
+        }
+        return { url: authorizedHostedPreviewPath(url, contentContext.authorization), kind: "image" };
+      })));
     },
     uiAssetUrls(uiManifest, _pack, runtimeContext) {
       return Object.values(uiManifest?.assets || {}).map((asset) => runtimeContext?.kind === HOSTED_VIEWER_RUNTIME_MODES.RELEASE_PREVIEW

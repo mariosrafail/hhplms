@@ -1,6 +1,6 @@
 import { fulfillManagedWorkerResponse } from "./multi-book-component-worker-response.mjs";
+import { assertManagedSavedDraftStartup } from "./managed-saved-draft-startup-playwright.mjs";
 import { createBuilderNativePreviewHandler } from "../../netlify-sites/ultimate-b2-builder/server/_builder-native-preview.js";
-
 import { componentActivityOrderEntries, projectComponentActivityOrder } from "../../src/data/native-activities/nativeActivityOrder.js";
 import { managedHotspots } from "./hosted-native-activity-document-fixtures.mjs";
 import { exerciseMarkWordsAuthoring } from "./hosted-native-activity-mark-words.mjs";
@@ -9,7 +9,6 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
-
 import { chromium, expect } from "@playwright/test";
 import { localPlaywrightLaunchOptions } from "../android-teacher/playwright-launch-options.mjs";
 import { assertInteractiveOverview } from "./interactive-overview-assertions.mjs";
@@ -483,6 +482,7 @@ let browser;
 try {
   if (overviewScreenshotDir) await mkdir(overviewScreenshotDir, { recursive: true });
   browser = await chromium.launch(localPlaywrightLaunchOptions());
+  await assertManagedSavedDraftStartup(browser, viewerRoot);
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: "block" });
   await context.addInitScript(() => {
     const nativeSetTimeout = globalThis.setTimeout.bind(globalThis);

@@ -215,8 +215,7 @@ export default function TeacherOfflineApp() {
       onError: (identity) => setComponentFeedback(`${identity.componentSlug} authorization expired. Refresh Review to continue.`),
     });
     authorizationSessionRef.current = authorizationSession;
-    const preparationCounts = new Map();
-    const unavailableReleaseMembers = new Map();
+    const preparationCounts = new Map(), unavailableReleaseMembers = new Map();
     const recordPreparation = (runtime) => {
       const count = (preparationCounts.get(runtime.componentSlug) || 0) + 1;
       preparationCounts.set(runtime.componentSlug, count);
@@ -242,8 +241,8 @@ export default function TeacherOfflineApp() {
         loadContentPack: () => initialRuntime.contentPackProvider.load({ runtimeContext, signal: controller.signal }),
         loadUiManifest: ({ signal }) => initialRuntime.uiManifestProvider?.load?.({ runtimeContext: shellContext, signal }) || Promise.resolve(null),
         prepareHotspots: () => initialRuntime.hotspotProvider?.prepare?.({ runtimeContext, signal: controller.signal }) || Promise.resolve(),
-        startupAssets: initialRuntime.startupAssets,
-        assetRuntimeContext: shellContext,
+        startupAssets: initialRuntime.startupAssets, assetRuntimeContext: shellContext,
+        getContentRuntimeContext: () => authorizationSession.contextFor(componentIdentity(initialRuntime)),
         signal: controller.signal,
         onState: (state) => {
           const normalized = {
@@ -257,6 +256,7 @@ export default function TeacherOfflineApp() {
       componentPreparationRef.current.set(initialRuntime.key, pending.then((result) => ({
         status: "ready", phase: "ready", progress: null, pack: result.pack, error: null, message: "",
       })));
+      await componentPreparationRef.current.get(initialRuntime.key);
       const result = await pending;
       updateComponentState(initialRuntime, { status: "ready", phase: "ready", progress: null, pack: result.pack, error: null, message: "" });
       setProductState((current) => ({ ...current, status: "ready", phase: "ready", pack: null, uiManifest: result.uiManifest, error: null, message: "" }));

@@ -53,7 +53,7 @@ function ExtrasColumn({ label, items, position }) {
   );
 }
 
-export default function TeacherOfflineLibrary({ menuSkin, units = [], onOpenUnit, animationsActive, unitAvailabilityByEdition = {}, initialEditionId = "students-book", onSelectEdition, unavailableEditionIds = new Set(), unavailableEditionMessages = new Map() }) {
+export default function TeacherOfflineLibrary({ menuSkin, units = [], onOpenUnit, animationsActive, unitAvailabilityByEdition = {}, initialEditionId = "students-book", onSelectEdition, unavailableEditionIds = new Set(), unavailableEditionMessages = new Map(), unavailableEditionLabels = new Map() }) {
   const [selectedEdition, setSelectedEdition] = useState(initialEditionId);
   if (!menuSkin) return <main className="teacher-offline-status damaged" role="alert"><h1>Book menu unavailable</h1><p>Reinstall the verified classroom application.</p></main>;
   const surfaceKey = menuSkin.surfaceKey;
@@ -78,7 +78,7 @@ export default function TeacherOfflineLibrary({ menuSkin, units = [], onOpenUnit
 
             <div className="legacy-home-book-row" aria-label="Book editions">
               {menuSkin.editions.map((edition) => { const unavailable = unavailableEditionIds.has(edition.id); return (
-                <button key={edition.id} type="button" className="legacy-home-book-button" data-teacher-control-id={edition.controlId} data-sound-category="button" aria-label={unavailable ? `${edition.label} unavailable in this release` : edition.label} aria-pressed={selectedEdition === edition.id} title={unavailable ? unavailableEditionMessages.get(edition.id) || `${edition.label} was not included in this release.` : edition.label} disabled={unavailable} onClick={() => { setSelectedEdition(edition.id); onSelectEdition?.(edition.id); }}>
+                <button key={edition.id} type="button" className="legacy-home-book-button" data-teacher-control-id={edition.controlId} data-sound-category="button" aria-label={unavailable ? unavailableEditionLabels.get(edition.id) || `${edition.label} unavailable in this release` : edition.label} aria-pressed={!unavailable && selectedEdition === edition.id} title={unavailable ? unavailableEditionMessages.get(edition.id) || `${edition.label} was not included in this release.` : edition.label} disabled={unavailable} onClick={() => { if (unavailable || onSelectEdition?.(edition.id) === false) return; setSelectedEdition(edition.id); }}>
                   <LegacyMenuArtwork artwork={edition} />
                 </button>
               ); })}

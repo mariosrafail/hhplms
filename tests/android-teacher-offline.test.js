@@ -330,8 +330,8 @@ test("Teacher book screens use one canonical navigation row with code-controlled
   assert.match(navigationCore, /Next activity part/);
   assert.match(navigationCore, /bookSwitches\.map/);
   assert.match(navigationCore, /data-teacher-control-id=\{item\.controlId\}/);
-  assert.match(navigationCore, /aria-current=\{selectedBookId === item\.id \? "page" : undefined\}/);
-  assert.match(navigationCore, /onClick=\{\(\) => onBookSwitch\(item\.id\)\}/);
+  assert.match(navigationCore, /aria-current=\{!unavailable && selectedBookId === item\.id \? "page" : undefined\}/);
+  assert.match(navigationCore, /onClick=\{\(\) => \{ if \(!unavailable\) onBookSwitch\(item\.id\); \}\}/);
   assert.doesNotMatch(navigationCore, />GB<|>WB</);
   assert.match(navigation, /TeacherBookNavigationCore/);
   assert.match(navigation, /LegacyClassroomIcon/);
@@ -629,7 +629,7 @@ test("teacher app embeds book activities in the mounted page shell with one clas
   assert.doesNotMatch(library, /teacherOfflineUnitMetadata|Lights, Camera, Action/);
   assert.match(app, /units=\{packageUnitMetadata\}/);
   assert.match(app, /teacherLibraryUnitMetadata\(packageStudentsRuntime\?\.bookSlug/);
-  assert.match(library, /aria-pressed=\{selectedEdition === edition\.id\}/);
+  assert.match(library, /aria-pressed=\{!unavailable && selectedEdition === edition\.id\}/);
   assert.match(app, /initialEditionId=\{activeRuntime\.component\.teacherEditionId\}/);
   assert.match(library, /menuSkin\.extras/);
   assert.match(library, /ExtrasColumn/);

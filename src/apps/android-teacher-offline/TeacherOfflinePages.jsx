@@ -67,6 +67,8 @@ export default function TeacherOfflinePages({
   selectedBookId,
   onBookSwitch,
   unavailableBookIds,
+  unavailableBookMessages,
+  unavailableBookLabels,
   hotspotProvider,
   runtimeContext,
   componentIdentity,
@@ -420,6 +422,8 @@ export default function TeacherOfflinePages({
       selectedBookId={selectedBookId}
       onBookSwitch={onBookSwitch}
       unavailableBookIds={unavailableBookIds}
+      unavailableBookMessages={unavailableBookMessages}
+      unavailableBookLabels={unavailableBookLabels}
       componentIdentity={componentIdentity}
     />
   );
@@ -533,6 +537,8 @@ export default function TeacherOfflinePages({
         selectedBookId={selectedBookId}
         onBookSwitch={onBookSwitch}
         unavailableBookIds={unavailableBookIds}
+        unavailableBookMessages={unavailableBookMessages}
+        unavailableBookLabels={unavailableBookLabels}
       />
 
       <ClassroomToolbar surfaceKey={classroomSurfaceKey} />

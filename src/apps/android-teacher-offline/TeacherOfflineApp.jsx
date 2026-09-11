@@ -5,6 +5,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { readTeacherOfflineLocation, writeTeacherOfflineLocation } from "./teacherOfflineStorage.js";
 import TeacherOfflineBook from "./TeacherOfflineBook.jsx";
 import TeacherOfflineLibrary from "./TeacherOfflineLibrary.jsx";
+import { createTeacherEditionControls } from "./teacherEditionControls.js";
 import { HostedUnitExtrasDraftStatus } from "virtual:unit-extras-draft-status";
 import TeacherOfflineMedia from "./TeacherOfflineMedia.jsx";
 import TeacherViewportDiagnostics from "./TeacherViewportDiagnostics.jsx";
@@ -451,16 +452,16 @@ export default function TeacherOfflineApp() {
     setNavigation(activityState);
     window.history.pushState(activityState, "", `#book/activity/${encodeURIComponent(activityId)}`);
   };
+  const { allowTeacherEdition, unavailableEditionIds, unavailableEditionMessages, unavailableEditionLabels } = createTeacherEditionControls({
+    bookSlug: (activeRuntime || initialRuntime)?.bookSlug, packageRuntimes, componentStates,
+    readComponentStates: () => componentStatesRef.current, onUnavailable: setComponentFeedback,
+  });
   const switchTeacherEdition = async (teacherEditionId, requestedUnitNumber = null) => {
+    if (!allowTeacherEdition(teacherEditionId)) return false;
     const resolution = resolveTeacherEditionComponent((activeRuntime || initialRuntime).bookSlug, teacherEditionId);
     if (resolution.kind !== "installed") {
       const title = resolution.registration?.component?.title || "The requested component";
       setComponentFeedback(`${title} content is registered but not installed for Teacher Review.`);
-      return false;
-    }
-    const unavailableState = componentStatesRef.current[resolution.runtime.key];
-    if (unavailableState?.status === "unavailable") {
-      setComponentFeedback(unavailableState.message || `${resolution.runtime.component.title} is unavailable in this release.`);
       return false;
     }
     if (resolution.runtime.key === activeRuntime?.key) {
@@ -487,13 +488,11 @@ export default function TeacherOfflineApp() {
     }
   };
   const selectTeacherEdition = (teacherEditionId) => {
+    if (!allowTeacherEdition(teacherEditionId)) return false;
+    // Extras belongs to the launcher, not to a component runtime.
+    if (teacherEditionId === "extras") return true;
     const resolution = resolveTeacherEditionComponent((activeRuntime || initialRuntime).bookSlug, teacherEditionId);
     if (resolution.kind !== "installed") return;
-    const unavailableState = componentStatesRef.current[resolution.runtime.key];
-    if (unavailableState?.status === "unavailable") {
-      setComponentFeedback(unavailableState.message || `${resolution.runtime.component.title} is unavailable in this release.`);
-      return;
-    }
     const nextRuntime = resolution.runtime;
     setActiveRuntime(nextRuntime);
     const next = libraryState(nextRuntime);
@@ -504,17 +503,12 @@ export default function TeacherOfflineApp() {
     void prepareComponentRef.current(nextRuntime).catch(() => {
       setComponentFeedback("The selected component could not be authorized or prepared for Builder Review. Refresh the review and try again.");
     });
+    return true;
   };
   const unitAvailabilityByEdition = Object.fromEntries(packageRuntimes.map((runtime) => [
     runtime.component.teacherEditionId,
     new Set(((componentStates[runtime.key]?.pack?.pageUnits) || runtime.pageUnits || []).map((unit) => Number(unit.number))),
   ]));
-  const unavailableEditionIds = new Set(packageRuntimes
-    .filter((runtime) => componentStates[runtime.key]?.status === "unavailable")
-    .map((runtime) => runtime.component.teacherEditionId));
-  const unavailableEditionMessages = new Map(packageRuntimes
-    .filter((runtime) => componentStates[runtime.key]?.status === "unavailable")
-    .map((runtime) => [runtime.component.teacherEditionId, componentStates[runtime.key].message]));
   const packageStudentsRuntime = packageRuntimes.find((runtime) => runtime.component.teacherEditionId === "students-book");
   const packageUnitMetadata = teacherLibraryUnitMetadata(packageStudentsRuntime?.bookSlug, componentStates[packageStudentsRuntime?.key]?.pack?.pageUnits || packageStudentsRuntime?.pageUnits || []);
   let content;
@@ -558,6 +552,8 @@ export default function TeacherOfflineApp() {
         selectedBookId={activeRuntime.component.teacherEditionId}
         onBookSwitch={switchTeacherEdition}
         unavailableBookIds={unavailableEditionIds}
+        unavailableBookMessages={unavailableEditionMessages}
+        unavailableBookLabels={unavailableEditionLabels}
         hotspotProvider={activeRuntime.hotspotProvider}
         runtimeContext={activeRuntimeContext}
         componentIdentity={componentIdentity(activeRuntime)}
@@ -575,6 +571,7 @@ export default function TeacherOfflineApp() {
         onSelectEdition={selectTeacherEdition}
         unavailableEditionIds={unavailableEditionIds}
         unavailableEditionMessages={unavailableEditionMessages}
+        unavailableEditionLabels={unavailableEditionLabels}
       />
     );
   }

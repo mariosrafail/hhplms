@@ -66,9 +66,49 @@ export async function assertManagedSavedDraftStartup(browser, viewerRoot) {
       if (identity.componentSlug.endsWith("workbook")) assert.ok(required.every((request) => request.token !== uiRequests[0].token));
       assert.ok(publicRequests.length > 0 && publicRequests.every((url) => !url.searchParams.has("previewAuthorization")));
 
+      const launcher = page.locator(".teacher-offline-library");
+      const selectedEdition = await launcher.getAttribute("data-selected-edition");
+      const beforeDisabledAttempts = fixture.requests.length;
+      for (const [edition, message] of [["grammar-book", "Grammar Book is currently disabled for this package."], ["extras", "Extras are currently disabled for this package."]]) {
+        const button = page.locator(`[data-teacher-control-id="edition:${edition}"]`);
+        await expect(button).toBeVisible();
+        await expect(button).toBeDisabled();
+        await expect(button).toHaveAttribute("title", message);
+        await button.hover({ force: true });
+        assert.equal(await button.locator(".hover-pressed").evaluate((art) => getComputedStyle(art).opacity), "0", "disabled artwork never shows hover/pressed state");
+        await button.evaluate((element) => element.click());
+        // Invoke the real App selection callback directly, bypassing disabled HTML.
+        const accepted = await button.evaluate((element, id) => {
+          let fiber = element[Object.keys(element).find((key) => key.startsWith("__reactFiber$"))];
+          while (fiber && typeof fiber.memoizedProps?.onSelectEdition !== "function") fiber = fiber.return;
+          if (!fiber) throw new Error("Teacher App selection callback was not found");
+          return fiber.memoizedProps.onSelectEdition(id);
+        }, edition);
+        assert.equal(accepted, false);
+        await expect(launcher).toHaveAttribute("data-selected-edition", selectedEdition);
+        await expect(page.locator(".legacy-home-extras-column")).toHaveCount(0);
+      }
+      assert.equal(fixture.requests.length, beforeDisabledAttempts, "disabled editions never start component preparation");
+      for (const edition of ["students-book", "workbook"]) await expect(page.locator(`[data-teacher-control-id="edition:${edition}"]`)).toBeEnabled();
+
       await page.getByRole("button", { name: /^Open Unit 1:/ }).click();
       await expect(page.locator(".teacher-unit-page-card")).toHaveCount(2);
+      const grammarSwitch = page.locator('.teacher-book-navigation [data-book-id="grammar-book"]');
+      await expect(grammarSwitch).toBeVisible();
+      await expect(grammarSwitch).toBeDisabled();
+      await expect(grammarSwitch).toHaveAttribute("title", "Grammar Book is currently disabled for this package.");
+      const beforeSwitchAttempt = fixture.requests.length;
+      await grammarSwitch.evaluate((element) => element.click());
+      assert.equal(await grammarSwitch.evaluate(async (element) => {
+        let fiber = element[Object.keys(element).find((key) => key.startsWith("__reactFiber$"))];
+        while (fiber && typeof fiber.memoizedProps?.onBookSwitch !== "function") fiber = fiber.return;
+        if (!fiber) throw new Error("Teacher App switch callback was not found");
+        return fiber.memoizedProps.onBookSwitch("grammar-book");
+      }), false);
+      assert.equal(fixture.requests.length, beforeSwitchAttempt, "programmatic disabled switch performs no component preparation");
+      await expect(page.locator(".teacher-unit-page-card")).toHaveCount(2);
       await page.getByRole("button", { name: /^Open Page 1,/ }).click();
+      await expect(page.locator('.teacher-book-navigation [data-book-id="grammar-book"]')).toHaveAttribute("title", "Grammar Book is currently disabled for this package.");
       await expect.poll(() => page.locator(".teacher-offline-page-image img").evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
       await page.getByRole("button", { name: "Home", exact: true }).click();
       await page.getByRole("button", { name: identity.componentSlug.endsWith("workbook") ? "Students Book" : "Workbook", exact: true }).click();

@@ -266,6 +266,8 @@ Refresh trigger για το provider snapshot: νέο deployment, binding/variab
 
 ## 6. Τι είναι παλιό και τι παραμένει ενεργό
 
+Teacher shell edition availability is controlled centrally by `src/config/teacherEditionAvailability.js`, independently of LMS catalog visibility and immutable publication/UI contracts. B1/B1+ keep Grammar Book and Extras visible but disabled by default; B2 retains its existing behavior. Configuration can only further restrict runtime/release availability, whose unavailable messages take precedence. Enabling a flag requires a normal repository change/deployment and cannot add a missing component to a historical release.
+
 | Πηγή/όρος | Εύρημα της έρευνας | Χειρισμός |
 |---|---|---|
 | Project Instructions φορτωμένα στη συζήτηση | Παραμένουν Netlify-centric | Αντικατάσταση με το νέο compact κείμενο |

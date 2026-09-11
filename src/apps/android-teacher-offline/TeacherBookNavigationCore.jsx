@@ -17,6 +17,8 @@ export default function TeacherBookNavigationCore({
   selectedBookId = "students-book",
   onBookSwitch = noOp,
   unavailableBookIds = new Set(),
+  unavailableBookMessages = new Map(),
+  unavailableBookLabels = new Map(),
   renderBookSwitch = null,
 }) {
   const actions = contextActions || (contextAction ? [contextAction] : []);
@@ -50,11 +52,11 @@ export default function TeacherBookNavigationCore({
           className="teacher-book-navigation-book-switch"
           data-teacher-control-id={item.controlId}
           data-book-id={item.id}
-          aria-label={unavailable ? `${item.label} unavailable in this release` : item.label}
-          aria-current={selectedBookId === item.id ? "page" : undefined}
-          title={unavailable ? `${item.label} was not included in this release.` : item.label}
+          aria-label={unavailable ? unavailableBookLabels.get(item.id) || `${item.label} unavailable in this release` : item.label}
+          aria-current={!unavailable && selectedBookId === item.id ? "page" : undefined}
+          title={unavailable ? unavailableBookMessages.get(item.id) || `${item.label} was not included in this release.` : item.label}
           disabled={unavailable}
-          onClick={() => onBookSwitch(item.id)}
+          onClick={() => { if (!unavailable) onBookSwitch(item.id); }}
         >{renderBookSwitch?.(item)}</button>
       ); })}
     </nav>

@@ -4,7 +4,7 @@ import ClassroomToolbar from "./UltimateB2ClassroomToolbar.jsx";
 import TeacherBookNavigation from "./TeacherBookNavigation.jsx";
 import { buildTeacherUnitOverviewEntries } from "./studentsBookOverviewLayout.js";
 
-export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackToLibrary, selectedBookId = "students-book", onBookSwitch, unavailableBookIds, componentIdentity }) {
+export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackToLibrary, selectedBookId = "students-book", onBookSwitch, unavailableBookIds, unavailableBookMessages, unavailableBookLabels, componentIdentity }) {
   const entries = buildTeacherUnitOverviewEntries({ unit, selectedBookId, componentIdentity });
   const unitNumber = Number(unit.number);
   const surfaceKey = `${selectedBookId}:overview:unit-${unitNumber}`;
@@ -53,7 +53,7 @@ export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackT
         </div>
       </div>
 
-      <TeacherBookNavigation onHome={onBackToLibrary} onBack={onBackToLibrary} selectedBookId={selectedBookId} onBookSwitch={onBookSwitch} unavailableBookIds={unavailableBookIds} />
+      <TeacherBookNavigation onHome={onBackToLibrary} onBack={onBackToLibrary} selectedBookId={selectedBookId} onBookSwitch={onBookSwitch} unavailableBookIds={unavailableBookIds} unavailableBookMessages={unavailableBookMessages} unavailableBookLabels={unavailableBookLabels} />
       <ClassroomToolbar surfaceKey={surfaceKey} />
     </section>
   );

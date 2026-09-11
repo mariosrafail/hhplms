@@ -17,6 +17,8 @@ export default function TeacherOfflineBook({
   selectedBookId,
   onBookSwitch,
   unavailableBookIds,
+  unavailableBookMessages,
+  unavailableBookLabels,
   hotspotProvider,
   runtimeContext,
   componentIdentity,
@@ -59,6 +61,8 @@ export default function TeacherOfflineBook({
           selectedBookId={selectedBookId}
           onBookSwitch={onBookSwitch}
           unavailableBookIds={unavailableBookIds}
+          unavailableBookMessages={unavailableBookMessages}
+          unavailableBookLabels={unavailableBookLabels}
           hotspotProvider={hotspotProvider}
           runtimeContext={runtimeContext}
           componentIdentity={componentIdentity}
@@ -75,6 +79,8 @@ export default function TeacherOfflineBook({
             selectedBookId={selectedBookId}
             onBookSwitch={onBookSwitch}
             unavailableBookIds={unavailableBookIds}
+            unavailableBookMessages={unavailableBookMessages}
+            unavailableBookLabels={unavailableBookLabels}
           />
         </>
       )}

@@ -133,26 +133,26 @@
 .legacy-home-unit:hover .legacy-menu-button-art .normal,
 .legacy-home-unit:active .legacy-menu-button-art .normal,
 .legacy-home-unit:focus-visible .legacy-menu-button-art .normal,
-.legacy-home-book-button:hover .legacy-menu-button-art .normal,
-.legacy-home-book-button:active .legacy-menu-button-art .normal,
-.legacy-home-book-button:focus-visible .legacy-menu-button-art .normal,
-.legacy-home-book-button[aria-pressed="true"] .legacy-menu-button-art .normal,
+.legacy-home-book-button:not(:disabled):hover .legacy-menu-button-art .normal,
+.legacy-home-book-button:not(:disabled):active .legacy-menu-button-art .normal,
+.legacy-home-book-button:not(:disabled):focus-visible .legacy-menu-button-art .normal,
+.legacy-home-book-button:not(:disabled)[aria-pressed="true"] .legacy-menu-button-art .normal,
 .legacy-home-extra-button:hover .legacy-menu-button-art .normal,
 .legacy-home-extra-button:active .legacy-menu-button-art .normal,
 .legacy-home-extra-button:focus-visible .legacy-menu-button-art .normal { opacity: 0; }
 .legacy-home-unit:hover .legacy-menu-button-art .hover-pressed,
 .legacy-home-unit:active .legacy-menu-button-art .hover-pressed,
 .legacy-home-unit:focus-visible .legacy-menu-button-art .hover-pressed,
-.legacy-home-book-button:hover .legacy-menu-button-art .hover-pressed,
-.legacy-home-book-button:active .legacy-menu-button-art .hover-pressed,
-.legacy-home-book-button:focus-visible .legacy-menu-button-art .hover-pressed,
-.legacy-home-book-button[aria-pressed="true"] .legacy-menu-button-art .hover-pressed,
+.legacy-home-book-button:not(:disabled):hover .legacy-menu-button-art .hover-pressed,
+.legacy-home-book-button:not(:disabled):active .legacy-menu-button-art .hover-pressed,
+.legacy-home-book-button:not(:disabled):focus-visible .legacy-menu-button-art .hover-pressed,
+.legacy-home-book-button:not(:disabled)[aria-pressed="true"] .legacy-menu-button-art .hover-pressed,
 .legacy-home-extra-button:hover .legacy-menu-button-art .hover-pressed,
 .legacy-home-extra-button:active .legacy-menu-button-art .hover-pressed,
 .legacy-home-extra-button:focus-visible .legacy-menu-button-art .hover-pressed { opacity: 1; }
 .legacy-home-unit:focus-visible { outline: 4px solid #fff600; outline-offset: 3px; }
 .legacy-home-extra-button:focus-visible,
-.legacy-home-book-button:focus-visible { outline: 4px solid #fff600; outline-offset: 3px; }
+.legacy-home-book-button:not(:disabled):focus-visible { outline: 4px solid #fff600; outline-offset: 3px; }
 
 .legacy-menu-title-animation {
   align-self: center;
@@ -188,6 +188,8 @@ transform: translateX(70px) translateY(clamp(-120px, -9vh, -70px)) scale(1.1);
   background: transparent;
   box-shadow: none;
 }
+
+.legacy-home-book-button:disabled { opacity: .4; cursor: not-allowed; }
 
 .teacher-offline-library > .classroom-teaching-toolbar {
   align-self: center;

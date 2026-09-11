@@ -17,11 +17,13 @@ export default function TeacherBookNavigation({
   selectedBookId = "students-book",
   onBookSwitch = noOp,
   unavailableBookIds = new Set(),
+  unavailableBookMessages = new Map(),
+  unavailableBookLabels = new Map(),
 }) {
   const runtimeUiAssets = useTeacherRuntimeUiAssets();
   return <TeacherBookNavigationCore
     navigationMode={navigationMode}
-    {...{ onHome, onBack, onPrevious, onNext, previousDisabled, nextDisabled, contextAction, contextActions, internalNavigation, selectedBookId, onBookSwitch, unavailableBookIds }}
+    {...{ onHome, onBack, onPrevious, onNext, previousDisabled, nextDisabled, contextAction, contextActions, internalNavigation, selectedBookId, onBookSwitch, unavailableBookIds, unavailableBookMessages, unavailableBookLabels }}
     bookSwitches={runtimeUiAssets.classroom.bookSwitches}
     renderIcon={(name) => <LegacyClassroomIcon name={name} />}
     renderContextIcon={(action) => action.artwork ? <span className="teacher-book-navigation-context-icon-set" aria-hidden="true"><img data-icon-state="active" src={action.artwork.active} alt="" draggable="false" /><img data-icon-state="pressed" src={action.artwork.pressed} alt="" draggable="false" /><img data-icon-state="disabled" src={action.artwork.disabled} alt="" draggable="false" /></span> : null}

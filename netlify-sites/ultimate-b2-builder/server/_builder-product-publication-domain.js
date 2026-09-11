@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
 
 import { normalizeProductReleaseEnvelope } from "../../../src/data/ultimate-b2/productPublication.js";
-import { findPublicationProduct, findPublicationComponentBySlug } from "../../../src/data/publicationRegistry.js";
+import { publicationProductsV1 } from "../../../src/data/publicationRegistry.js";
 
+// These namespace recipes belong to the immutable envelope v1 shape.
+const findPublicationProduct = (book) => publicationProductsV1.find((entry) => entry.bookSlug === book);
+const findPublicationComponentBySlug = (slug) => publicationProductsV1.flatMap((entry) => entry.members).find((entry) => entry.componentSlug === slug);
 const sha256 = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 const absent = (value) => value === null || value === undefined ? "-" : String(value);
 

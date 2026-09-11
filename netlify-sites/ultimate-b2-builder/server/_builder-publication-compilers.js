@@ -31,7 +31,9 @@ import { COMPONENT_PUBLICATION_ASSET_ROLES } from "../../../src/data/ultimate-b2
 import { STUDENTS_BOOK_V3_COMPILER, STUDENTS_BOOK_V3_SCHEMA, normalizeStudentsBookV3Sources, normalizeStudentsBookV3Public, normalizeStudentsBookV3Teacher } from "../../../src/data/ultimate-b2/componentPublicationV3.js";
 import { compileStudentsBookReleaseV3, studentsBookV3Compatibility } from "./_builder-publication-compiler-v3.js";
 import { collectStudentsBookPublicationV3Sources } from "./_builder-publication-sources-v3.js";
-import { newManagedPublicationComponents, findPublicationComponentBySlug } from "../../../src/data/publicationRegistry.js";
+import { managedPublicationComponentsV1, findManagedPublicationComponentV1 } from "../../../src/data/publicationRegistry.js";
+import { managedUiV2Components, compileManagedUiReleaseV2, verifyManagedUiReleaseV2 } from "./_builder-managed-ui-publication-compiler.js";
+import { collectManagedUiPublicationSources } from "./_builder-managed-ui-publication-sources.js";
 import { collectManagedPublicationSources } from "./_builder-publication-store.js";
 
 function expectedAssetManifest(publicProjection, teacherProjection) {
@@ -144,7 +146,7 @@ const v2 = Object.freeze({
 });
 
 function managed(componentSlug) {
-  const { compilerId, bookSlug } = findPublicationComponentBySlug(componentSlug);
+  const { compilerId, bookSlug } = findManagedPublicationComponentV1(componentSlug);
   return Object.freeze({
     compilerId,
     releaseSchemaVersion: ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION,
@@ -175,7 +177,13 @@ const v3 = Object.freeze({
   },
 });
 const registry = Object.freeze({ [v1.compilerId]: v1, [v2.compilerId]: v2, [v3.compilerId]: v3, [workbook.compilerId]: workbook, [grammarBook.compilerId]: grammarBook,
-  ...Object.fromEntries(newManagedPublicationComponents.map((entry) => [entry.compilerId, managed(entry.componentSlug)])),
+  ...Object.fromEntries(managedPublicationComponentsV1.map((entry) => [entry.compilerId, managed(entry.componentSlug)])),
+  ...Object.fromEntries(managedUiV2Components.map((componentSlug) => [`${componentSlug}-v2`, Object.freeze({
+    compilerId: `${componentSlug}-v2`, releaseSchemaVersion: "2.0",
+    collect(sql) { return collectManagedUiPublicationSources(sql, componentSlug.slice(0, -"-students-book".length), componentSlug); },
+    compile(sources) { return compileManagedUiReleaseV2(sources, componentSlug); },
+    verifyRelease(release) { return verifyManagedUiReleaseV2(release, componentSlug); },
+  })])),
 });
 
 export function resolvePublicationCompiler(compilerId, releaseSchemaVersion = null) {

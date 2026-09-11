@@ -1,4 +1,4 @@
-import { newManagedPublicationComponents } from "../../../src/data/publicationRegistry.js";
+import { isB1ManagedPublicationCompiler } from "../../../src/data/publicationRegistry.js";
 import { deliverNativeTeacherAnswer } from "./_builder-native-answer-delivery.js";
 import { createHash } from "node:crypto";
 import { createBookAssetStorage } from "../../../lib/book-assets/storage.js";
@@ -133,7 +133,7 @@ export function createBuilderPublicationHandler(overrides = {}) {
               if (!pin || pin.component_release_id !== release.id || pin.asset_role !== asset.role || pin.checksum_sha256 !== asset.sha256
                 || pin.extension !== asset.extension || pin.media_type !== asset.mediaType || Number(pin.byte_size) < 1
                 || pin.storage_profile !== "private") return json(409, { error: "release_pin_integrity_failed" });
-              if (release.compiler_id === "ultimate-b2-students-book-v3" || newManagedPublicationComponents.some((entry) => entry.compilerId === release.compiler_id)) {
+              if (release.compiler_id === "ultimate-b2-students-book-v3" || isB1ManagedPublicationCompiler(release.compiler_id)) {
                 try { verifiedPublicAssetPin({ row: release, projection: verified.publicProjection, asset, pin }); }
                 catch { return json(409, { error: "release_pin_integrity_failed" }); }
               }

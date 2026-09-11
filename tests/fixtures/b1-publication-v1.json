@@ -1,0 +1,1820 @@
+{
+  "components": {
+    "ultimate-b1-students-book": {
+      "compilerId": "ultimate-b1-students-book-v1",
+      "releaseSchemaVersion": "1.0",
+      "compatibility": "f7c1a359e3874d07b429de4ec1c1d81a1bb9ad6f037175d8f5a0c4b6a45aae18",
+      "sourceSnapshot": {
+        "schemaVersion": "1.0",
+        "pages": {
+          "revision": 1,
+          "sha256": "a64cfe52be1cfc440a12c1a91334136c6a90ed1147b9e2421ba3678844d25b45"
+        },
+        "hotspots": {
+          "revision": 1,
+          "sha256": "7151bf916ba5ba7215d473548ca6271bd7423a5145245b8f7d9ed73ec3118bba"
+        },
+        "activityLifecycle": {
+          "revision": 0,
+          "sha256": "04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36"
+        },
+        "nativeIndex": {
+          "revision": 1,
+          "sha256": "137dfb3a70118886469d732460ef8e14022b4791bfb313524b2bc375c8671506"
+        },
+        "nativeActivities": {
+          "ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "public": {
+              "revision": 1,
+              "sha256": "9372c311f0c573e4f2cd86d05090b804b9f3928eca92ad97be19b0297fb63ee4"
+            },
+            "teacher": {
+              "revision": 1,
+              "sha256": "bd5d100287971d60f118e7a3e5ce00f9336f6569cbd59650e6f1fa6fe596cd1a"
+            }
+          },
+          "ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "public": {
+              "revision": 1,
+              "sha256": "bf54a7a2e525410858cda080ea622423565591bbe79e7c6ad0debc5746670b0c"
+            },
+            "teacher": {
+              "revision": 1,
+              "sha256": "ad643b3d7799583a0512d8e0ebf7d167344de887a7836c318ef6b73f990505e9"
+            }
+          }
+        }
+      },
+      "publicProjection": {
+        "schemaVersion": "1.0",
+        "bookSlug": "ultimate-b1",
+        "componentSlug": "ultimate-b1-students-book",
+        "compatibility": "f7c1a359e3874d07b429de4ec1c1d81a1bb9ad6f037175d8f5a0c4b6a45aae18",
+        "units": [
+          {
+            "id": "10000000-0000-4000-8000-000000000001",
+            "slug": "unit-1",
+            "title": "Unit 1",
+            "unitNumber": 1,
+            "sortOrder": 1
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000002",
+            "slug": "unit-2",
+            "title": "Unit 2",
+            "unitNumber": 2,
+            "sortOrder": 2
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000003",
+            "slug": "unit-3",
+            "title": "Unit 3",
+            "unitNumber": 3,
+            "sortOrder": 3
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000004",
+            "slug": "unit-4",
+            "title": "Unit 4",
+            "unitNumber": 4,
+            "sortOrder": 4
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000005",
+            "slug": "unit-5",
+            "title": "Unit 5",
+            "unitNumber": 5,
+            "sortOrder": 5
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000006",
+            "slug": "unit-6",
+            "title": "Unit 6",
+            "unitNumber": 6,
+            "sortOrder": 6
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000007",
+            "slug": "unit-7",
+            "title": "Unit 7",
+            "unitNumber": 7,
+            "sortOrder": 7
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000008",
+            "slug": "unit-8",
+            "title": "Unit 8",
+            "unitNumber": 8,
+            "sortOrder": 8
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000009",
+            "slug": "unit-9",
+            "title": "Unit 9",
+            "unitNumber": 9,
+            "sortOrder": 9
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000010",
+            "slug": "unit-10",
+            "title": "Unit 10",
+            "unitNumber": 10,
+            "sortOrder": 10
+          }
+        ],
+        "pages": [
+          {
+            "id": "b1-sb-page-abcde12345674abc89ab0123456789ab",
+            "stableKey": "ultimate-b1-students-book/pages/b1-sb-page-abcde12345674abc89ab0123456789ab",
+            "unitId": "10000000-0000-4000-8000-000000000001",
+            "unitSlug": "unit-1",
+            "unitNumber": 1,
+            "unitTitle": "Unit 1",
+            "sectionTitle": "Vocabulary",
+            "printedLabel": "4",
+            "sortOrder": 1,
+            "label": "Page 1",
+            "image": {
+              "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+              "extension": "png",
+              "mediaType": "image/png",
+              "role": "managed_page_image",
+              "byteSize": 68,
+              "width": 1,
+              "height": 1
+            }
+          },
+          {
+            "id": "b1-sb-page-98765432abcd4321abcd0123456789ef",
+            "stableKey": "ultimate-b1-students-book/pages/b1-sb-page-98765432abcd4321abcd0123456789ef",
+            "unitId": "10000000-0000-4000-8000-000000000001",
+            "unitSlug": "unit-1",
+            "unitNumber": 1,
+            "unitTitle": "Unit 1",
+            "sectionTitle": "Vocabulary",
+            "printedLabel": "5",
+            "sortOrder": 2,
+            "label": "Page 2",
+            "image": {
+              "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+              "extension": "png",
+              "mediaType": "image/png",
+              "role": "managed_page_image",
+              "byteSize": 68,
+              "width": 1,
+              "height": 1
+            }
+          }
+        ],
+        "hotspots": {
+          "schemaVersion": "1.0",
+          "packageSlug": "ultimate-b1",
+          "componentSlug": "ultimate-b1-students-book",
+          "pages": {
+            "b1-sb-page-abcde12345674abc89ab0123456789ab": [
+              {
+                "id": "b1-sb-hotspot-1",
+                "unitNumber": 1,
+                "pageId": "b1-sb-page-abcde12345674abc89ab0123456789ab",
+                "left": 10,
+                "top": 20,
+                "width": 35,
+                "height": 15,
+                "label": "Explain your answer",
+                "actionType": "normalized_activity",
+                "activityKey": "ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1"
+              }
+            ],
+            "b1-sb-page-98765432abcd4321abcd0123456789ef": [
+              {
+                "id": "b1-sb-hotspot-2",
+                "unitNumber": 1,
+                "pageId": "b1-sb-page-98765432abcd4321abcd0123456789ef",
+                "left": 10,
+                "top": 20,
+                "width": 35,
+                "height": 15,
+                "label": "Explain your answer",
+                "actionType": "normalized_activity",
+                "activityKey": "ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1"
+              }
+            ]
+          }
+        },
+        "nativeActivities": {
+          "ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1",
+              "kind": "open-response",
+              "metadata": {
+                "title": "Explain your answer 2",
+                "visibleInstructionText": ""
+              },
+              "placement": {
+                "pageId": "b1-sb-page-98765432abcd4321abcd0123456789ef"
+              },
+              "assets": [],
+              "parts": [
+                {
+                  "id": "part-1",
+                  "interaction": {
+                    "kind": "open-response",
+                    "surface": {
+                      "width": 1024,
+                      "height": 582
+                    },
+                    "artwork": [],
+                    "questions": [
+                      {
+                        "id": "q-40000000000040008000000000000002",
+                        "prompt": "Explain question 2.",
+                        "promptArea": {
+                          "x": 72,
+                          "y": 24,
+                          "width": 880,
+                          "height": 38
+                        },
+                        "promptStyle": {
+                          "fontFamily": "Arial",
+                          "fontSize": 22,
+                          "color": "#111827",
+                          "align": "left"
+                        },
+                        "responseRegion": {
+                          "id": "q-40000000000040008000000000000002-response",
+                          "ariaLabel": "Response for question 1",
+                          "area": {
+                            "x": 160,
+                            "y": 180,
+                            "width": 704,
+                            "height": 120
+                          },
+                          "presentation": {
+                            "paddingX": 12,
+                            "paddingY": 8,
+                            "lineCount": 3,
+                            "lineSpacing": 32,
+                            "linePositions": [
+                              40,
+                              72,
+                              104
+                            ],
+                            "lineWidth": 676,
+                            "answerFontFamily": "Arial",
+                            "answerFontSizeMin": 12,
+                            "answerFontSizeMax": 22,
+                            "color": "#111827",
+                            "align": "left"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1",
+              "kind": "open-response",
+              "metadata": {
+                "title": "Explain your answer 1",
+                "visibleInstructionText": ""
+              },
+              "placement": {
+                "pageId": "b1-sb-page-abcde12345674abc89ab0123456789ab"
+              },
+              "assets": [],
+              "parts": [
+                {
+                  "id": "part-1",
+                  "interaction": {
+                    "kind": "open-response",
+                    "surface": {
+                      "width": 1024,
+                      "height": 582
+                    },
+                    "artwork": [],
+                    "questions": [
+                      {
+                        "id": "q-40000000000040008000000000000001",
+                        "prompt": "Explain question 1.",
+                        "promptArea": {
+                          "x": 72,
+                          "y": 24,
+                          "width": 880,
+                          "height": 38
+                        },
+                        "promptStyle": {
+                          "fontFamily": "Arial",
+                          "fontSize": 22,
+                          "color": "#111827",
+                          "align": "left"
+                        },
+                        "responseRegion": {
+                          "id": "q-40000000000040008000000000000001-response",
+                          "ariaLabel": "Response for question 1",
+                          "area": {
+                            "x": 160,
+                            "y": 180,
+                            "width": 704,
+                            "height": 120
+                          },
+                          "presentation": {
+                            "paddingX": 12,
+                            "paddingY": 8,
+                            "lineCount": 3,
+                            "lineSpacing": 32,
+                            "linePositions": [
+                              40,
+                              72,
+                              104
+                            ],
+                            "lineWidth": 676,
+                            "answerFontFamily": "Arial",
+                            "answerFontSizeMin": 12,
+                            "answerFontSizeMax": 22,
+                            "color": "#111827",
+                            "align": "left"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "activityOrder": {
+          "b1-sb-page-abcde12345674abc89ab0123456789ab": [
+            "ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1"
+          ],
+          "b1-sb-page-98765432abcd4321abcd0123456789ef": [
+            "ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1"
+          ]
+        },
+        "assets": [
+          {
+            "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+            "extension": "png",
+            "mediaType": "image/png",
+            "role": "managed_page_image"
+          }
+        ]
+      },
+      "teacherProjection": {
+        "schemaVersion": "1.0",
+        "bookSlug": "ultimate-b1",
+        "componentSlug": "ultimate-b1-students-book",
+        "nativeActivities": {
+          "ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1",
+              "kind": "open-response",
+              "parts": [
+                {
+                  "id": "part-1",
+                  "solution": {
+                    "kind": "open-response",
+                    "modelAnswers": [
+                      {
+                        "questionId": "q-40000000000040008000000000000002",
+                        "text": "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1",
+              "kind": "open-response",
+              "parts": [
+                {
+                  "id": "part-1",
+                  "solution": {
+                    "kind": "open-response",
+                    "modelAnswers": [
+                      {
+                        "questionId": "q-40000000000040008000000000000001",
+                        "text": "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "assetManifest": [
+        {
+          "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+          "extension": "png",
+          "mediaType": "image/png",
+          "role": "managed_page_image"
+        }
+      ],
+      "sourceSnapshotSha256": "92e5a43e87e61cd833801fa4074bdf33cc5b5a495ca8c35c03180830b947d160",
+      "publicProjectionSha256": "5e240b8b39e8f900020dc1a312ca9b88869045c8c9b92989062878829cb4a540",
+      "teacherProjectionSha256": "0b5eb15929f1f45a4d51526358aed3fb40d30082bed41ec2f4a6f4ddbe66a27d",
+      "releaseSha256": "6d1691e633145250ab9a4a5668e12f5e61f081124ad09c55041935f605350094",
+      "stableJson": "{\"compatibility\":\"f7c1a359e3874d07b429de4ec1c1d81a1bb9ad6f037175d8f5a0c4b6a45aae18\",\"publicProjection\":{\"activityOrder\":{\"b1-sb-page-98765432abcd4321abcd0123456789ef\":[\"ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1\"],\"b1-sb-page-abcde12345674abc89ab0123456789ab\":[\"ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1\"]},\"assets\":[{\"extension\":\"png\",\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\"}],\"bookSlug\":\"ultimate-b1\",\"compatibility\":\"f7c1a359e3874d07b429de4ec1c1d81a1bb9ad6f037175d8f5a0c4b6a45aae18\",\"componentSlug\":\"ultimate-b1-students-book\",\"hotspots\":{\"componentSlug\":\"ultimate-b1-students-book\",\"packageSlug\":\"ultimate-b1\",\"pages\":{\"b1-sb-page-98765432abcd4321abcd0123456789ef\":[{\"actionType\":\"normalized_activity\",\"activityKey\":\"ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1\",\"height\":15,\"id\":\"b1-sb-hotspot-2\",\"label\":\"Explain your answer\",\"left\":10,\"pageId\":\"b1-sb-page-98765432abcd4321abcd0123456789ef\",\"top\":20,\"unitNumber\":1,\"width\":35}],\"b1-sb-page-abcde12345674abc89ab0123456789ab\":[{\"actionType\":\"normalized_activity\",\"activityKey\":\"ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1\",\"height\":15,\"id\":\"b1-sb-hotspot-1\",\"label\":\"Explain your answer\",\"left\":10,\"pageId\":\"b1-sb-page-abcde12345674abc89ab0123456789ab\",\"top\":20,\"unitNumber\":1,\"width\":35}]},\"schemaVersion\":\"1.0\"},\"nativeActivities\":{\"ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1\":{\"document\":{\"activityId\":\"ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1\",\"assets\":[],\"kind\":\"open-response\",\"metadata\":{\"title\":\"Explain your answer 2\",\"visibleInstructionText\":\"\"},\"parts\":[{\"id\":\"part-1\",\"interaction\":{\"artwork\":[],\"kind\":\"open-response\",\"questions\":[{\"id\":\"q-40000000000040008000000000000002\",\"prompt\":\"Explain question 2.\",\"promptArea\":{\"height\":38,\"width\":880,\"x\":72,\"y\":24},\"promptStyle\":{\"align\":\"left\",\"color\":\"#111827\",\"fontFamily\":\"Arial\",\"fontSize\":22},\"responseRegion\":{\"area\":{\"height\":120,\"width\":704,\"x\":160,\"y\":180},\"ariaLabel\":\"Response for question 1\",\"id\":\"q-40000000000040008000000000000002-response\",\"presentation\":{\"align\":\"left\",\"answerFontFamily\":\"Arial\",\"answerFontSizeMax\":22,\"answerFontSizeMin\":12,\"color\":\"#111827\",\"lineCount\":3,\"linePositions\":[40,72,104],\"lineSpacing\":32,\"lineWidth\":676,\"paddingX\":12,\"paddingY\":8}}}],\"surface\":{\"height\":582,\"width\":1024}}}],\"placement\":{\"pageId\":\"b1-sb-page-98765432abcd4321abcd0123456789ef\"},\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"},\"ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1\":{\"document\":{\"activityId\":\"ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1\",\"assets\":[],\"kind\":\"open-response\",\"metadata\":{\"title\":\"Explain your answer 1\",\"visibleInstructionText\":\"\"},\"parts\":[{\"id\":\"part-1\",\"interaction\":{\"artwork\":[],\"kind\":\"open-response\",\"questions\":[{\"id\":\"q-40000000000040008000000000000001\",\"prompt\":\"Explain question 1.\",\"promptArea\":{\"height\":38,\"width\":880,\"x\":72,\"y\":24},\"promptStyle\":{\"align\":\"left\",\"color\":\"#111827\",\"fontFamily\":\"Arial\",\"fontSize\":22},\"responseRegion\":{\"area\":{\"height\":120,\"width\":704,\"x\":160,\"y\":180},\"ariaLabel\":\"Response for question 1\",\"id\":\"q-40000000000040008000000000000001-response\",\"presentation\":{\"align\":\"left\",\"answerFontFamily\":\"Arial\",\"answerFontSizeMax\":22,\"answerFontSizeMin\":12,\"color\":\"#111827\",\"lineCount\":3,\"linePositions\":[40,72,104],\"lineSpacing\":32,\"lineWidth\":676,\"paddingX\":12,\"paddingY\":8}}}],\"surface\":{\"height\":582,\"width\":1024}}}],\"placement\":{\"pageId\":\"b1-sb-page-abcde12345674abc89ab0123456789ab\"},\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"}},\"pages\":[{\"id\":\"b1-sb-page-abcde12345674abc89ab0123456789ab\",\"image\":{\"byteSize\":68,\"extension\":\"png\",\"height\":1,\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\",\"width\":1},\"label\":\"Page 1\",\"printedLabel\":\"4\",\"sectionTitle\":\"Vocabulary\",\"sortOrder\":1,\"stableKey\":\"ultimate-b1-students-book/pages/b1-sb-page-abcde12345674abc89ab0123456789ab\",\"unitId\":\"10000000-0000-4000-8000-000000000001\",\"unitNumber\":1,\"unitSlug\":\"unit-1\",\"unitTitle\":\"Unit 1\"},{\"id\":\"b1-sb-page-98765432abcd4321abcd0123456789ef\",\"image\":{\"byteSize\":68,\"extension\":\"png\",\"height\":1,\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\",\"width\":1},\"label\":\"Page 2\",\"printedLabel\":\"5\",\"sectionTitle\":\"Vocabulary\",\"sortOrder\":2,\"stableKey\":\"ultimate-b1-students-book/pages/b1-sb-page-98765432abcd4321abcd0123456789ef\",\"unitId\":\"10000000-0000-4000-8000-000000000001\",\"unitNumber\":1,\"unitSlug\":\"unit-1\",\"unitTitle\":\"Unit 1\"}],\"schemaVersion\":\"1.0\",\"units\":[{\"id\":\"10000000-0000-4000-8000-000000000001\",\"slug\":\"unit-1\",\"sortOrder\":1,\"title\":\"Unit 1\",\"unitNumber\":1},{\"id\":\"10000000-0000-4000-8000-000000000002\",\"slug\":\"unit-2\",\"sortOrder\":2,\"title\":\"Unit 2\",\"unitNumber\":2},{\"id\":\"10000000-0000-4000-8000-000000000003\",\"slug\":\"unit-3\",\"sortOrder\":3,\"title\":\"Unit 3\",\"unitNumber\":3},{\"id\":\"10000000-0000-4000-8000-000000000004\",\"slug\":\"unit-4\",\"sortOrder\":4,\"title\":\"Unit 4\",\"unitNumber\":4},{\"id\":\"10000000-0000-4000-8000-000000000005\",\"slug\":\"unit-5\",\"sortOrder\":5,\"title\":\"Unit 5\",\"unitNumber\":5},{\"id\":\"10000000-0000-4000-8000-000000000006\",\"slug\":\"unit-6\",\"sortOrder\":6,\"title\":\"Unit 6\",\"unitNumber\":6},{\"id\":\"10000000-0000-4000-8000-000000000007\",\"slug\":\"unit-7\",\"sortOrder\":7,\"title\":\"Unit 7\",\"unitNumber\":7},{\"id\":\"10000000-0000-4000-8000-000000000008\",\"slug\":\"unit-8\",\"sortOrder\":8,\"title\":\"Unit 8\",\"unitNumber\":8},{\"id\":\"10000000-0000-4000-8000-000000000009\",\"slug\":\"unit-9\",\"sortOrder\":9,\"title\":\"Unit 9\",\"unitNumber\":9},{\"id\":\"10000000-0000-4000-8000-000000000010\",\"slug\":\"unit-10\",\"sortOrder\":10,\"title\":\"Unit 10\",\"unitNumber\":10}]},\"sourceSnapshot\":{\"activityLifecycle\":{\"revision\":0,\"sha256\":\"04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36\"},\"hotspots\":{\"revision\":1,\"sha256\":\"7151bf916ba5ba7215d473548ca6271bd7423a5145245b8f7d9ed73ec3118bba\"},\"nativeActivities\":{\"ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1\":{\"kind\":\"open-response\",\"public\":{\"revision\":1,\"sha256\":\"9372c311f0c573e4f2cd86d05090b804b9f3928eca92ad97be19b0297fb63ee4\"},\"teacher\":{\"revision\":1,\"sha256\":\"bd5d100287971d60f118e7a3e5ce00f9336f6569cbd59650e6f1fa6fe596cd1a\"}},\"ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1\":{\"kind\":\"open-response\",\"public\":{\"revision\":1,\"sha256\":\"bf54a7a2e525410858cda080ea622423565591bbe79e7c6ad0debc5746670b0c\"},\"teacher\":{\"revision\":1,\"sha256\":\"ad643b3d7799583a0512d8e0ebf7d167344de887a7836c318ef6b73f990505e9\"}}},\"nativeIndex\":{\"revision\":1,\"sha256\":\"137dfb3a70118886469d732460ef8e14022b4791bfb313524b2bc375c8671506\"},\"pages\":{\"revision\":1,\"sha256\":\"a64cfe52be1cfc440a12c1a91334136c6a90ed1147b9e2421ba3678844d25b45\"},\"schemaVersion\":\"1.0\"},\"teacherProjection\":{\"bookSlug\":\"ultimate-b1\",\"componentSlug\":\"ultimate-b1-students-book\",\"nativeActivities\":{\"ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1\":{\"document\":{\"activityId\":\"ultimate-b1-sb-98765432abcd4321abcd0123456789ef-o1\",\"kind\":\"open-response\",\"parts\":[{\"id\":\"part-1\",\"solution\":{\"kind\":\"open-response\",\"modelAnswers\":[{\"questionId\":\"q-40000000000040008000000000000002\",\"text\":\"PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL\"}]}}],\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"},\"ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1\":{\"document\":{\"activityId\":\"ultimate-b1-sb-abcde12345674abc89ab0123456789ab-o1\",\"kind\":\"open-response\",\"parts\":[{\"id\":\"part-1\",\"solution\":{\"kind\":\"open-response\",\"modelAnswers\":[{\"questionId\":\"q-40000000000040008000000000000001\",\"text\":\"PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL\"}]}}],\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"}},\"schemaVersion\":\"1.0\"}}"
+    },
+    "ultimate-b1-workbook": {
+      "compilerId": "ultimate-b1-workbook-v1",
+      "releaseSchemaVersion": "1.0",
+      "compatibility": "9590ce25d499c099a2b997e7fada40e86a7fbf07aef79086dfd2c8bd3cc31854",
+      "sourceSnapshot": {
+        "schemaVersion": "1.0",
+        "pages": {
+          "revision": 1,
+          "sha256": "cf061259a35c4ec0138357292cb992e4b389cd9b708490f6420e4399276ce716"
+        },
+        "hotspots": {
+          "revision": 1,
+          "sha256": "04e5bd224d678196a613162d2ff573de98f870e7a2da951e08bc621718fe8454"
+        },
+        "activityLifecycle": {
+          "revision": 0,
+          "sha256": "04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36"
+        },
+        "nativeIndex": {
+          "revision": 1,
+          "sha256": "86170982c3650f5f3c9c83ecb4269e67e60b59d9014447a10fe7588bf567f5bf"
+        },
+        "nativeActivities": {
+          "ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "public": {
+              "revision": 1,
+              "sha256": "6db0a0ffd58b06419aaf1795b7e25c8b0da52cf4ce57c83739a9884908810767"
+            },
+            "teacher": {
+              "revision": 1,
+              "sha256": "30e553bff558141ee7ce72ac3aff274d650e9df8bd247ec1ef995928fadb5c1d"
+            }
+          },
+          "ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "public": {
+              "revision": 1,
+              "sha256": "446d2a3af6376a158e07b77bd0acc1c5ac289336a30d0fe681b4200553394f87"
+            },
+            "teacher": {
+              "revision": 1,
+              "sha256": "1e42824f0276d934f6225ead4a4bd8ef677339865cb41edf132e93a89e11e0c3"
+            }
+          }
+        }
+      },
+      "publicProjection": {
+        "schemaVersion": "1.0",
+        "bookSlug": "ultimate-b1",
+        "componentSlug": "ultimate-b1-workbook",
+        "compatibility": "9590ce25d499c099a2b997e7fada40e86a7fbf07aef79086dfd2c8bd3cc31854",
+        "units": [
+          {
+            "id": "10000000-0000-4000-8000-000000000001",
+            "slug": "unit-1",
+            "title": "Unit 1",
+            "unitNumber": 1,
+            "sortOrder": 1
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000002",
+            "slug": "unit-2",
+            "title": "Unit 2",
+            "unitNumber": 2,
+            "sortOrder": 2
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000003",
+            "slug": "unit-3",
+            "title": "Unit 3",
+            "unitNumber": 3,
+            "sortOrder": 3
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000004",
+            "slug": "unit-4",
+            "title": "Unit 4",
+            "unitNumber": 4,
+            "sortOrder": 4
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000005",
+            "slug": "unit-5",
+            "title": "Unit 5",
+            "unitNumber": 5,
+            "sortOrder": 5
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000006",
+            "slug": "unit-6",
+            "title": "Unit 6",
+            "unitNumber": 6,
+            "sortOrder": 6
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000007",
+            "slug": "unit-7",
+            "title": "Unit 7",
+            "unitNumber": 7,
+            "sortOrder": 7
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000008",
+            "slug": "unit-8",
+            "title": "Unit 8",
+            "unitNumber": 8,
+            "sortOrder": 8
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000009",
+            "slug": "unit-9",
+            "title": "Unit 9",
+            "unitNumber": 9,
+            "sortOrder": 9
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000010",
+            "slug": "unit-10",
+            "title": "Unit 10",
+            "unitNumber": 10,
+            "sortOrder": 10
+          }
+        ],
+        "pages": [
+          {
+            "id": "b1-wb-page-abcde12345674abc89ab0123456789ab",
+            "stableKey": "ultimate-b1-workbook/pages/b1-wb-page-abcde12345674abc89ab0123456789ab",
+            "unitId": "10000000-0000-4000-8000-000000000001",
+            "unitSlug": "unit-1",
+            "unitNumber": 1,
+            "unitTitle": "Unit 1",
+            "sectionTitle": "Vocabulary",
+            "printedLabel": "4",
+            "sortOrder": 1,
+            "label": "Page 1",
+            "image": {
+              "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+              "extension": "png",
+              "mediaType": "image/png",
+              "role": "managed_page_image",
+              "byteSize": 68,
+              "width": 1,
+              "height": 1
+            }
+          },
+          {
+            "id": "b1-wb-page-98765432abcd4321abcd0123456789ef",
+            "stableKey": "ultimate-b1-workbook/pages/b1-wb-page-98765432abcd4321abcd0123456789ef",
+            "unitId": "10000000-0000-4000-8000-000000000001",
+            "unitSlug": "unit-1",
+            "unitNumber": 1,
+            "unitTitle": "Unit 1",
+            "sectionTitle": "Vocabulary",
+            "printedLabel": "5",
+            "sortOrder": 2,
+            "label": "Page 2",
+            "image": {
+              "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+              "extension": "png",
+              "mediaType": "image/png",
+              "role": "managed_page_image",
+              "byteSize": 68,
+              "width": 1,
+              "height": 1
+            }
+          }
+        ],
+        "hotspots": {
+          "schemaVersion": "1.0",
+          "packageSlug": "ultimate-b1",
+          "componentSlug": "ultimate-b1-workbook",
+          "pages": {
+            "b1-wb-page-abcde12345674abc89ab0123456789ab": [
+              {
+                "id": "b1-wb-hotspot-1",
+                "unitNumber": 1,
+                "pageId": "b1-wb-page-abcde12345674abc89ab0123456789ab",
+                "left": 10,
+                "top": 20,
+                "width": 35,
+                "height": 15,
+                "label": "Explain your answer",
+                "actionType": "normalized_activity",
+                "activityKey": "ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1"
+              }
+            ],
+            "b1-wb-page-98765432abcd4321abcd0123456789ef": [
+              {
+                "id": "b1-wb-hotspot-2",
+                "unitNumber": 1,
+                "pageId": "b1-wb-page-98765432abcd4321abcd0123456789ef",
+                "left": 10,
+                "top": 20,
+                "width": 35,
+                "height": 15,
+                "label": "Explain your answer",
+                "actionType": "normalized_activity",
+                "activityKey": "ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1"
+              }
+            ]
+          }
+        },
+        "nativeActivities": {
+          "ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1",
+              "kind": "open-response",
+              "metadata": {
+                "title": "Explain your answer 2",
+                "visibleInstructionText": ""
+              },
+              "placement": {
+                "pageId": "b1-wb-page-98765432abcd4321abcd0123456789ef"
+              },
+              "assets": [],
+              "parts": [
+                {
+                  "id": "part-1",
+                  "interaction": {
+                    "kind": "open-response",
+                    "surface": {
+                      "width": 1024,
+                      "height": 582
+                    },
+                    "artwork": [],
+                    "questions": [
+                      {
+                        "id": "q-40000000000040008000000000000002",
+                        "prompt": "Explain question 2.",
+                        "promptArea": {
+                          "x": 72,
+                          "y": 24,
+                          "width": 880,
+                          "height": 38
+                        },
+                        "promptStyle": {
+                          "fontFamily": "Arial",
+                          "fontSize": 22,
+                          "color": "#111827",
+                          "align": "left"
+                        },
+                        "responseRegion": {
+                          "id": "q-40000000000040008000000000000002-response",
+                          "ariaLabel": "Response for question 1",
+                          "area": {
+                            "x": 160,
+                            "y": 180,
+                            "width": 704,
+                            "height": 120
+                          },
+                          "presentation": {
+                            "paddingX": 12,
+                            "paddingY": 8,
+                            "lineCount": 3,
+                            "lineSpacing": 32,
+                            "linePositions": [
+                              40,
+                              72,
+                              104
+                            ],
+                            "lineWidth": 676,
+                            "answerFontFamily": "Arial",
+                            "answerFontSizeMin": 12,
+                            "answerFontSizeMax": 22,
+                            "color": "#111827",
+                            "align": "left"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1",
+              "kind": "open-response",
+              "metadata": {
+                "title": "Explain your answer 1",
+                "visibleInstructionText": ""
+              },
+              "placement": {
+                "pageId": "b1-wb-page-abcde12345674abc89ab0123456789ab"
+              },
+              "assets": [],
+              "parts": [
+                {
+                  "id": "part-1",
+                  "interaction": {
+                    "kind": "open-response",
+                    "surface": {
+                      "width": 1024,
+                      "height": 582
+                    },
+                    "artwork": [],
+                    "questions": [
+                      {
+                        "id": "q-40000000000040008000000000000001",
+                        "prompt": "Explain question 1.",
+                        "promptArea": {
+                          "x": 72,
+                          "y": 24,
+                          "width": 880,
+                          "height": 38
+                        },
+                        "promptStyle": {
+                          "fontFamily": "Arial",
+                          "fontSize": 22,
+                          "color": "#111827",
+                          "align": "left"
+                        },
+                        "responseRegion": {
+                          "id": "q-40000000000040008000000000000001-response",
+                          "ariaLabel": "Response for question 1",
+                          "area": {
+                            "x": 160,
+                            "y": 180,
+                            "width": 704,
+                            "height": 120
+                          },
+                          "presentation": {
+                            "paddingX": 12,
+                            "paddingY": 8,
+                            "lineCount": 3,
+                            "lineSpacing": 32,
+                            "linePositions": [
+                              40,
+                              72,
+                              104
+                            ],
+                            "lineWidth": 676,
+                            "answerFontFamily": "Arial",
+                            "answerFontSizeMin": 12,
+                            "answerFontSizeMax": 22,
+                            "color": "#111827",
+                            "align": "left"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "activityOrder": {
+          "b1-wb-page-abcde12345674abc89ab0123456789ab": [
+            "ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1"
+          ],
+          "b1-wb-page-98765432abcd4321abcd0123456789ef": [
+            "ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1"
+          ]
+        },
+        "assets": [
+          {
+            "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+            "extension": "png",
+            "mediaType": "image/png",
+            "role": "managed_page_image"
+          }
+        ]
+      },
+      "teacherProjection": {
+        "schemaVersion": "1.0",
+        "bookSlug": "ultimate-b1",
+        "componentSlug": "ultimate-b1-workbook",
+        "nativeActivities": {
+          "ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1",
+              "kind": "open-response",
+              "parts": [
+                {
+                  "id": "part-1",
+                  "solution": {
+                    "kind": "open-response",
+                    "modelAnswers": [
+                      {
+                        "questionId": "q-40000000000040008000000000000002",
+                        "text": "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1",
+              "kind": "open-response",
+              "parts": [
+                {
+                  "id": "part-1",
+                  "solution": {
+                    "kind": "open-response",
+                    "modelAnswers": [
+                      {
+                        "questionId": "q-40000000000040008000000000000001",
+                        "text": "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "assetManifest": [
+        {
+          "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+          "extension": "png",
+          "mediaType": "image/png",
+          "role": "managed_page_image"
+        }
+      ],
+      "sourceSnapshotSha256": "3bc503e3508257cb466733282085b433b5cdddf4a26a98ef94057ff1391ed630",
+      "publicProjectionSha256": "278fe334aad9c938a2cd293d3d27c12f03180551cf6de004e605904e94df537a",
+      "teacherProjectionSha256": "204a9a3c492580c3630a7c8e89afa5ebef21ecd2dcf67d79dd914711634ff6ba",
+      "releaseSha256": "1c67b76ab1941c788f33f08e603620b7c4fcff9d65b8ece1f84f567dc22e768c",
+      "stableJson": "{\"compatibility\":\"9590ce25d499c099a2b997e7fada40e86a7fbf07aef79086dfd2c8bd3cc31854\",\"publicProjection\":{\"activityOrder\":{\"b1-wb-page-98765432abcd4321abcd0123456789ef\":[\"ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1\"],\"b1-wb-page-abcde12345674abc89ab0123456789ab\":[\"ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1\"]},\"assets\":[{\"extension\":\"png\",\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\"}],\"bookSlug\":\"ultimate-b1\",\"compatibility\":\"9590ce25d499c099a2b997e7fada40e86a7fbf07aef79086dfd2c8bd3cc31854\",\"componentSlug\":\"ultimate-b1-workbook\",\"hotspots\":{\"componentSlug\":\"ultimate-b1-workbook\",\"packageSlug\":\"ultimate-b1\",\"pages\":{\"b1-wb-page-98765432abcd4321abcd0123456789ef\":[{\"actionType\":\"normalized_activity\",\"activityKey\":\"ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1\",\"height\":15,\"id\":\"b1-wb-hotspot-2\",\"label\":\"Explain your answer\",\"left\":10,\"pageId\":\"b1-wb-page-98765432abcd4321abcd0123456789ef\",\"top\":20,\"unitNumber\":1,\"width\":35}],\"b1-wb-page-abcde12345674abc89ab0123456789ab\":[{\"actionType\":\"normalized_activity\",\"activityKey\":\"ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1\",\"height\":15,\"id\":\"b1-wb-hotspot-1\",\"label\":\"Explain your answer\",\"left\":10,\"pageId\":\"b1-wb-page-abcde12345674abc89ab0123456789ab\",\"top\":20,\"unitNumber\":1,\"width\":35}]},\"schemaVersion\":\"1.0\"},\"nativeActivities\":{\"ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1\":{\"document\":{\"activityId\":\"ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1\",\"assets\":[],\"kind\":\"open-response\",\"metadata\":{\"title\":\"Explain your answer 2\",\"visibleInstructionText\":\"\"},\"parts\":[{\"id\":\"part-1\",\"interaction\":{\"artwork\":[],\"kind\":\"open-response\",\"questions\":[{\"id\":\"q-40000000000040008000000000000002\",\"prompt\":\"Explain question 2.\",\"promptArea\":{\"height\":38,\"width\":880,\"x\":72,\"y\":24},\"promptStyle\":{\"align\":\"left\",\"color\":\"#111827\",\"fontFamily\":\"Arial\",\"fontSize\":22},\"responseRegion\":{\"area\":{\"height\":120,\"width\":704,\"x\":160,\"y\":180},\"ariaLabel\":\"Response for question 1\",\"id\":\"q-40000000000040008000000000000002-response\",\"presentation\":{\"align\":\"left\",\"answerFontFamily\":\"Arial\",\"answerFontSizeMax\":22,\"answerFontSizeMin\":12,\"color\":\"#111827\",\"lineCount\":3,\"linePositions\":[40,72,104],\"lineSpacing\":32,\"lineWidth\":676,\"paddingX\":12,\"paddingY\":8}}}],\"surface\":{\"height\":582,\"width\":1024}}}],\"placement\":{\"pageId\":\"b1-wb-page-98765432abcd4321abcd0123456789ef\"},\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"},\"ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1\":{\"document\":{\"activityId\":\"ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1\",\"assets\":[],\"kind\":\"open-response\",\"metadata\":{\"title\":\"Explain your answer 1\",\"visibleInstructionText\":\"\"},\"parts\":[{\"id\":\"part-1\",\"interaction\":{\"artwork\":[],\"kind\":\"open-response\",\"questions\":[{\"id\":\"q-40000000000040008000000000000001\",\"prompt\":\"Explain question 1.\",\"promptArea\":{\"height\":38,\"width\":880,\"x\":72,\"y\":24},\"promptStyle\":{\"align\":\"left\",\"color\":\"#111827\",\"fontFamily\":\"Arial\",\"fontSize\":22},\"responseRegion\":{\"area\":{\"height\":120,\"width\":704,\"x\":160,\"y\":180},\"ariaLabel\":\"Response for question 1\",\"id\":\"q-40000000000040008000000000000001-response\",\"presentation\":{\"align\":\"left\",\"answerFontFamily\":\"Arial\",\"answerFontSizeMax\":22,\"answerFontSizeMin\":12,\"color\":\"#111827\",\"lineCount\":3,\"linePositions\":[40,72,104],\"lineSpacing\":32,\"lineWidth\":676,\"paddingX\":12,\"paddingY\":8}}}],\"surface\":{\"height\":582,\"width\":1024}}}],\"placement\":{\"pageId\":\"b1-wb-page-abcde12345674abc89ab0123456789ab\"},\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"}},\"pages\":[{\"id\":\"b1-wb-page-abcde12345674abc89ab0123456789ab\",\"image\":{\"byteSize\":68,\"extension\":\"png\",\"height\":1,\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\",\"width\":1},\"label\":\"Page 1\",\"printedLabel\":\"4\",\"sectionTitle\":\"Vocabulary\",\"sortOrder\":1,\"stableKey\":\"ultimate-b1-workbook/pages/b1-wb-page-abcde12345674abc89ab0123456789ab\",\"unitId\":\"10000000-0000-4000-8000-000000000001\",\"unitNumber\":1,\"unitSlug\":\"unit-1\",\"unitTitle\":\"Unit 1\"},{\"id\":\"b1-wb-page-98765432abcd4321abcd0123456789ef\",\"image\":{\"byteSize\":68,\"extension\":\"png\",\"height\":1,\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\",\"width\":1},\"label\":\"Page 2\",\"printedLabel\":\"5\",\"sectionTitle\":\"Vocabulary\",\"sortOrder\":2,\"stableKey\":\"ultimate-b1-workbook/pages/b1-wb-page-98765432abcd4321abcd0123456789ef\",\"unitId\":\"10000000-0000-4000-8000-000000000001\",\"unitNumber\":1,\"unitSlug\":\"unit-1\",\"unitTitle\":\"Unit 1\"}],\"schemaVersion\":\"1.0\",\"units\":[{\"id\":\"10000000-0000-4000-8000-000000000001\",\"slug\":\"unit-1\",\"sortOrder\":1,\"title\":\"Unit 1\",\"unitNumber\":1},{\"id\":\"10000000-0000-4000-8000-000000000002\",\"slug\":\"unit-2\",\"sortOrder\":2,\"title\":\"Unit 2\",\"unitNumber\":2},{\"id\":\"10000000-0000-4000-8000-000000000003\",\"slug\":\"unit-3\",\"sortOrder\":3,\"title\":\"Unit 3\",\"unitNumber\":3},{\"id\":\"10000000-0000-4000-8000-000000000004\",\"slug\":\"unit-4\",\"sortOrder\":4,\"title\":\"Unit 4\",\"unitNumber\":4},{\"id\":\"10000000-0000-4000-8000-000000000005\",\"slug\":\"unit-5\",\"sortOrder\":5,\"title\":\"Unit 5\",\"unitNumber\":5},{\"id\":\"10000000-0000-4000-8000-000000000006\",\"slug\":\"unit-6\",\"sortOrder\":6,\"title\":\"Unit 6\",\"unitNumber\":6},{\"id\":\"10000000-0000-4000-8000-000000000007\",\"slug\":\"unit-7\",\"sortOrder\":7,\"title\":\"Unit 7\",\"unitNumber\":7},{\"id\":\"10000000-0000-4000-8000-000000000008\",\"slug\":\"unit-8\",\"sortOrder\":8,\"title\":\"Unit 8\",\"unitNumber\":8},{\"id\":\"10000000-0000-4000-8000-000000000009\",\"slug\":\"unit-9\",\"sortOrder\":9,\"title\":\"Unit 9\",\"unitNumber\":9},{\"id\":\"10000000-0000-4000-8000-000000000010\",\"slug\":\"unit-10\",\"sortOrder\":10,\"title\":\"Unit 10\",\"unitNumber\":10}]},\"sourceSnapshot\":{\"activityLifecycle\":{\"revision\":0,\"sha256\":\"04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36\"},\"hotspots\":{\"revision\":1,\"sha256\":\"04e5bd224d678196a613162d2ff573de98f870e7a2da951e08bc621718fe8454\"},\"nativeActivities\":{\"ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1\":{\"kind\":\"open-response\",\"public\":{\"revision\":1,\"sha256\":\"6db0a0ffd58b06419aaf1795b7e25c8b0da52cf4ce57c83739a9884908810767\"},\"teacher\":{\"revision\":1,\"sha256\":\"30e553bff558141ee7ce72ac3aff274d650e9df8bd247ec1ef995928fadb5c1d\"}},\"ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1\":{\"kind\":\"open-response\",\"public\":{\"revision\":1,\"sha256\":\"446d2a3af6376a158e07b77bd0acc1c5ac289336a30d0fe681b4200553394f87\"},\"teacher\":{\"revision\":1,\"sha256\":\"1e42824f0276d934f6225ead4a4bd8ef677339865cb41edf132e93a89e11e0c3\"}}},\"nativeIndex\":{\"revision\":1,\"sha256\":\"86170982c3650f5f3c9c83ecb4269e67e60b59d9014447a10fe7588bf567f5bf\"},\"pages\":{\"revision\":1,\"sha256\":\"cf061259a35c4ec0138357292cb992e4b389cd9b708490f6420e4399276ce716\"},\"schemaVersion\":\"1.0\"},\"teacherProjection\":{\"bookSlug\":\"ultimate-b1\",\"componentSlug\":\"ultimate-b1-workbook\",\"nativeActivities\":{\"ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1\":{\"document\":{\"activityId\":\"ultimate-b1-wb-98765432abcd4321abcd0123456789ef-o1\",\"kind\":\"open-response\",\"parts\":[{\"id\":\"part-1\",\"solution\":{\"kind\":\"open-response\",\"modelAnswers\":[{\"questionId\":\"q-40000000000040008000000000000002\",\"text\":\"PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL\"}]}}],\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"},\"ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1\":{\"document\":{\"activityId\":\"ultimate-b1-wb-abcde12345674abc89ab0123456789ab-o1\",\"kind\":\"open-response\",\"parts\":[{\"id\":\"part-1\",\"solution\":{\"kind\":\"open-response\",\"modelAnswers\":[{\"questionId\":\"q-40000000000040008000000000000001\",\"text\":\"PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL\"}]}}],\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"}},\"schemaVersion\":\"1.0\"}}"
+    },
+    "ultimate-b1-plus-students-book": {
+      "compilerId": "ultimate-b1-plus-students-book-v1",
+      "releaseSchemaVersion": "1.0",
+      "compatibility": "22b75850e77ad02afd29639ec95a95cb689b58fec61dc6aa087bbb780fab2604",
+      "sourceSnapshot": {
+        "schemaVersion": "1.0",
+        "pages": {
+          "revision": 1,
+          "sha256": "0883d9d2dadece1e12b451c04dfb184c7bc630a64bf43e5264d03d112f41d5cc"
+        },
+        "hotspots": {
+          "revision": 1,
+          "sha256": "5fe4243b695d7a305348086067bfd097b19c6e1cf26dafc16cc14c0e489394bd"
+        },
+        "activityLifecycle": {
+          "revision": 0,
+          "sha256": "04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36"
+        },
+        "nativeIndex": {
+          "revision": 1,
+          "sha256": "8e976009063e476cca556ee4ac0475889ded619cbd0c89b40cfc675fcd3770ac"
+        },
+        "nativeActivities": {
+          "ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "public": {
+              "revision": 1,
+              "sha256": "81fc3445b1ed16d3b27cee3ba98d120cdf591e7e936be5d1a8ca16d08f496148"
+            },
+            "teacher": {
+              "revision": 1,
+              "sha256": "73960f5f6b74dd1dd6014f4b4389498f77e8a38aed69472ae10ce496c9325bf2"
+            }
+          },
+          "ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "public": {
+              "revision": 1,
+              "sha256": "4238d01bc9424d935473337f961042cd98ebb081bac969efd46961c986d622b0"
+            },
+            "teacher": {
+              "revision": 1,
+              "sha256": "28ea6ba778e938f697bc437c5f11db73dc598878bf44c8bbdc9eac401af3de45"
+            }
+          }
+        }
+      },
+      "publicProjection": {
+        "schemaVersion": "1.0",
+        "bookSlug": "ultimate-b1-plus",
+        "componentSlug": "ultimate-b1-plus-students-book",
+        "compatibility": "22b75850e77ad02afd29639ec95a95cb689b58fec61dc6aa087bbb780fab2604",
+        "units": [
+          {
+            "id": "10000000-0000-4000-8000-000000000001",
+            "slug": "unit-1",
+            "title": "Unit 1",
+            "unitNumber": 1,
+            "sortOrder": 1
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000002",
+            "slug": "unit-2",
+            "title": "Unit 2",
+            "unitNumber": 2,
+            "sortOrder": 2
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000003",
+            "slug": "unit-3",
+            "title": "Unit 3",
+            "unitNumber": 3,
+            "sortOrder": 3
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000004",
+            "slug": "unit-4",
+            "title": "Unit 4",
+            "unitNumber": 4,
+            "sortOrder": 4
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000005",
+            "slug": "unit-5",
+            "title": "Unit 5",
+            "unitNumber": 5,
+            "sortOrder": 5
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000006",
+            "slug": "unit-6",
+            "title": "Unit 6",
+            "unitNumber": 6,
+            "sortOrder": 6
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000007",
+            "slug": "unit-7",
+            "title": "Unit 7",
+            "unitNumber": 7,
+            "sortOrder": 7
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000008",
+            "slug": "unit-8",
+            "title": "Unit 8",
+            "unitNumber": 8,
+            "sortOrder": 8
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000009",
+            "slug": "unit-9",
+            "title": "Unit 9",
+            "unitNumber": 9,
+            "sortOrder": 9
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000010",
+            "slug": "unit-10",
+            "title": "Unit 10",
+            "unitNumber": 10,
+            "sortOrder": 10
+          }
+        ],
+        "pages": [
+          {
+            "id": "b1-plus-sb-page-abcde12345674abc89ab0123456789ab",
+            "stableKey": "ultimate-b1-plus-students-book/pages/b1-plus-sb-page-abcde12345674abc89ab0123456789ab",
+            "unitId": "10000000-0000-4000-8000-000000000001",
+            "unitSlug": "unit-1",
+            "unitNumber": 1,
+            "unitTitle": "Unit 1",
+            "sectionTitle": "Vocabulary",
+            "printedLabel": "4",
+            "sortOrder": 1,
+            "label": "Page 1",
+            "image": {
+              "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+              "extension": "png",
+              "mediaType": "image/png",
+              "role": "managed_page_image",
+              "byteSize": 68,
+              "width": 1,
+              "height": 1
+            }
+          },
+          {
+            "id": "b1-plus-sb-page-98765432abcd4321abcd0123456789ef",
+            "stableKey": "ultimate-b1-plus-students-book/pages/b1-plus-sb-page-98765432abcd4321abcd0123456789ef",
+            "unitId": "10000000-0000-4000-8000-000000000001",
+            "unitSlug": "unit-1",
+            "unitNumber": 1,
+            "unitTitle": "Unit 1",
+            "sectionTitle": "Vocabulary",
+            "printedLabel": "5",
+            "sortOrder": 2,
+            "label": "Page 2",
+            "image": {
+              "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+              "extension": "png",
+              "mediaType": "image/png",
+              "role": "managed_page_image",
+              "byteSize": 68,
+              "width": 1,
+              "height": 1
+            }
+          }
+        ],
+        "hotspots": {
+          "schemaVersion": "1.0",
+          "packageSlug": "ultimate-b1-plus",
+          "componentSlug": "ultimate-b1-plus-students-book",
+          "pages": {
+            "b1-plus-sb-page-abcde12345674abc89ab0123456789ab": [
+              {
+                "id": "b1-plus-sb-hotspot-1",
+                "unitNumber": 1,
+                "pageId": "b1-plus-sb-page-abcde12345674abc89ab0123456789ab",
+                "left": 10,
+                "top": 20,
+                "width": 35,
+                "height": 15,
+                "label": "Explain your answer",
+                "actionType": "normalized_activity",
+                "activityKey": "ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1"
+              }
+            ],
+            "b1-plus-sb-page-98765432abcd4321abcd0123456789ef": [
+              {
+                "id": "b1-plus-sb-hotspot-2",
+                "unitNumber": 1,
+                "pageId": "b1-plus-sb-page-98765432abcd4321abcd0123456789ef",
+                "left": 10,
+                "top": 20,
+                "width": 35,
+                "height": 15,
+                "label": "Explain your answer",
+                "actionType": "normalized_activity",
+                "activityKey": "ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1"
+              }
+            ]
+          }
+        },
+        "nativeActivities": {
+          "ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1",
+              "kind": "open-response",
+              "metadata": {
+                "title": "Explain your answer 2",
+                "visibleInstructionText": ""
+              },
+              "placement": {
+                "pageId": "b1-plus-sb-page-98765432abcd4321abcd0123456789ef"
+              },
+              "assets": [],
+              "parts": [
+                {
+                  "id": "part-1",
+                  "interaction": {
+                    "kind": "open-response",
+                    "surface": {
+                      "width": 1024,
+                      "height": 582
+                    },
+                    "artwork": [],
+                    "questions": [
+                      {
+                        "id": "q-40000000000040008000000000000002",
+                        "prompt": "Explain question 2.",
+                        "promptArea": {
+                          "x": 72,
+                          "y": 24,
+                          "width": 880,
+                          "height": 38
+                        },
+                        "promptStyle": {
+                          "fontFamily": "Arial",
+                          "fontSize": 22,
+                          "color": "#111827",
+                          "align": "left"
+                        },
+                        "responseRegion": {
+                          "id": "q-40000000000040008000000000000002-response",
+                          "ariaLabel": "Response for question 1",
+                          "area": {
+                            "x": 160,
+                            "y": 180,
+                            "width": 704,
+                            "height": 120
+                          },
+                          "presentation": {
+                            "paddingX": 12,
+                            "paddingY": 8,
+                            "lineCount": 3,
+                            "lineSpacing": 32,
+                            "linePositions": [
+                              40,
+                              72,
+                              104
+                            ],
+                            "lineWidth": 676,
+                            "answerFontFamily": "Arial",
+                            "answerFontSizeMin": 12,
+                            "answerFontSizeMax": 22,
+                            "color": "#111827",
+                            "align": "left"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1",
+              "kind": "open-response",
+              "metadata": {
+                "title": "Explain your answer 1",
+                "visibleInstructionText": ""
+              },
+              "placement": {
+                "pageId": "b1-plus-sb-page-abcde12345674abc89ab0123456789ab"
+              },
+              "assets": [],
+              "parts": [
+                {
+                  "id": "part-1",
+                  "interaction": {
+                    "kind": "open-response",
+                    "surface": {
+                      "width": 1024,
+                      "height": 582
+                    },
+                    "artwork": [],
+                    "questions": [
+                      {
+                        "id": "q-40000000000040008000000000000001",
+                        "prompt": "Explain question 1.",
+                        "promptArea": {
+                          "x": 72,
+                          "y": 24,
+                          "width": 880,
+                          "height": 38
+                        },
+                        "promptStyle": {
+                          "fontFamily": "Arial",
+                          "fontSize": 22,
+                          "color": "#111827",
+                          "align": "left"
+                        },
+                        "responseRegion": {
+                          "id": "q-40000000000040008000000000000001-response",
+                          "ariaLabel": "Response for question 1",
+                          "area": {
+                            "x": 160,
+                            "y": 180,
+                            "width": 704,
+                            "height": 120
+                          },
+                          "presentation": {
+                            "paddingX": 12,
+                            "paddingY": 8,
+                            "lineCount": 3,
+                            "lineSpacing": 32,
+                            "linePositions": [
+                              40,
+                              72,
+                              104
+                            ],
+                            "lineWidth": 676,
+                            "answerFontFamily": "Arial",
+                            "answerFontSizeMin": 12,
+                            "answerFontSizeMax": 22,
+                            "color": "#111827",
+                            "align": "left"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "activityOrder": {
+          "b1-plus-sb-page-abcde12345674abc89ab0123456789ab": [
+            "ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1"
+          ],
+          "b1-plus-sb-page-98765432abcd4321abcd0123456789ef": [
+            "ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1"
+          ]
+        },
+        "assets": [
+          {
+            "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+            "extension": "png",
+            "mediaType": "image/png",
+            "role": "managed_page_image"
+          }
+        ]
+      },
+      "teacherProjection": {
+        "schemaVersion": "1.0",
+        "bookSlug": "ultimate-b1-plus",
+        "componentSlug": "ultimate-b1-plus-students-book",
+        "nativeActivities": {
+          "ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1",
+              "kind": "open-response",
+              "parts": [
+                {
+                  "id": "part-1",
+                  "solution": {
+                    "kind": "open-response",
+                    "modelAnswers": [
+                      {
+                        "questionId": "q-40000000000040008000000000000002",
+                        "text": "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1",
+              "kind": "open-response",
+              "parts": [
+                {
+                  "id": "part-1",
+                  "solution": {
+                    "kind": "open-response",
+                    "modelAnswers": [
+                      {
+                        "questionId": "q-40000000000040008000000000000001",
+                        "text": "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "assetManifest": [
+        {
+          "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+          "extension": "png",
+          "mediaType": "image/png",
+          "role": "managed_page_image"
+        }
+      ],
+      "sourceSnapshotSha256": "b7bb8bb6fafb42830854dd07570b1656597187c786db8bc9dfa5a9fa5fae537f",
+      "publicProjectionSha256": "ba34c702be16bb23bcd252bbb55fc1eed2e73b0b297bfb0116a834a2cb21eb25",
+      "teacherProjectionSha256": "26d08cfd9003226906e0674882e51a85ad2e70e60982f6e22dd4fa7628c1ce17",
+      "releaseSha256": "3cab99f35a16ad96b56725c73cfa18f7bd250a1c5891d93de3350bc2fb1536cc",
+      "stableJson": "{\"compatibility\":\"22b75850e77ad02afd29639ec95a95cb689b58fec61dc6aa087bbb780fab2604\",\"publicProjection\":{\"activityOrder\":{\"b1-plus-sb-page-98765432abcd4321abcd0123456789ef\":[\"ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1\"],\"b1-plus-sb-page-abcde12345674abc89ab0123456789ab\":[\"ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1\"]},\"assets\":[{\"extension\":\"png\",\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\"}],\"bookSlug\":\"ultimate-b1-plus\",\"compatibility\":\"22b75850e77ad02afd29639ec95a95cb689b58fec61dc6aa087bbb780fab2604\",\"componentSlug\":\"ultimate-b1-plus-students-book\",\"hotspots\":{\"componentSlug\":\"ultimate-b1-plus-students-book\",\"packageSlug\":\"ultimate-b1-plus\",\"pages\":{\"b1-plus-sb-page-98765432abcd4321abcd0123456789ef\":[{\"actionType\":\"normalized_activity\",\"activityKey\":\"ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1\",\"height\":15,\"id\":\"b1-plus-sb-hotspot-2\",\"label\":\"Explain your answer\",\"left\":10,\"pageId\":\"b1-plus-sb-page-98765432abcd4321abcd0123456789ef\",\"top\":20,\"unitNumber\":1,\"width\":35}],\"b1-plus-sb-page-abcde12345674abc89ab0123456789ab\":[{\"actionType\":\"normalized_activity\",\"activityKey\":\"ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1\",\"height\":15,\"id\":\"b1-plus-sb-hotspot-1\",\"label\":\"Explain your answer\",\"left\":10,\"pageId\":\"b1-plus-sb-page-abcde12345674abc89ab0123456789ab\",\"top\":20,\"unitNumber\":1,\"width\":35}]},\"schemaVersion\":\"1.0\"},\"nativeActivities\":{\"ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1\":{\"document\":{\"activityId\":\"ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1\",\"assets\":[],\"kind\":\"open-response\",\"metadata\":{\"title\":\"Explain your answer 2\",\"visibleInstructionText\":\"\"},\"parts\":[{\"id\":\"part-1\",\"interaction\":{\"artwork\":[],\"kind\":\"open-response\",\"questions\":[{\"id\":\"q-40000000000040008000000000000002\",\"prompt\":\"Explain question 2.\",\"promptArea\":{\"height\":38,\"width\":880,\"x\":72,\"y\":24},\"promptStyle\":{\"align\":\"left\",\"color\":\"#111827\",\"fontFamily\":\"Arial\",\"fontSize\":22},\"responseRegion\":{\"area\":{\"height\":120,\"width\":704,\"x\":160,\"y\":180},\"ariaLabel\":\"Response for question 1\",\"id\":\"q-40000000000040008000000000000002-response\",\"presentation\":{\"align\":\"left\",\"answerFontFamily\":\"Arial\",\"answerFontSizeMax\":22,\"answerFontSizeMin\":12,\"color\":\"#111827\",\"lineCount\":3,\"linePositions\":[40,72,104],\"lineSpacing\":32,\"lineWidth\":676,\"paddingX\":12,\"paddingY\":8}}}],\"surface\":{\"height\":582,\"width\":1024}}}],\"placement\":{\"pageId\":\"b1-plus-sb-page-98765432abcd4321abcd0123456789ef\"},\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"},\"ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1\":{\"document\":{\"activityId\":\"ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1\",\"assets\":[],\"kind\":\"open-response\",\"metadata\":{\"title\":\"Explain your answer 1\",\"visibleInstructionText\":\"\"},\"parts\":[{\"id\":\"part-1\",\"interaction\":{\"artwork\":[],\"kind\":\"open-response\",\"questions\":[{\"id\":\"q-40000000000040008000000000000001\",\"prompt\":\"Explain question 1.\",\"promptArea\":{\"height\":38,\"width\":880,\"x\":72,\"y\":24},\"promptStyle\":{\"align\":\"left\",\"color\":\"#111827\",\"fontFamily\":\"Arial\",\"fontSize\":22},\"responseRegion\":{\"area\":{\"height\":120,\"width\":704,\"x\":160,\"y\":180},\"ariaLabel\":\"Response for question 1\",\"id\":\"q-40000000000040008000000000000001-response\",\"presentation\":{\"align\":\"left\",\"answerFontFamily\":\"Arial\",\"answerFontSizeMax\":22,\"answerFontSizeMin\":12,\"color\":\"#111827\",\"lineCount\":3,\"linePositions\":[40,72,104],\"lineSpacing\":32,\"lineWidth\":676,\"paddingX\":12,\"paddingY\":8}}}],\"surface\":{\"height\":582,\"width\":1024}}}],\"placement\":{\"pageId\":\"b1-plus-sb-page-abcde12345674abc89ab0123456789ab\"},\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"}},\"pages\":[{\"id\":\"b1-plus-sb-page-abcde12345674abc89ab0123456789ab\",\"image\":{\"byteSize\":68,\"extension\":\"png\",\"height\":1,\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\",\"width\":1},\"label\":\"Page 1\",\"printedLabel\":\"4\",\"sectionTitle\":\"Vocabulary\",\"sortOrder\":1,\"stableKey\":\"ultimate-b1-plus-students-book/pages/b1-plus-sb-page-abcde12345674abc89ab0123456789ab\",\"unitId\":\"10000000-0000-4000-8000-000000000001\",\"unitNumber\":1,\"unitSlug\":\"unit-1\",\"unitTitle\":\"Unit 1\"},{\"id\":\"b1-plus-sb-page-98765432abcd4321abcd0123456789ef\",\"image\":{\"byteSize\":68,\"extension\":\"png\",\"height\":1,\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\",\"width\":1},\"label\":\"Page 2\",\"printedLabel\":\"5\",\"sectionTitle\":\"Vocabulary\",\"sortOrder\":2,\"stableKey\":\"ultimate-b1-plus-students-book/pages/b1-plus-sb-page-98765432abcd4321abcd0123456789ef\",\"unitId\":\"10000000-0000-4000-8000-000000000001\",\"unitNumber\":1,\"unitSlug\":\"unit-1\",\"unitTitle\":\"Unit 1\"}],\"schemaVersion\":\"1.0\",\"units\":[{\"id\":\"10000000-0000-4000-8000-000000000001\",\"slug\":\"unit-1\",\"sortOrder\":1,\"title\":\"Unit 1\",\"unitNumber\":1},{\"id\":\"10000000-0000-4000-8000-000000000002\",\"slug\":\"unit-2\",\"sortOrder\":2,\"title\":\"Unit 2\",\"unitNumber\":2},{\"id\":\"10000000-0000-4000-8000-000000000003\",\"slug\":\"unit-3\",\"sortOrder\":3,\"title\":\"Unit 3\",\"unitNumber\":3},{\"id\":\"10000000-0000-4000-8000-000000000004\",\"slug\":\"unit-4\",\"sortOrder\":4,\"title\":\"Unit 4\",\"unitNumber\":4},{\"id\":\"10000000-0000-4000-8000-000000000005\",\"slug\":\"unit-5\",\"sortOrder\":5,\"title\":\"Unit 5\",\"unitNumber\":5},{\"id\":\"10000000-0000-4000-8000-000000000006\",\"slug\":\"unit-6\",\"sortOrder\":6,\"title\":\"Unit 6\",\"unitNumber\":6},{\"id\":\"10000000-0000-4000-8000-000000000007\",\"slug\":\"unit-7\",\"sortOrder\":7,\"title\":\"Unit 7\",\"unitNumber\":7},{\"id\":\"10000000-0000-4000-8000-000000000008\",\"slug\":\"unit-8\",\"sortOrder\":8,\"title\":\"Unit 8\",\"unitNumber\":8},{\"id\":\"10000000-0000-4000-8000-000000000009\",\"slug\":\"unit-9\",\"sortOrder\":9,\"title\":\"Unit 9\",\"unitNumber\":9},{\"id\":\"10000000-0000-4000-8000-000000000010\",\"slug\":\"unit-10\",\"sortOrder\":10,\"title\":\"Unit 10\",\"unitNumber\":10}]},\"sourceSnapshot\":{\"activityLifecycle\":{\"revision\":0,\"sha256\":\"04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36\"},\"hotspots\":{\"revision\":1,\"sha256\":\"5fe4243b695d7a305348086067bfd097b19c6e1cf26dafc16cc14c0e489394bd\"},\"nativeActivities\":{\"ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1\":{\"kind\":\"open-response\",\"public\":{\"revision\":1,\"sha256\":\"81fc3445b1ed16d3b27cee3ba98d120cdf591e7e936be5d1a8ca16d08f496148\"},\"teacher\":{\"revision\":1,\"sha256\":\"73960f5f6b74dd1dd6014f4b4389498f77e8a38aed69472ae10ce496c9325bf2\"}},\"ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1\":{\"kind\":\"open-response\",\"public\":{\"revision\":1,\"sha256\":\"4238d01bc9424d935473337f961042cd98ebb081bac969efd46961c986d622b0\"},\"teacher\":{\"revision\":1,\"sha256\":\"28ea6ba778e938f697bc437c5f11db73dc598878bf44c8bbdc9eac401af3de45\"}}},\"nativeIndex\":{\"revision\":1,\"sha256\":\"8e976009063e476cca556ee4ac0475889ded619cbd0c89b40cfc675fcd3770ac\"},\"pages\":{\"revision\":1,\"sha256\":\"0883d9d2dadece1e12b451c04dfb184c7bc630a64bf43e5264d03d112f41d5cc\"},\"schemaVersion\":\"1.0\"},\"teacherProjection\":{\"bookSlug\":\"ultimate-b1-plus\",\"componentSlug\":\"ultimate-b1-plus-students-book\",\"nativeActivities\":{\"ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1\":{\"document\":{\"activityId\":\"ultimate-b1-plus-sb-98765432abcd4321abcd0123456789ef-o1\",\"kind\":\"open-response\",\"parts\":[{\"id\":\"part-1\",\"solution\":{\"kind\":\"open-response\",\"modelAnswers\":[{\"questionId\":\"q-40000000000040008000000000000002\",\"text\":\"PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL\"}]}}],\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"},\"ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1\":{\"document\":{\"activityId\":\"ultimate-b1-plus-sb-abcde12345674abc89ab0123456789ab-o1\",\"kind\":\"open-response\",\"parts\":[{\"id\":\"part-1\",\"solution\":{\"kind\":\"open-response\",\"modelAnswers\":[{\"questionId\":\"q-40000000000040008000000000000001\",\"text\":\"PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL\"}]}}],\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"}},\"schemaVersion\":\"1.0\"}}"
+    },
+    "ultimate-b1-plus-workbook": {
+      "compilerId": "ultimate-b1-plus-workbook-v1",
+      "releaseSchemaVersion": "1.0",
+      "compatibility": "44c6219d6d8c066dd6528b2d446d6b18160b7406618f46ca8ae0ab66731bde60",
+      "sourceSnapshot": {
+        "schemaVersion": "1.0",
+        "pages": {
+          "revision": 1,
+          "sha256": "81ee17264b31a1e04fa1e0bf9de167efed9baeba43a2cadcc918fee834a2d21d"
+        },
+        "hotspots": {
+          "revision": 1,
+          "sha256": "ff6104bfb364fa1e574938a80b0e9b09f69bf718208b2f4e47aa705643920472"
+        },
+        "activityLifecycle": {
+          "revision": 0,
+          "sha256": "04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36"
+        },
+        "nativeIndex": {
+          "revision": 1,
+          "sha256": "97bb4ee566bfb6ab18380f34ec492fe6c6775c0ea58980a5275eee27d1ab59ea"
+        },
+        "nativeActivities": {
+          "ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "public": {
+              "revision": 1,
+              "sha256": "4e2a59d6ca31833d809498c4f3ef739e7255ef4ce3efba5a914ab5c4d6d58e95"
+            },
+            "teacher": {
+              "revision": 1,
+              "sha256": "94b714e2f913195e81b792f02a0726a80c7cf5a48162f9338afdfc69cca972da"
+            }
+          },
+          "ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "public": {
+              "revision": 1,
+              "sha256": "17a7b2393bad920f74768b8a8a66e93bd705114a0d0c0b435966f0d86cf0ca57"
+            },
+            "teacher": {
+              "revision": 1,
+              "sha256": "a582912e145303c5b7e849e366e27d64fd3e788ff759f855a5b183c45442deea"
+            }
+          }
+        }
+      },
+      "publicProjection": {
+        "schemaVersion": "1.0",
+        "bookSlug": "ultimate-b1-plus",
+        "componentSlug": "ultimate-b1-plus-workbook",
+        "compatibility": "44c6219d6d8c066dd6528b2d446d6b18160b7406618f46ca8ae0ab66731bde60",
+        "units": [
+          {
+            "id": "10000000-0000-4000-8000-000000000001",
+            "slug": "unit-1",
+            "title": "Unit 1",
+            "unitNumber": 1,
+            "sortOrder": 1
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000002",
+            "slug": "unit-2",
+            "title": "Unit 2",
+            "unitNumber": 2,
+            "sortOrder": 2
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000003",
+            "slug": "unit-3",
+            "title": "Unit 3",
+            "unitNumber": 3,
+            "sortOrder": 3
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000004",
+            "slug": "unit-4",
+            "title": "Unit 4",
+            "unitNumber": 4,
+            "sortOrder": 4
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000005",
+            "slug": "unit-5",
+            "title": "Unit 5",
+            "unitNumber": 5,
+            "sortOrder": 5
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000006",
+            "slug": "unit-6",
+            "title": "Unit 6",
+            "unitNumber": 6,
+            "sortOrder": 6
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000007",
+            "slug": "unit-7",
+            "title": "Unit 7",
+            "unitNumber": 7,
+            "sortOrder": 7
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000008",
+            "slug": "unit-8",
+            "title": "Unit 8",
+            "unitNumber": 8,
+            "sortOrder": 8
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000009",
+            "slug": "unit-9",
+            "title": "Unit 9",
+            "unitNumber": 9,
+            "sortOrder": 9
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000010",
+            "slug": "unit-10",
+            "title": "Unit 10",
+            "unitNumber": 10,
+            "sortOrder": 10
+          }
+        ],
+        "pages": [
+          {
+            "id": "b1-plus-wb-page-abcde12345674abc89ab0123456789ab",
+            "stableKey": "ultimate-b1-plus-workbook/pages/b1-plus-wb-page-abcde12345674abc89ab0123456789ab",
+            "unitId": "10000000-0000-4000-8000-000000000001",
+            "unitSlug": "unit-1",
+            "unitNumber": 1,
+            "unitTitle": "Unit 1",
+            "sectionTitle": "Vocabulary",
+            "printedLabel": "4",
+            "sortOrder": 1,
+            "label": "Page 1",
+            "image": {
+              "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+              "extension": "png",
+              "mediaType": "image/png",
+              "role": "managed_page_image",
+              "byteSize": 68,
+              "width": 1,
+              "height": 1
+            }
+          },
+          {
+            "id": "b1-plus-wb-page-98765432abcd4321abcd0123456789ef",
+            "stableKey": "ultimate-b1-plus-workbook/pages/b1-plus-wb-page-98765432abcd4321abcd0123456789ef",
+            "unitId": "10000000-0000-4000-8000-000000000001",
+            "unitSlug": "unit-1",
+            "unitNumber": 1,
+            "unitTitle": "Unit 1",
+            "sectionTitle": "Vocabulary",
+            "printedLabel": "5",
+            "sortOrder": 2,
+            "label": "Page 2",
+            "image": {
+              "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+              "extension": "png",
+              "mediaType": "image/png",
+              "role": "managed_page_image",
+              "byteSize": 68,
+              "width": 1,
+              "height": 1
+            }
+          }
+        ],
+        "hotspots": {
+          "schemaVersion": "1.0",
+          "packageSlug": "ultimate-b1-plus",
+          "componentSlug": "ultimate-b1-plus-workbook",
+          "pages": {
+            "b1-plus-wb-page-abcde12345674abc89ab0123456789ab": [
+              {
+                "id": "b1-plus-wb-hotspot-1",
+                "unitNumber": 1,
+                "pageId": "b1-plus-wb-page-abcde12345674abc89ab0123456789ab",
+                "left": 10,
+                "top": 20,
+                "width": 35,
+                "height": 15,
+                "label": "Explain your answer",
+                "actionType": "normalized_activity",
+                "activityKey": "ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1"
+              }
+            ],
+            "b1-plus-wb-page-98765432abcd4321abcd0123456789ef": [
+              {
+                "id": "b1-plus-wb-hotspot-2",
+                "unitNumber": 1,
+                "pageId": "b1-plus-wb-page-98765432abcd4321abcd0123456789ef",
+                "left": 10,
+                "top": 20,
+                "width": 35,
+                "height": 15,
+                "label": "Explain your answer",
+                "actionType": "normalized_activity",
+                "activityKey": "ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1"
+              }
+            ]
+          }
+        },
+        "nativeActivities": {
+          "ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1",
+              "kind": "open-response",
+              "metadata": {
+                "title": "Explain your answer 2",
+                "visibleInstructionText": ""
+              },
+              "placement": {
+                "pageId": "b1-plus-wb-page-98765432abcd4321abcd0123456789ef"
+              },
+              "assets": [],
+              "parts": [
+                {
+                  "id": "part-1",
+                  "interaction": {
+                    "kind": "open-response",
+                    "surface": {
+                      "width": 1024,
+                      "height": 582
+                    },
+                    "artwork": [],
+                    "questions": [
+                      {
+                        "id": "q-40000000000040008000000000000002",
+                        "prompt": "Explain question 2.",
+                        "promptArea": {
+                          "x": 72,
+                          "y": 24,
+                          "width": 880,
+                          "height": 38
+                        },
+                        "promptStyle": {
+                          "fontFamily": "Arial",
+                          "fontSize": 22,
+                          "color": "#111827",
+                          "align": "left"
+                        },
+                        "responseRegion": {
+                          "id": "q-40000000000040008000000000000002-response",
+                          "ariaLabel": "Response for question 1",
+                          "area": {
+                            "x": 160,
+                            "y": 180,
+                            "width": 704,
+                            "height": 120
+                          },
+                          "presentation": {
+                            "paddingX": 12,
+                            "paddingY": 8,
+                            "lineCount": 3,
+                            "lineSpacing": 32,
+                            "linePositions": [
+                              40,
+                              72,
+                              104
+                            ],
+                            "lineWidth": 676,
+                            "answerFontFamily": "Arial",
+                            "answerFontSizeMin": 12,
+                            "answerFontSizeMax": 22,
+                            "color": "#111827",
+                            "align": "left"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1",
+              "kind": "open-response",
+              "metadata": {
+                "title": "Explain your answer 1",
+                "visibleInstructionText": ""
+              },
+              "placement": {
+                "pageId": "b1-plus-wb-page-abcde12345674abc89ab0123456789ab"
+              },
+              "assets": [],
+              "parts": [
+                {
+                  "id": "part-1",
+                  "interaction": {
+                    "kind": "open-response",
+                    "surface": {
+                      "width": 1024,
+                      "height": 582
+                    },
+                    "artwork": [],
+                    "questions": [
+                      {
+                        "id": "q-40000000000040008000000000000001",
+                        "prompt": "Explain question 1.",
+                        "promptArea": {
+                          "x": 72,
+                          "y": 24,
+                          "width": 880,
+                          "height": 38
+                        },
+                        "promptStyle": {
+                          "fontFamily": "Arial",
+                          "fontSize": 22,
+                          "color": "#111827",
+                          "align": "left"
+                        },
+                        "responseRegion": {
+                          "id": "q-40000000000040008000000000000001-response",
+                          "ariaLabel": "Response for question 1",
+                          "area": {
+                            "x": 160,
+                            "y": 180,
+                            "width": 704,
+                            "height": 120
+                          },
+                          "presentation": {
+                            "paddingX": 12,
+                            "paddingY": 8,
+                            "lineCount": 3,
+                            "lineSpacing": 32,
+                            "linePositions": [
+                              40,
+                              72,
+                              104
+                            ],
+                            "lineWidth": 676,
+                            "answerFontFamily": "Arial",
+                            "answerFontSizeMin": 12,
+                            "answerFontSizeMax": 22,
+                            "color": "#111827",
+                            "align": "left"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "activityOrder": {
+          "b1-plus-wb-page-abcde12345674abc89ab0123456789ab": [
+            "ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1"
+          ],
+          "b1-plus-wb-page-98765432abcd4321abcd0123456789ef": [
+            "ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1"
+          ]
+        },
+        "assets": [
+          {
+            "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+            "extension": "png",
+            "mediaType": "image/png",
+            "role": "managed_page_image"
+          }
+        ]
+      },
+      "teacherProjection": {
+        "schemaVersion": "1.0",
+        "bookSlug": "ultimate-b1-plus",
+        "componentSlug": "ultimate-b1-plus-workbook",
+        "nativeActivities": {
+          "ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1",
+              "kind": "open-response",
+              "parts": [
+                {
+                  "id": "part-1",
+                  "solution": {
+                    "kind": "open-response",
+                    "modelAnswers": [
+                      {
+                        "questionId": "q-40000000000040008000000000000002",
+                        "text": "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1": {
+            "kind": "open-response",
+            "document": {
+              "schemaVersion": "1.0",
+              "activityId": "ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1",
+              "kind": "open-response",
+              "parts": [
+                {
+                  "id": "part-1",
+                  "solution": {
+                    "kind": "open-response",
+                    "modelAnswers": [
+                      {
+                        "questionId": "q-40000000000040008000000000000001",
+                        "text": "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "assetManifest": [
+        {
+          "sha256": "d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e",
+          "extension": "png",
+          "mediaType": "image/png",
+          "role": "managed_page_image"
+        }
+      ],
+      "sourceSnapshotSha256": "6787304308571304a7230de36f1f14de024a1a9e90a6caccb431557c9ee64958",
+      "publicProjectionSha256": "7cbbc317862b4b0752925fa776d3982c121ea8d372322570f7ec93e0077e352e",
+      "teacherProjectionSha256": "45761fbdac450e8ed8d874a8483609ee20af7f506e45a8ea6ffb6e607ebd732d",
+      "releaseSha256": "122245145b2b0c00e27f578ae2ca92fcaee8ec39eb67b9198ed036cecc1b89d3",
+      "stableJson": "{\"compatibility\":\"44c6219d6d8c066dd6528b2d446d6b18160b7406618f46ca8ae0ab66731bde60\",\"publicProjection\":{\"activityOrder\":{\"b1-plus-wb-page-98765432abcd4321abcd0123456789ef\":[\"ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1\"],\"b1-plus-wb-page-abcde12345674abc89ab0123456789ab\":[\"ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1\"]},\"assets\":[{\"extension\":\"png\",\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\"}],\"bookSlug\":\"ultimate-b1-plus\",\"compatibility\":\"44c6219d6d8c066dd6528b2d446d6b18160b7406618f46ca8ae0ab66731bde60\",\"componentSlug\":\"ultimate-b1-plus-workbook\",\"hotspots\":{\"componentSlug\":\"ultimate-b1-plus-workbook\",\"packageSlug\":\"ultimate-b1-plus\",\"pages\":{\"b1-plus-wb-page-98765432abcd4321abcd0123456789ef\":[{\"actionType\":\"normalized_activity\",\"activityKey\":\"ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1\",\"height\":15,\"id\":\"b1-plus-wb-hotspot-2\",\"label\":\"Explain your answer\",\"left\":10,\"pageId\":\"b1-plus-wb-page-98765432abcd4321abcd0123456789ef\",\"top\":20,\"unitNumber\":1,\"width\":35}],\"b1-plus-wb-page-abcde12345674abc89ab0123456789ab\":[{\"actionType\":\"normalized_activity\",\"activityKey\":\"ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1\",\"height\":15,\"id\":\"b1-plus-wb-hotspot-1\",\"label\":\"Explain your answer\",\"left\":10,\"pageId\":\"b1-plus-wb-page-abcde12345674abc89ab0123456789ab\",\"top\":20,\"unitNumber\":1,\"width\":35}]},\"schemaVersion\":\"1.0\"},\"nativeActivities\":{\"ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1\":{\"document\":{\"activityId\":\"ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1\",\"assets\":[],\"kind\":\"open-response\",\"metadata\":{\"title\":\"Explain your answer 2\",\"visibleInstructionText\":\"\"},\"parts\":[{\"id\":\"part-1\",\"interaction\":{\"artwork\":[],\"kind\":\"open-response\",\"questions\":[{\"id\":\"q-40000000000040008000000000000002\",\"prompt\":\"Explain question 2.\",\"promptArea\":{\"height\":38,\"width\":880,\"x\":72,\"y\":24},\"promptStyle\":{\"align\":\"left\",\"color\":\"#111827\",\"fontFamily\":\"Arial\",\"fontSize\":22},\"responseRegion\":{\"area\":{\"height\":120,\"width\":704,\"x\":160,\"y\":180},\"ariaLabel\":\"Response for question 1\",\"id\":\"q-40000000000040008000000000000002-response\",\"presentation\":{\"align\":\"left\",\"answerFontFamily\":\"Arial\",\"answerFontSizeMax\":22,\"answerFontSizeMin\":12,\"color\":\"#111827\",\"lineCount\":3,\"linePositions\":[40,72,104],\"lineSpacing\":32,\"lineWidth\":676,\"paddingX\":12,\"paddingY\":8}}}],\"surface\":{\"height\":582,\"width\":1024}}}],\"placement\":{\"pageId\":\"b1-plus-wb-page-98765432abcd4321abcd0123456789ef\"},\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"},\"ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1\":{\"document\":{\"activityId\":\"ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1\",\"assets\":[],\"kind\":\"open-response\",\"metadata\":{\"title\":\"Explain your answer 1\",\"visibleInstructionText\":\"\"},\"parts\":[{\"id\":\"part-1\",\"interaction\":{\"artwork\":[],\"kind\":\"open-response\",\"questions\":[{\"id\":\"q-40000000000040008000000000000001\",\"prompt\":\"Explain question 1.\",\"promptArea\":{\"height\":38,\"width\":880,\"x\":72,\"y\":24},\"promptStyle\":{\"align\":\"left\",\"color\":\"#111827\",\"fontFamily\":\"Arial\",\"fontSize\":22},\"responseRegion\":{\"area\":{\"height\":120,\"width\":704,\"x\":160,\"y\":180},\"ariaLabel\":\"Response for question 1\",\"id\":\"q-40000000000040008000000000000001-response\",\"presentation\":{\"align\":\"left\",\"answerFontFamily\":\"Arial\",\"answerFontSizeMax\":22,\"answerFontSizeMin\":12,\"color\":\"#111827\",\"lineCount\":3,\"linePositions\":[40,72,104],\"lineSpacing\":32,\"lineWidth\":676,\"paddingX\":12,\"paddingY\":8}}}],\"surface\":{\"height\":582,\"width\":1024}}}],\"placement\":{\"pageId\":\"b1-plus-wb-page-abcde12345674abc89ab0123456789ab\"},\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"}},\"pages\":[{\"id\":\"b1-plus-wb-page-abcde12345674abc89ab0123456789ab\",\"image\":{\"byteSize\":68,\"extension\":\"png\",\"height\":1,\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\",\"width\":1},\"label\":\"Page 1\",\"printedLabel\":\"4\",\"sectionTitle\":\"Vocabulary\",\"sortOrder\":1,\"stableKey\":\"ultimate-b1-plus-workbook/pages/b1-plus-wb-page-abcde12345674abc89ab0123456789ab\",\"unitId\":\"10000000-0000-4000-8000-000000000001\",\"unitNumber\":1,\"unitSlug\":\"unit-1\",\"unitTitle\":\"Unit 1\"},{\"id\":\"b1-plus-wb-page-98765432abcd4321abcd0123456789ef\",\"image\":{\"byteSize\":68,\"extension\":\"png\",\"height\":1,\"mediaType\":\"image/png\",\"role\":\"managed_page_image\",\"sha256\":\"d385fa431f85489a132610d66fec765de64c3efb9abf420e95c2f25536d85b9e\",\"width\":1},\"label\":\"Page 2\",\"printedLabel\":\"5\",\"sectionTitle\":\"Vocabulary\",\"sortOrder\":2,\"stableKey\":\"ultimate-b1-plus-workbook/pages/b1-plus-wb-page-98765432abcd4321abcd0123456789ef\",\"unitId\":\"10000000-0000-4000-8000-000000000001\",\"unitNumber\":1,\"unitSlug\":\"unit-1\",\"unitTitle\":\"Unit 1\"}],\"schemaVersion\":\"1.0\",\"units\":[{\"id\":\"10000000-0000-4000-8000-000000000001\",\"slug\":\"unit-1\",\"sortOrder\":1,\"title\":\"Unit 1\",\"unitNumber\":1},{\"id\":\"10000000-0000-4000-8000-000000000002\",\"slug\":\"unit-2\",\"sortOrder\":2,\"title\":\"Unit 2\",\"unitNumber\":2},{\"id\":\"10000000-0000-4000-8000-000000000003\",\"slug\":\"unit-3\",\"sortOrder\":3,\"title\":\"Unit 3\",\"unitNumber\":3},{\"id\":\"10000000-0000-4000-8000-000000000004\",\"slug\":\"unit-4\",\"sortOrder\":4,\"title\":\"Unit 4\",\"unitNumber\":4},{\"id\":\"10000000-0000-4000-8000-000000000005\",\"slug\":\"unit-5\",\"sortOrder\":5,\"title\":\"Unit 5\",\"unitNumber\":5},{\"id\":\"10000000-0000-4000-8000-000000000006\",\"slug\":\"unit-6\",\"sortOrder\":6,\"title\":\"Unit 6\",\"unitNumber\":6},{\"id\":\"10000000-0000-4000-8000-000000000007\",\"slug\":\"unit-7\",\"sortOrder\":7,\"title\":\"Unit 7\",\"unitNumber\":7},{\"id\":\"10000000-0000-4000-8000-000000000008\",\"slug\":\"unit-8\",\"sortOrder\":8,\"title\":\"Unit 8\",\"unitNumber\":8},{\"id\":\"10000000-0000-4000-8000-000000000009\",\"slug\":\"unit-9\",\"sortOrder\":9,\"title\":\"Unit 9\",\"unitNumber\":9},{\"id\":\"10000000-0000-4000-8000-000000000010\",\"slug\":\"unit-10\",\"sortOrder\":10,\"title\":\"Unit 10\",\"unitNumber\":10}]},\"sourceSnapshot\":{\"activityLifecycle\":{\"revision\":0,\"sha256\":\"04c29631d1e6f24a55dd087ac9e3631df56d034d0bc24b22c90044840a838c36\"},\"hotspots\":{\"revision\":1,\"sha256\":\"ff6104bfb364fa1e574938a80b0e9b09f69bf718208b2f4e47aa705643920472\"},\"nativeActivities\":{\"ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1\":{\"kind\":\"open-response\",\"public\":{\"revision\":1,\"sha256\":\"4e2a59d6ca31833d809498c4f3ef739e7255ef4ce3efba5a914ab5c4d6d58e95\"},\"teacher\":{\"revision\":1,\"sha256\":\"94b714e2f913195e81b792f02a0726a80c7cf5a48162f9338afdfc69cca972da\"}},\"ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1\":{\"kind\":\"open-response\",\"public\":{\"revision\":1,\"sha256\":\"17a7b2393bad920f74768b8a8a66e93bd705114a0d0c0b435966f0d86cf0ca57\"},\"teacher\":{\"revision\":1,\"sha256\":\"a582912e145303c5b7e849e366e27d64fd3e788ff759f855a5b183c45442deea\"}}},\"nativeIndex\":{\"revision\":1,\"sha256\":\"97bb4ee566bfb6ab18380f34ec492fe6c6775c0ea58980a5275eee27d1ab59ea\"},\"pages\":{\"revision\":1,\"sha256\":\"81ee17264b31a1e04fa1e0bf9de167efed9baeba43a2cadcc918fee834a2d21d\"},\"schemaVersion\":\"1.0\"},\"teacherProjection\":{\"bookSlug\":\"ultimate-b1-plus\",\"componentSlug\":\"ultimate-b1-plus-workbook\",\"nativeActivities\":{\"ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1\":{\"document\":{\"activityId\":\"ultimate-b1-plus-wb-98765432abcd4321abcd0123456789ef-o1\",\"kind\":\"open-response\",\"parts\":[{\"id\":\"part-1\",\"solution\":{\"kind\":\"open-response\",\"modelAnswers\":[{\"questionId\":\"q-40000000000040008000000000000002\",\"text\":\"PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL\"}]}}],\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"},\"ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1\":{\"document\":{\"activityId\":\"ultimate-b1-plus-wb-abcde12345674abc89ab0123456789ab-o1\",\"kind\":\"open-response\",\"parts\":[{\"id\":\"part-1\",\"solution\":{\"kind\":\"open-response\",\"modelAnswers\":[{\"questionId\":\"q-40000000000040008000000000000001\",\"text\":\"PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL\"}]}}],\"schemaVersion\":\"1.0\"},\"kind\":\"open-response\"}},\"schemaVersion\":\"1.0\"}}"
+    }
+  },
+  "products": {
+    "ultimate-b1": {
+      "id": "80000000-0000-4000-8000-000000000001",
+      "number": 1,
+      "bookSlug": "ultimate-b1",
+      "compilerId": "ultimate-b1-product-v1",
+      "releaseSchemaVersion": "1.0",
+      "releaseNote": "Historical deterministic fixture",
+      "createdAt": "2026-09-11T00:00:00Z",
+      "members": [
+        {
+          "componentSlug": "ultimate-b1-students-book",
+          "order": 1,
+          "status": "included",
+          "componentReleaseId": "70000000-0000-4000-8000-000000000001",
+          "compilerId": "ultimate-b1-students-book-v1",
+          "releaseSchemaVersion": "1.0",
+          "releaseSha256": "6d1691e633145250ab9a4a5668e12f5e61f081124ad09c55041935f605350094",
+          "compatibility": "f7c1a359e3874d07b429de4ec1c1d81a1bb9ad6f037175d8f5a0c4b6a45aae18",
+          "unavailableReason": null,
+          "memberSha256": "c226fd5ea4b91ccc637fde4b0a3016becf659eb7e567969c32d19fa01f0b9712"
+        },
+        {
+          "componentSlug": "ultimate-b1-workbook",
+          "order": 2,
+          "status": "included",
+          "componentReleaseId": "70000000-0000-4000-8000-000000000002",
+          "compilerId": "ultimate-b1-workbook-v1",
+          "releaseSchemaVersion": "1.0",
+          "releaseSha256": "1c67b76ab1941c788f33f08e603620b7c4fcff9d65b8ece1f84f567dc22e768c",
+          "compatibility": "9590ce25d499c099a2b997e7fada40e86a7fbf07aef79086dfd2c8bd3cc31854",
+          "unavailableReason": null,
+          "memberSha256": "c51d6b2937d6abf66581045cb1428f6230f3eeca39bd16c18f81aaae2ae8b43f"
+        }
+      ],
+      "sourceSnapshotSha256": "95d59526b3692c32cea849a82df1fce0b0419cdcffb4d5cfbc1ed3a4fa77e610",
+      "releaseSha256": "3283901904e417f7d427bc0418aabfc38a8dd9e87b89110a887c381ff4394ff9"
+    },
+    "ultimate-b1-plus": {
+      "id": "80000000-0000-4000-8000-000000000001",
+      "number": 1,
+      "bookSlug": "ultimate-b1-plus",
+      "compilerId": "ultimate-b1-plus-product-v1",
+      "releaseSchemaVersion": "1.0",
+      "releaseNote": "Historical deterministic fixture",
+      "createdAt": "2026-09-11T00:00:00Z",
+      "members": [
+        {
+          "componentSlug": "ultimate-b1-plus-students-book",
+          "order": 1,
+          "status": "included",
+          "componentReleaseId": "70000000-0000-4000-8000-000000000001",
+          "compilerId": "ultimate-b1-plus-students-book-v1",
+          "releaseSchemaVersion": "1.0",
+          "releaseSha256": "3cab99f35a16ad96b56725c73cfa18f7bd250a1c5891d93de3350bc2fb1536cc",
+          "compatibility": "22b75850e77ad02afd29639ec95a95cb689b58fec61dc6aa087bbb780fab2604",
+          "unavailableReason": null,
+          "memberSha256": "eb478fc580b6b783fc7cb64ea25f7f07ec1d6d656de21627b965e99cb502ac4c"
+        },
+        {
+          "componentSlug": "ultimate-b1-plus-workbook",
+          "order": 2,
+          "status": "included",
+          "componentReleaseId": "70000000-0000-4000-8000-000000000002",
+          "compilerId": "ultimate-b1-plus-workbook-v1",
+          "releaseSchemaVersion": "1.0",
+          "releaseSha256": "122245145b2b0c00e27f578ae2ca92fcaee8ec39eb67b9198ed036cecc1b89d3",
+          "compatibility": "44c6219d6d8c066dd6528b2d446d6b18160b7406618f46ca8ae0ab66731bde60",
+          "unavailableReason": null,
+          "memberSha256": "8fa4742487b59e09694c57de6bbf88eba5411cfe9ae592b51d9bf70a35163cc5"
+        }
+      ],
+      "sourceSnapshotSha256": "7533f26ebf43f0015ceea9213d5c40b4d677eae0c72c9af99316db63870532db",
+      "releaseSha256": "f55b3f41f2cb846b51eefbd5ce544396b5ccb5aeb53bd6c05032b155ad51fabf"
+    }
+  }
+}

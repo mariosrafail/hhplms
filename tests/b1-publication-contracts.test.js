@@ -19,7 +19,7 @@ for (const book of ['ultimate-b1', 'ultimate-b1-plus']) {
     test(`${component} has an explicitly registered managed publication compiler`, () => {
       const compiler = resolvePublicationCompiler(`${component}-v1`, '1.0');
       assert.ok(compiler);
-      assert.equal(findProductComponent(book, component).publication.compilerId, compiler.compilerId);
+      assert.equal(findProductComponent(book, component).publication.compilerId, `${component}-v${suffix === 'students-book' ? 2 : 1}`);
       assert.equal(resolvePublicationCompiler(`${component}-v1`, '3.0'), null);
       assert.throws(() => compiler.compile({}), /managed_pages_empty|topology/);
     });

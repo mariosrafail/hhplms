@@ -24,6 +24,7 @@ import { publicationAssetPinFingerprint } from '../../netlify-sites/ultimate-b2-
 import { verifyB1PagePlacement } from './_b1-page-placement-regression.mjs';
 import { verifyB1LockOrder } from './_b1-lock-regression.mjs';
 import { verifyB1PublicationConcurrency } from './_b1-publication-concurrency.mjs';
+import { verifyB1ImmutableUi } from './_b1-immutable-ui-regression.mjs';
 
 const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.TEST_DATABASE_CONFIRMATION === 'isolated-test-database';
 const event = (path, body) => ({ path, httpMethod: body ? 'POST' : 'GET', headers: { host: 'builder.example', origin: 'https://builder.example', 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) });
@@ -44,8 +45,11 @@ test('062 upgrades an existing B2 historical release, head, assignment and submi
   const row = (await pool.query('select * from book_component_releases where id=$1', [seeded.releaseId])).rows[0];
   const original = verifyImmutableComponentRelease(row);
   const before = await captureStudentsBookPreservation(pool);
-  const migrations = await applyCanonicalProductionMigrations(pool);
+  const migrations = await applyCanonicalProductionMigrations(pool, { through: '062_b1_managed_publication.sql' });
   assertStudentsBookDatabasePreserved(before, await captureStudentsBookPreservation(pool), { migration: migrations.at(-1) });
+  const beforeUi = await captureStudentsBookPreservation(pool);
+  const uiMigrations = await applyCanonicalProductionMigrations(pool);
+  assertStudentsBookDatabasePreserved(beforeUi, await captureStudentsBookPreservation(pool), { migration: uiMigrations.at(-1) });
   assert.deepEqual(verifyImmutableComponentRelease((await pool.query('select * from book_component_releases where id=$1', [seeded.releaseId])).rows[0]), original);
 });
 
@@ -63,8 +67,11 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
   assert.equal(await productPublicationDatabaseReady(sql, 'ultimate-b2'), true);
   assert.equal(await productPublicationDatabaseReady(sql, 'ultimate-b1'), false);
   const before = await captureStudentsBookPreservation(pool);
-  const migrations = await applyCanonicalProductionMigrations(pool);
+  const migrations = await applyCanonicalProductionMigrations(pool, { through: '062_b1_managed_publication.sql' });
   assertStudentsBookDatabasePreserved(before, await captureStudentsBookPreservation(pool), { migration: migrations.at(-1) });
+  const beforeUi = await captureStudentsBookPreservation(pool);
+  const uiMigrations = await applyCanonicalProductionMigrations(pool);
+  assertStudentsBookDatabasePreserved(beforeUi, await captureStudentsBookPreservation(pool), { migration: uiMigrations.at(-1) });
   assert.equal(await productPublicationDatabaseReady(sql, 'ultimate-b1'), true);
   for (const sample of [{ a: 1, z: [0.0000001, 0.000001, 1e21, 1.23, 'Ελληνικά\n"'] }, { z: true, a: null }]) {
     const actual = (await pool.query('select builder_publication_stable_json($1::jsonb) value', [JSON.stringify(sample)])).rows[0].value;
@@ -79,7 +86,7 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
     upload: async ({ objectKey, body }) => { media.set(objectKey, Buffer.from(body)); },
     delete: async ({ objectKey }) => { media.delete(objectKey); },
     download: async ({ objectKey }) => { assert.ok(media.has(objectKey)); return media.get(objectKey); },
-    head: async ({ objectKey }) => { const bytes = media.get(objectKey); assert.ok(bytes, objectKey); return { byteSize: bytes.length, contentType: 'image/png', checksumSha256: createHash('sha256').update(bytes).digest('hex') }; },
+    head: async ({ objectKey }) => { const bytes = media.get(objectKey); assert.ok(bytes, objectKey); return { byteSize: bytes.length, contentType: objectKey.endsWith('.wav') ? 'audio/wav' : 'image/png', checksumSha256: createHash('sha256').update(bytes).digest('hex') }; },
   };
   const authorize = async () => ({ builderUser: { id: actor } });
   const pagesHandler = createBuilderPagesHandler({ getDatabase: () => sql, authorize, storage: () => storage });
@@ -134,6 +141,7 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
     assert.deepEqual((await pool.query('select builder_b1_managed_page_snapshot($1) value', [componentId])).rows[0].value, { units: compiled.publicProjection.units, pages: compiled.publicProjection.pages });
     drafts.set(component, { fixture, pageIds, componentId, index, image });
   }
+  await verifyB1ImmutableUi({ pool, actor, save, media, publication });
   const teacher = { ...(await pool.query("select * from app_users where role='teacher' and school_id is not null limit 1")).rows[0] };
   const student = { ...(await pool.query("select * from app_users where role='student' and school_id=$1 limit 1", [teacher.school_id])).rows[0] };
   await pool.query("update app_users set status='active' where id=$1", [student.id]); student.status = 'active';
@@ -247,7 +255,7 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
     const isolatedSql = async (strings, ...values) => (await absent.query(strings.reduce((text, part, i) => text + (i ? `$${i}` : '') + part, ''), values)).rows;
     assert.deepEqual(response(await listPublishedBooks(isolatedSql, accessUser)).books.map((book) => book.componentSlug), ['ultimate-b2-workbook'], 'Missing new publications preserve healthy entitled B2 and never fall back to new component heads');
   } finally { await absent.query('rollback'); absent.release(); }
-  const corruptRead = async (strings, ...values) => (await sql(strings, ...values)).map((row) => row.compiler_id === 'ultimate-b1-students-book-v1' && row.public_projection ? { ...row, public_projection_sha256: '0'.repeat(64) } : row);
+  const corruptRead = async (strings, ...values) => (await sql(strings, ...values)).map((row) => row.compiler_id === 'ultimate-b1-students-book-v2' && row.public_projection ? { ...row, public_projection_sha256: '0'.repeat(64) } : row);
   assert.equal(response(await listPublishedBooks(corruptRead, accessUser), 503).error, 'publication_catalog_unavailable', 'Corruption is distinguishable from an unpublished book');
   assert.deepEqual(sb.pages.map((page) => page.id), drafts.get(sb.componentSlug).pageIds);
   assert.ok(!JSON.stringify(initialBooks).includes('PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL'));

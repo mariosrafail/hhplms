@@ -1,4 +1,4 @@
-import { findPublicationProduct } from "../publicationRegistry.js";
+import { resolvePublicationProductContract } from "../publicationRegistry.js";
 export const ULTIMATE_B2_PRODUCT_RELEASE_SCHEMA_VERSION = "1.0";
 export const ULTIMATE_B2_PRODUCT_RELEASE_COMPILER_ID = "ultimate-b2-product-v1";
 export const ULTIMATE_B2_LEGACY_PRODUCT_RELEASE_COMPILER_ID = "ultimate-b2-product-legacy-v1";
@@ -56,7 +56,7 @@ function normalizedMembers(values, contract) {
 
 export function normalizeProductReleaseEnvelope(value) {
   exact(value, ["id", "number", "bookSlug", "compilerId", "releaseSchemaVersion", "sourceSnapshotSha256", "releaseSha256", "releaseNote", "createdAt", "members"], "Product release");
-  const contract = findPublicationProduct(value.bookSlug);
+  const contract = resolvePublicationProductContract(value.bookSlug, value.compilerId);
   if (!UUID.test(String(value.id || "")) || !contract || !Number.isSafeInteger(value.number) || value.number < 1
     || !(value.compilerId === contract.compilerId || value.bookSlug === "ultimate-b2" && value.compilerId === ULTIMATE_B2_LEGACY_PRODUCT_RELEASE_COMPILER_ID)
     || value.releaseSchemaVersion !== ULTIMATE_B2_PRODUCT_RELEASE_SCHEMA_VERSION || !SHA256.test(String(value.sourceSnapshotSha256 || ""))

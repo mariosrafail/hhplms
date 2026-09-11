@@ -101,7 +101,9 @@ export function runtimeSchemaContractData(migrations) {
     expectedMigrations: migrations.map(({ filename, compatibleChecksums }) => ({
       filename,
       compatibleChecksums: [...compatibleChecksums].sort(),
-      ...(filename === "062_b1_managed_publication.sql" ? { featureOptional: true } : {}),
+      // Publication capabilities gate these additive functions separately; login
+      // and historical reads remain available before the authorized feature migration.
+      ...(["062_b1_managed_publication.sql", "063_b1_immutable_package_ui.sql"].includes(filename) ? { featureOptional: true } : {}),
     })),
     requiredTables: Object.entries(requiredRuntimeSchema).map(([table, columns]) => ({
       table,

@@ -3,7 +3,7 @@ import { parseReleaseAssetRange } from "../../../netlify-sites/ultimate-b2-build
 import { verifiedPublicAssetPin } from "./published-asset-pin.js";
 import { json } from "./shared.js";
 import { readBoundedImageResponse } from "../../../lib/book-assets/verified-image-bytes.js";
-import { newManagedPublicationComponents } from "../../../src/data/publicationRegistry.js";
+import { isB1ManagedPublicationCompiler } from "../../../src/data/publicationRegistry.js";
 
 const failure = (status, error) => json(status, { error }, { "Cache-Control": "private, no-store", Vary: "Cookie" });
 
@@ -19,7 +19,7 @@ export async function deliverPublishedPinnedAsset(sql, query, { row, projection,
     const headers = { "Content-Type": asset.mediaType, "Content-Length": String(size), "Accept-Ranges": "bytes",
       "Cache-Control": "private, no-store", Vary: "Cookie", "Cross-Origin-Resource-Policy": "same-origin", "X-Content-Type-Options": "nosniff",
       ...(contentRange ? { "Content-Range": contentRange } : {}) };
-    if ((row.compiler_id === "ultimate-b2-students-book-v3" || newManagedPublicationComponents.some((entry) => entry.compilerId === row.compiler_id)) && asset.role === "managed_page_image") {
+    if ((row.compiler_id === "ultimate-b2-students-book-v3" || isB1ManagedPublicationCompiler(row.compiler_id)) && asset.role === "managed_page_image") {
       const page = projection.pages.find((entry) => entry.image.sha256 === asset.sha256 && entry.image.extension === asset.extension);
       const object = await storage.openReadStream({ profile: "private", objectKey });
       if (!page || object.byteSize !== Number(pin.byte_size) || object.checksumSha256 !== asset.sha256 || object.contentType !== asset.mediaType || object.contentRange !== null) {

@@ -8,7 +8,7 @@ import { builderDocumentSha256, stableBuilderJson } from "./_builder-content-sec
 import { resolveNativeActivityKind } from "./_native-activity-registry.js";
 import { collectNativeEntriesForPublication, validateNativePublicationAssetRows } from "./_builder-publication-compiler-v2.js";
 import { resolveNativeActivityAdapter } from "./_native-activity-adapters.js";
-import { findPublicationComponentBySlug } from "../../../src/data/publicationRegistry.js";
+import { findManagedPublicationComponentV1 } from "../../../src/data/publicationRegistry.js";
 
 export const ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION = "1.0";
 export const ULTIMATE_B2_MANAGED_COMPONENT_COMPILERS = Object.freeze({
@@ -40,7 +40,7 @@ function source(value, label) {
 }
 
 function componentIdentity(componentSlug) {
-  const registration = findPublicationComponentBySlug(componentSlug);
+  const registration = findManagedPublicationComponentV1(componentSlug);
   if (!registration?.managed) throw new Error("Managed publication component is unsupported.");
   return registration;
 }
@@ -174,9 +174,10 @@ function publicationPages(sources, componentSlug) {
   return { units, pages, assetSources: [...assetSources.values()].sort((left, right) => left.descriptor.sha256.localeCompare(right.descriptor.sha256)) };
 }
 
-function compatibility(componentSlug, nativeKinds, composition = false) {
+export function managedV1Compatibility(componentSlug, nativeKinds, composition = false) {
   return builderDocumentSha256({ compilerId: componentIdentity(componentSlug).compilerId, releaseSchemaVersion: ULTIMATE_B2_MANAGED_COMPONENT_RELEASE_SCHEMA_VERSION, hotspotSchemaVersion: ULTIMATE_B2_HOTSPOT_SCHEMA_VERSION, nativeActivitySchemaVersion: NATIVE_ACTIVITY_SCHEMA_VERSION, nativeIndexSchemaVersion: NATIVE_ACTIVITY_INDEX_SCHEMA_VERSION, nativeKinds: [...nativeKinds].sort(), ...(composition ? { nativeComposition: "multi-part.v1" } : {}), releaseAssetDescriptorSchemaVersion: "1.0" });
 }
+const compatibility = managedV1Compatibility;
 
 export function compileUltimateB2ManagedComponentRelease(sources, componentSlug) {
   const identity = componentIdentity(componentSlug);

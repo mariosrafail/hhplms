@@ -15,6 +15,7 @@ import {
 import {
   invalidHostedTeacherUiPngFixture,
 } from "../../tests/fixtures/hosted-teacher-ui-assets.js";
+import { studentsBookCurrentPageEnvelope } from "./students-book-current-browser-fixtures.mjs";
 import { localPlaywrightLaunchOptions } from "../android-teacher/playwright-launch-options.mjs";
 
 const builderRoot = path.resolve("dist-netlify/ultimate-b2-builder");
@@ -26,7 +27,6 @@ const previewPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-s
 const hotspotPreviewPath = "/preview/content/books/ultimate-b2/components/ultimate-b2-students-book/hotspots";
 const pageCatalogPreviewPath = "/preview/pages/books/ultimate-b2/components/ultimate-b2-students-book";
 const hotspots = JSON.parse(await readFile("src/data/ultimate-b2/authoring/studentsBookHotspots.json", "utf8"));
-const studentsBookRuntime = JSON.parse(await readFile("src/data/ultimate-b2/generated/students-book.runtime.json", "utf8"));
 const hostedTeacherUiPngFixture = Object.freeze({ name: "valid-ui.png", mimeType: "image/png", buffer: await readFile("src/assets/books/ultimate-b2/legacy-classroom-ui/controls/teacher-tools/annotation-container-low.png") });
 const mime = { ".css": "text/css", ".gaf": "application/x-gaf", ".html": "text/html", ".jpg": "image/jpeg", ".js": "text/javascript", ".json": "application/json", ".mp3": "audio/mpeg", ".mp4": "video/mp4", ".png": "image/png", ".svg": "image/svg+xml", ".webp": "image/webp" };
 
@@ -190,7 +190,7 @@ try {
       return route.fulfill({ status: 200, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify({ token: `v1.eA.${"b".repeat(43)}`, expiresAt: "2099-01-01T00:00:00.000Z" }) });
     }
     if (url.pathname === hotspotPreviewPath) return route.fulfill({ status: 200, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify({ ...identity, resource: "hotspots", revision: 1, source: "database", document: hotspots }) });
-    if (url.pathname === pageCatalogPreviewPath) return route.fulfill({ status: 200, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify({ component: { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", kind: "students-book" }, pages: studentsBookRuntime.units.flatMap((unit) => unit.pages.map((page) => ({ id: page.id, source: "canonical" }))) }) });
+    if (url.pathname === pageCatalogPreviewPath) return route.fulfill({ status: 200, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(studentsBookCurrentPageEnvelope(1)) });
     if (url.pathname === previewPath) {
       if (!saved) return route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
       return route.fulfill({ status: 200, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify({ ...identity, revision: saved.revision, source: "database", document: projectHostedTeacherUiPreview(saved.document) }) });

@@ -13,7 +13,10 @@ export const publishedManagedPageBytes = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAA
 export const publishedManagedPageSha256 = createHash("sha256").update(publishedManagedPageBytes).digest("hex");
 
 const source = (payload) => ({ payload, revision: 1, sha256: builderDocumentSha256(payload) });
-export function publishedManagedBookFixture(componentSlug = "ultimate-b2-workbook", { pageIds = null, pageLayout = null, unitSortOrders = {}, checksum = publishedManagedPageSha256, byteSize = publishedManagedPageBytes.length, width = 1, height = 1, title = "Explain your answer", teacherAnswer = "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL" } = {}) {
+export function publishedManagedBookFixture(componentSlug = "ultimate-b2-workbook", options = {}) {
+  return compileUltimateB2ManagedComponentRelease(publishedManagedBookSources(componentSlug, options), componentSlug);
+}
+export function publishedManagedBookSources(componentSlug = "ultimate-b2-workbook", { pageIds = null, pageLayout = null, unitSortOrders = {}, checksum = publishedManagedPageSha256, byteSize = publishedManagedPageBytes.length, width = 1, height = 1, title = "Explain your answer", teacherAnswer = "PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL" } = {}) {
   const { bookSlug, pagePrefix: prefix } = findPublicationComponentBySlug(componentSlug);
   const units = Array.from({ length: 10 }, (_, index) => ({ id: `10000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`, slug: `unit-${index + 1}`, title: `Unit ${index + 1}`, unit_number: index + 1, sort_order: unitSortOrders[index + 1] ?? index + 1 }));
   const layout = pageLayout || [{ unitNumber: 1, sortOrder: 1 }, { unitNumber: 1, sortOrder: 2 }];
@@ -44,10 +47,9 @@ export function publishedManagedBookFixture(componentSlug = "ultimate-b2-workboo
     hotspots[pageId] = [{ id: `${prefix}-hotspot-${number}`, pageId, unitNumber, left: 10, top: 20, width: 35, height: 15,
       label: title, actionType: "normalized_activity", activityKey: activityId }];
   }
-  const compiled = compileUltimateB2ManagedComponentRelease({ pages: { revision: 1, units, rows: pages },
+  return { pages: { revision: 1, units, rows: pages },
     documents: { hotspots: source({ schemaVersion: "1.0", packageSlug: bookSlug, componentSlug, pages: hotspots }), activityLifecycle: null },
-    native: { index: source({ schemaVersion: "1.0", activities: index }), activities, assetRows: [] } }, componentSlug);
-  return compiled;
+    native: { index: source({ schemaVersion: "1.0", activities: index }), activities, assetRows: [] } };
 }
 
 // Exercise the real creation contract with in-memory dependencies. No database,

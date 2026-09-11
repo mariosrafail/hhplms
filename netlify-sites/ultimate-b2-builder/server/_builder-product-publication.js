@@ -13,6 +13,7 @@ import {
 import { builderClientMutationIdPattern, stableBuilderJson } from "./_builder-content-security.js";
 import { getBuilderSql, json, requireBuilderOrigin, requireBuilderUser } from "./_builder-auth.js";
 import { ComponentPublicationAssetError } from "./_builder-publication-assets.js";
+import { verifyManagedPublicationUiAssets } from "./_builder-publication-ui-assets.js";
 import { freezeComponentPublicationAssetPins } from "./_builder-publication-pins.js";
 import { resolvePublicationCompiler, verifyImmutableComponentRelease } from "./_builder-publication-compilers.js";
 import { verifyProductReleaseEnvelope } from "./_builder-product-publication-domain.js";
@@ -231,6 +232,7 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
         for (const entry of compiledMembers) if (entry.compiled.canonicalAssetSources?.length) {
           await dependencies.materializeCanonical(storage, { bookSlug: parsedRoute.bookSlug, componentSlug: entry.componentSlug, ...entry.compiled, fetchAsset: dependencies.canonicalFetch(context) });
         }
+        for (const entry of compiledMembers) await verifyManagedPublicationUiAssets(storage, entry.compiled, { bookSlug: parsedRoute.bookSlug, componentSlug: entry.componentSlug }, context?.cloudflare ?? null);
         const pinnedMembers = await Promise.all(compiledMembers.map(async (entry) => ({
           entry,
           pins: await dependencies.freezePins(storage, { bookSlug: parsedRoute.bookSlug, componentSlug: entry.componentSlug, assetManifest: entry.compiled.assetManifest, nativeAssetSources: entry.compiled.nativeAssetSources || [] }),

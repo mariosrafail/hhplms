@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
-import { resolve, extname } from 'node:path';
+import { resolve, extname, sep } from 'node:path';
 import { randomBytes, createHash } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { chromium, expect } from '@playwright/test';
@@ -19,6 +19,7 @@ import { createBuilderContentHandler } from '../../netlify-sites/ultimate-b2-bui
 import { createBuilderPreviewHandler } from '../../netlify-sites/ultimate-b2-builder/server/_builder-preview.js';
 import { hashBuilderToken, builderCookieName } from '../../netlify-sites/ultimate-b2-builder/server/_builder-auth.js';
 import { hashToken, sessionCookieName, setSqlForTests } from '../../netlify/functions/_auth-utils.js';
+import { changeBrowserUiDraft, verifyFrozenBrowserUi } from './_b1-immutable-ui-browser.mjs';
 
 // Real Workers, authentication, handlers and PostgreSQL. All storage and browser
 // traffic are confined to these synthetic fixture servers and bundled assets.
@@ -29,12 +30,12 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
   const staticFetch = (root) => async (request) => {
     const pathname = decodeURIComponent(new URL(request.url).pathname);
     const file = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
-    if (!file.startsWith(root + '/')) return new Response('Not found', { status: 404 });
+    if (!file.startsWith(root + sep)) return new Response('Not found', { status: 404 });
     try { return new Response(await readFile(file), { headers: { 'Content-Type': mime[extname(file)] || 'application/octet-stream' } }); }
     catch { return new Response('Not found', { status: 404 }); }
   };
   const r2 = {
-    async head(key) { const bytes = media.get(key); return bytes ? { size: bytes.length, customMetadata: { sha256: createHash('sha256').update(bytes).digest('hex') }, httpMetadata: { contentType: 'image/png' } } : null; },
+    async head(key) { const bytes = media.get(key); return bytes ? { size: bytes.length, customMetadata: { sha256: createHash('sha256').update(bytes).digest('hex') }, httpMetadata: { contentType: key.endsWith('.wav') ? 'audio/wav' : 'image/png' } } : null; },
     async get(key) { const bytes = media.get(key); return bytes ? { ...await this.head(key), body: new ReadableStream({ start(controller) { controller.enqueue(bytes); controller.close(); } }), arrayBuffer: async () => bytes } : null; },
   };
   const dependency = { getDatabase: () => sql };
@@ -59,7 +60,7 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
       if (result.body) Readable.fromWeb(result.body).pipe(res); else res.end();
     } catch (error) { errors.push(error.message); res.writeHead(500); res.end('Isolated fixture error'); }
   });
-  const builderEnv = { ASSETS: { fetch: staticFetch(roots.builder) }, RELEASE_SOURCE_ASSETS: r2 };
+  const builderEnv = { ASSETS: { fetch: staticFetch(roots.builder) }, RELEASE_SOURCE_ASSETS: r2, PLAYER_MEDIA: r2 };
   const builder = serve((request) => builderWorker.fetch(request, builderEnv));
   const lms = serve((request) => lmsWorker.fetch(request, { ASSETS: { fetch: staticFetch(roots.lms) } }));
   const objects = serve(async (request) => {
@@ -72,20 +73,35 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
   setEnv({ BOOK_ASSET_STORAGE_PROVIDER: 's3', BOOK_ASSET_S3_ENDPOINT: origin(objects), BOOK_ASSET_S3_REGION: 'auto', BOOK_ASSET_S3_ACCESS_KEY_ID: 'isolated-test', BOOK_ASSET_S3_SECRET_ACCESS_KEY: 'isolated-test', BOOK_ASSET_PUBLIC_BUCKET: 'public-assets', BOOK_ASSET_PRIVATE_BUCKET: 'private-assets', BOOK_ASSET_ARCHIVE_BUCKET: 'archive-assets', BOOK_ASSET_PUBLIC_BASE_URL: origin(objects) + '/public-assets' });
   let browser;
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: true, args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1'] });
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+    await context.addInitScript(() => {
+      window.__immutableUiAudioUrls = [];
+      window.Audio = new Proxy(window.Audio, { construct(target, args) { window.__immutableUiAudioUrls.push(String(args[0] || '')); return Reflect.construct(target, args); } });
+    });
+    await context.route('**/*', async (route) => {
+      const host = new URL(route.request().url()).hostname;
+      if (!['127.0.0.1', 'hhplms-viewer.netlify.app'].includes(host)) { errors.push(`Unexpected network host: ${host}`); await route.abort(); }
+      else await route.fallback();
+    });
     const builderToken = randomBytes(32).toString('hex');
     await pool.query("insert into builder_sessions(builder_user_id,token_hash,expires_at) values($1,$2,now()+interval '1 day')", [actor, hashBuilderToken(builderToken)]);
     await context.addCookies([{ name: builderCookieName, value: builderToken, url: origin(builder), httpOnly: true, sameSite: 'Strict' }]);
     await context.route('https://hhplms-viewer.netlify.app/**', async (route) => {
       const original = route.request();
       const request = new Request(original.url(), { method: original.method(), headers: original.headers(), ...(original.postData() ? { body: original.postData() } : {}) });
-      const result = await builderWorker.fetch(request, { ...builderEnv, ASSETS: { fetch: staticFetch(roots.viewer) } });
+      const viewerEnv = { ...builderEnv, ASSETS: { fetch: staticFetch(roots.viewer) } };
+      let result = await builderWorker.fetch(request, viewerEnv);
+      // Playwright does not route each hop of a redirected request. Resolve the
+      // public content-addressed redirect locally before fulfilling the request.
+      if (result.status === 302 && result.headers.get('location')?.startsWith('/preview/ui-assets-v2/')) {
+        result = await builderWorker.fetch(new Request(new URL(result.headers.get('location'), request.url), { method: request.method }), viewerEnv);
+      }
       await route.fulfill({ status: result.status, headers: Object.fromEntries(result.headers), body: Buffer.from(await result.arrayBuffer()) });
     });
     const page = await context.newPage();
     page.on('pageerror', (error) => errors.push(error.message));
-    page.on('response', (result) => { if (result.status() >= 400) console.log('B1_BROWSER_RESPONSE', result.status(), new URL(result.url()).pathname); });
+    page.on('response', (result) => { if (result.status() >= 400) console.log('B1_BROWSER_RESPONSE', result.status(), new URL(result.url()).host, new URL(result.url()).pathname); });
     for (const book of ['ultimate-b1', 'ultimate-b1-plus']) {
       await page.goto(`${origin(builder)}/#/books/${book}/components/${book}-students-book/publication`);
       await expect(page.getByRole('heading', { name: 'Publication', exact: true })).toBeVisible();
@@ -93,6 +109,8 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
       const before = (await pool.query('select head_revision from book_product_publication_heads where book_package_id=(select id from book_packages where slug=$1)', [book])).rows[0].head_revision;
       await page.getByRole('button', { name: 'Prepare Preview', exact: true }).click();
       await expect(page.getByRole('status')).toContainText('prepared with 2 required components');
+      const frozen = (await pool.query("select r.* from book_component_releases r join book_components c on c.id=r.book_component_id where c.slug=$1 order by r.release_number desc limit 1", [`${book}-students-book`])).rows[0];
+      await changeBrowserUiDraft(pool, actor, book, media, 1);
       assert.equal((await pool.query('select head_revision from book_product_publication_heads where book_package_id=(select id from book_packages where slug=$1)', [book])).rows[0].head_revision, before);
       for (const suffix of ['students-book', 'workbook']) {
         const originalPages = (await pool.query('select id,source_metadata from book_pages where book_component_id=(select id from book_components where slug=$1)', [`${book}-${suffix}`])).rows;
@@ -107,13 +125,17 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
         const frameUrl = new URL(await page.locator('.unified-builder-review-dialog iframe').getAttribute('src'));
         assert.equal(frameUrl.searchParams.get('bookSlug'), book);
         assert.equal(frameUrl.searchParams.get('componentSlug'), `${book}-${suffix}`);
+        await verifyFrozenBrowserUi(frame, frozen, book, media);
         await frame.locator('.teacher-offline-page-hotspot').first().click();
         await expect(frame.locator('.published-native-activity')).toBeVisible();
         await expect(frame.locator('.published-native-activity')).toHaveAttribute('data-release-id', frameUrl.searchParams.get('releaseId'));
         await page.getByRole('button', { name: 'Close Review', exact: true }).click();
         for (const original of originalPages) await pool.query('update book_pages set source_metadata=$2::jsonb where id=$1', [original.id, JSON.stringify(original.source_metadata)]);
       }
+      await changeBrowserUiDraft(pool, actor, book, media, 0);
       await page.reload();
+      await page.getByRole('button', { name: 'Prepare Preview', exact: true }).click();
+      await expect(page.getByRole('status')).toContainText('prepared with 2 required components');
       await expect(page.getByRole('button', { name: 'Publish Preview', exact: true })).toBeEnabled();
       page.once('dialog', (dialog) => dialog.accept());
       await page.getByRole('button', { name: 'Publish Preview', exact: true }).click();

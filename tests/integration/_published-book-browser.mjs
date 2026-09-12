@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import { resolve, extname } from "node:path";
+import { resolve, extname, sep } from "node:path";
 import { randomBytes, createHash } from "node:crypto";
 import { Readable } from "node:stream";
 import { chromium, expect } from "@playwright/test";
@@ -30,7 +30,7 @@ export async function verifyPublishedBookBrowser({ pool, sql, teacher, student, 
     const canonical = pageAssets.pages.find((entry) => lmsCanonicalPageAssetPath(entry) === path);
     if (canonical) return new Response(await readFile(resolve(canonical.repositoryPath)), { headers: { "Content-Type": canonical.mimeType } });
     const file = resolve(root, `.${path === "/" ? "/index.html" : path}`);
-    if (!file.startsWith(`${root}/`)) return new Response("Not found", { status: 404 });
+    if (!file.startsWith(`${root}${sep}`)) return new Response("Not found", { status: 404 });
     try { return new Response(await readFile(file), { headers: { "Content-Type": types[extname(file)] || "application/octet-stream" } }); }
     catch { return new Response("Not found", { status: 404 }); }
   };

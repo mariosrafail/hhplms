@@ -14,7 +14,8 @@ export function printedPageNumbers(page) {
     if (unique.length > 0 && unique.length <= MAX_OVERVIEW_PAGE_WEIGHT) return unique;
   }
 
-  const match = String(page?.spreadNumber ?? "").trim().match(PRINTED_LABEL_PATTERN);
+  const printed = page?.printedLabel ? String(page.printedLabel).trim().replace(/^(?:pg|pages?)\s+/i, "") : String(page?.spreadNumber ?? "").trim();
+  const match = printed.match(PRINTED_LABEL_PATTERN);
   if (!match) return [];
   const start = Number(match[1]);
   const end = match[2] === undefined ? start : Number(match[2]);
@@ -113,11 +114,20 @@ export function cleanOverviewSectionLabel(label) {
   return value && !INTERNAL_ASSET_LABEL_PATTERN.test(value) ? value : null;
 }
 
+export function overviewSectionLabel(page) {
+  // An explicit authored label wins; a legacy page-number caption is not a section title.
+  const authored = page?.overviewLabel ?? page?.label;
+  const label = cleanOverviewSectionLabel(authored);
+  if (label && !/^(?:pg|pages?)\s+\d+(?:\s*[-\u2013\u2014]\s*\d+)?$/i.test(label) && label !== page?.id) return label;
+  const title = cleanOverviewSectionLabel(page?.title);
+  return title && title !== page?.id && !/^(?:pg|pages?)\s+\d/i.test(title) && !/^[a-z0-9]+(?:[-_][a-z0-9]+){2,}$/i.test(title) ? title : null;
+}
+
 export function overviewPrintedLabel(page, fallbackIndex = 0) {
   const numbers = printedPageNumbers(page);
   if (numbers.length === 1) return `pg ${numbers[0]}`;
   if (numbers.length === 2) return `pg ${numbers[0]}-${numbers[1]}`;
-  const fallback = String(page?.spreadNumber ?? "").trim();
+  const fallback = String(page?.printedLabel || page?.spreadNumber || "").trim();
   return /^page\s+\S+/i.test(fallback) ? fallback : `Page ${fallbackIndex + 1}`;
 }
 
@@ -134,10 +144,11 @@ function decorateRow(entries, row) {
 export function buildGenericOverviewEntries(unit) {
   const entries = (unit?.pages || []).map((page, index) => ({
     id: `unit-${unit.number}-overview-${page.id}`,
-    label: cleanOverviewSectionLabel(page.title || page.label),
+    label: overviewSectionLabel(page),
     pageLabel: overviewPrintedLabel(page, index),
     pageIds: [page.id],
     pages: [page],
+    physicalWeight: managedOverviewPageWeight(page),
   }));
   const rows = splitOverviewEntries(entries);
   return [...decorateRow(rows.top, 1), ...decorateRow(rows.bottom, 2)];
@@ -146,7 +157,7 @@ export function buildGenericOverviewEntries(unit) {
 export function buildManagedOverviewEntries(unit) {
   const entries = (unit?.pages || []).map((page, index) => ({
     id: `unit-${unit.number}-managed-overview-${page.id}`,
-    label: cleanOverviewSectionLabel(page.title || page.label),
+    label: overviewSectionLabel(page),
     pageLabel: overviewPrintedLabel(page, index),
     pageIds: [page.id],
     pages: [page],

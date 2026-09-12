@@ -239,10 +239,7 @@ html[data-app-mode="android-teacher-offline"] .teacher-offline-unit-overview-scr
   border-width: 4px;
   border-radius: 42px;
 }
-html[data-app-mode="android-teacher-offline"] .teacher-offline-unit-overview-screen .teacher-offline-unit-overview:is([data-overview-book="workbook"], [data-overview-book="grammar-book"]) {
-  --teacher-unit-overview-thumbnail-height: 280px;
-  padding-block: 4px;
-}
+
 html[data-app-mode="android-teacher-offline"] .teacher-offline-unit-overview-screen .teacher-unit-overview-grid { gap: 13px 8px; }
 html[data-app-mode="android-teacher-offline"] .teacher-offline-unit-overview-screen .teacher-unit-page-card {
   padding: 0 2px 2px;

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, symlink, writeFile, rm } from "node:fs/promises";
+import { copyFile, mkdtemp, mkdir, readFile, symlink, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -25,8 +25,9 @@ for (const page of manifest.pages) {
   await verifyImageBytes(new Uint8Array(await readFile(page.repositoryPath)), { ...source.descriptor, byteSize: source.byteSize, width: source.width, height: source.height });
   const target = path.join(assetDirectory, source.path);
   await mkdir(path.dirname(target), { recursive: true });
-  // Read-only test input links, not an exported publisher-media package.
-  await symlink(path.resolve(page.repositoryPath), target, "file");
+  // Isolated test inputs; Windows file symlinks require extra OS privileges.
+  if (process.platform === "win32") await copyFile(path.resolve(page.repositoryPath), target);
+  else await symlink(path.resolve(page.repositoryPath), target, "file");
 }
 const unique = new Set(input.assetManifest.map((asset) => asset.sha256));
 assert.equal(unique.size, 110, "The real manifest contains 110 distinct images");

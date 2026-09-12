@@ -1,4 +1,4 @@
-import { buildGenericOverviewEntries, buildManagedOverviewEntries, overviewEntryWeight } from "./unitOverviewLayout.js";
+import { buildGenericOverviewEntries, buildManagedOverviewEntries, overviewEntryWeight, overviewSectionLabel, overviewPrintedLabel, printedPageNumbers } from "./unitOverviewLayout.js";
 
 const ULTIMATE_B2_STUDENTS_BOOK_IDENTITY = Object.freeze({
   bookSlug: "ultimate-b2",
@@ -57,6 +57,11 @@ export function buildStudentsBookOverviewEntries(unit) {
       id: `unit-${unit.number}-overview-${index + 1}`,
       pages: entry.pageIds.map((id) => pagesById.get(id)),
     };
+    if (result.pages.some((page) => Object.hasOwn(page, "overviewLabel"))) {
+      result.label = overviewSectionLabel(result.pages[0]);
+      const numbers = result.pages.flatMap(printedPageNumbers);
+      if (numbers.length) result.pageLabel = overviewPrintedLabel({ pageNumbers: numbers });
+    }
     return { ...result, physicalWeight: overviewEntryWeight(result) };
   });
 }

@@ -1,3 +1,6 @@
+import { useRef } from "react";
+import { useOverviewThumbnailSizing } from "./useOverviewThumbnailSizing.js";
+import { useTeacherRuntimeUiAssets } from "./legacyClassroomAssets.js";
 import ClassroomStageTransform from "./ClassroomStageTransform.jsx";
 import ClassroomToolOverlay from "./ClassroomToolOverlay.jsx";
 import ClassroomToolbar from "./UltimateB2ClassroomToolbar.jsx";
@@ -5,12 +8,16 @@ import TeacherBookNavigation from "./TeacherBookNavigation.jsx";
 import { buildTeacherUnitOverviewEntries } from "./studentsBookOverviewLayout.js";
 
 export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackToLibrary, selectedBookId = "students-book", onBookSwitch, unavailableBookIds, unavailableBookMessages, unavailableBookLabels, componentIdentity }) {
+  const { classroom } = useTeacherRuntimeUiAssets();
+  const backgroundKey = { "students-book": "studentsBookPartsBackground", workbook: "workbookPartsBackground", "grammar-book": "grammarBookPartsBackground" }[selectedBookId];
   const entries = buildTeacherUnitOverviewEntries({ unit, selectedBookId, componentIdentity });
+  const panelRef = useRef(null);
+  useOverviewThumbnailSizing(panelRef, entries);
   const unitNumber = Number(unit.number);
   const surfaceKey = `${selectedBookId}:overview:unit-${unitNumber}`;
 
   return (
-    <section className="teacher-offline-pages teacher-offline-unit-overview-screen" aria-label={`Unit ${unit.number} page overview`}>
+    <section className="teacher-offline-pages teacher-offline-unit-overview-screen" aria-label={`Unit ${unit.number} page overview`} style={{ "--overview-parts-background": `url(${classroom.backgrounds[backgroundKey] || classroom.backgrounds.studentsBookPartsBackground})`, "--overview-caption-font": classroom.overviewCaptionFontFamily || undefined }}>
       <header className="legacy-page-heading legacy-overview-heading">
         <div aria-hidden="true" />
         <div><h2>Unit {unit.number}</h2></div>
@@ -18,7 +25,7 @@ export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackT
       </header>
 
       <div className="teacher-unit-overview-stage">
-        <div id="teacher-unit-overview-panel" className={`teacher-offline-unit-overview legacy-overview-unit-${unitNumber}`} data-classroom-surface-id={surfaceKey} data-overview-book={selectedBookId} tabIndex={-1}>
+        <div ref={panelRef} id="teacher-unit-overview-panel" className={`teacher-offline-unit-overview legacy-overview-unit-${unitNumber}`} data-classroom-surface-id={surfaceKey} data-overview-book={selectedBookId} tabIndex={-1}>
           <ClassroomStageTransform surfaceKey={surfaceKey}>
           <div className="teacher-unit-overview-grid">
             {entries.length ? entries.map((entry) => (
@@ -34,7 +41,7 @@ export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackT
                 data-page-ids={entry.pageIds.join(",")}
                 style={entry.columnSpan ? { "--overview-column-start": entry.columnStart, "--overview-column-span": entry.columnSpan } : undefined}
                 onClick={() => onSelectPage(entry.pageIds[0])}
-                aria-label={`Open ${entry.label || "Unit opener"}, ${entry.pageLabel}`}
+                aria-label={`Open ${entry.label ? `${entry.label}, ` : ""}${entry.pageLabel}`}
               >
                 <span className="teacher-unit-page-copy">
                   {entry.label && <strong>{entry.label}</strong>}

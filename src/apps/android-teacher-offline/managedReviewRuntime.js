@@ -76,7 +76,7 @@ export function managedPageUnitsFromRelease(projection, identity, context) {
   for (const page of projection.pages) {
     if (!pagesByUnit.has(page.unitId) || !page.image?.sha256 || !page.image?.extension) throw new Error("Managed release page topology is invalid.");
     const image = hostedReleasePath(context, config, `assets/${page.image.sha256}.${page.image.extension}`);
-    pagesByUnit.get(page.unitId).push(Object.freeze({ id: page.id, title: page.label, pageNumber: null, spreadNumber: page.printedLabel || page.label, pageNumbers: Object.freeze([]), ...managedImageDimensions(page.image), images: Object.freeze([image]), activities: Object.freeze([]), actions: Object.freeze([]), sortOrder: page.sortOrder }));
+    pagesByUnit.get(page.unitId).push(Object.freeze({ id: page.id, title: page.label, overviewLabel: page.label, printedLabel: page.printedLabel, pageNumber: null, spreadNumber: page.printedLabel || page.label, pageNumbers: Object.freeze([]), ...managedImageDimensions(page.image), images: Object.freeze([image]), activities: Object.freeze([]), actions: Object.freeze([]), sortOrder: page.sortOrder }));
   }
   return Object.freeze(projection.units.map((unit) => Object.freeze({ id: unit.slug, number: unit.unitNumber, title: unit.title, pages: Object.freeze(pagesByUnit.get(unit.id).sort((left, right) => left.sortOrder - right.sortOrder)) })));
 }
@@ -90,7 +90,7 @@ export function managedPageUnitsFromCatalog(payload, identity) {
     const imageUrl = new URL(page.image.url, "https://viewer.invalid");
     imageUrl.searchParams.delete("previewAuthorization");
     const imagePath = `${imageUrl.pathname}${imageUrl.search}`;
-    pagesByUnit.get(page.unitId).push(Object.freeze({ id: page.id, title: page.label, pageNumber: null, spreadNumber: page.printedLabel || page.label, pageNumbers: Object.freeze([]), ...managedImageDimensions(page.image), images: Object.freeze([imagePath]), activities: Object.freeze([]), actions: Object.freeze([]), sortOrder: page.sortOrder }));
+    pagesByUnit.get(page.unitId).push(Object.freeze({ id: page.id, title: page.label, overviewLabel: page.label, printedLabel: page.printedLabel, pageNumber: null, spreadNumber: page.printedLabel || page.label, pageNumbers: Object.freeze([]), ...managedImageDimensions(page.image), images: Object.freeze([imagePath]), activities: Object.freeze([]), actions: Object.freeze([]), sortOrder: page.sortOrder }));
   }
   return Object.freeze(payload.units.map((unit) => Object.freeze({ id: unit.slug, number: unit.unitNumber, title: unit.title, pages: Object.freeze(pagesByUnit.get(unit.id).sort((left, right) => left.sortOrder - right.sortOrder)) })));
 }

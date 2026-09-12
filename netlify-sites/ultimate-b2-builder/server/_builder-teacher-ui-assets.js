@@ -14,6 +14,7 @@ import {
 } from "../../../src/data/ultimate-b2/hostedTeacherUiBindingCatalog.js";
 import { getBuilderSql, json, requireBuilderOrigin, requireBuilderUser } from "./_builder-auth.js";
 import { resolveBuilderPackageUi } from "./_builder-component-registry.js";
+import { overviewUiDatabaseReady, requiresOverviewUiSchema } from "./_builder-overview-ui-capability.js";
 import { builderClientMutationIdPattern, builderDocumentSha256, stableBuilderJson } from "./_builder-content-security.js";
 import { resolveBuilderContentResource } from "./_builder-content-registry.js";
 import { loadBuilderComponentDocument, saveBuilderComponentDocument } from "./_builder-content-store.js";
@@ -168,6 +169,7 @@ export function createBuilderTeacherUiAssetsHandler(overrides = {}) {
     resolveResource: overrides.resolveResource || resolveBuilderContentResource,
     loadDocument: overrides.loadDocument || loadBuilderComponentDocument,
     saveDocument: overrides.saveDocument || saveBuilderComponentDocument,
+    overviewUiReady: overrides.overviewUiReady || overviewUiDatabaseReady,
     storage: overrides.storage || (() => createBookAssetStorage()),
     prepare: overrides.prepare || prepareTeacherUiAssetUploadSession,
     claim: overrides.claim || claimTeacherUiAssetUploadSession,
@@ -291,10 +293,18 @@ export function createBuilderTeacherUiAssetsHandler(overrides = {}) {
         if (!Array.isArray(parsed.value.candidateUploadIds) || new Set(parsed.value.candidateUploadIds).size !== parsed.value.candidateUploadIds.length || parsed.value.candidateUploadIds.some((id) => !uuidV4Pattern.test(String(id)))) return uiJson(400, { error: "invalid_candidate_upload_ids" });
         let document;
         try { document = resource.validate(parsed.value.document); } catch (error) { return uiJson(400, { error: "invalid_document", detail: String(error.message).slice(0, 240) }); }
+        if (requiresOverviewUiSchema(document) && !await dependencies.overviewUiReady(sql)) {
+          return uiJson(409, { error: "publication_ui_schema_unavailable" });
+        }
         const stored = await dependencies.loadDocument(sql, resource);
         const current = stored?.document || resource.baseline();
         const changedIds = changedAssetIds(current, document);
-        const newOrChanged = changedIds.filter((id) => document.assets[id]);
+        const newOrChanged = changedIds.filter((id) => document.assets[id] && !(
+          document.independentPartsBackgrounds && !current.independentPartsBackgrounds
+          && ["background.workbook-parts", "background.grammar-book-parts"].includes(id)
+          && !current.assets[id] && current.assets["background.students-book-parts"]
+          && metadataEquals(document.assets[id], current.assets["background.students-book-parts"])
+        ));
         const rows = await dependencies.loadCandidates(sql, { uploadIds: parsed.value.candidateUploadIds, builderUserId: auth.builderUser.id, bookSlug: identity.bookSlug, componentSlug: identity.componentSlug });
         const rowsById = new Map(rows.map((row) => [String(row.id), row]));
         if (rowsById.size !== parsed.value.candidateUploadIds.length) return uiJson(400, { error: "invalid_candidate_reference" });

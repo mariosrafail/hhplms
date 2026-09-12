@@ -20,16 +20,14 @@ export async function captureStudentsBookPreservation(pool) {
   return snapshot;
 }
 
-export function assertStudentsBookDatabasePreserved(before, after, { addedUnits = 0, migration = null } = {}) {
+export function assertStudentsBookDatabasePreserved(before, after, { addedUnits = 0, migration = null, migrations = migration ? [migration] : [] } = {}) {
   for (const [table, rows] of Object.entries(before)) {
     assert.ok(after[table], `Missing preserved table ${table}`);
-    if (table === "eduforge_migration_history" && migration) {
+    if (table === "eduforge_migration_history" && migrations.length) {
       const original = new Set(rows);
       assert.ok(rows.every((row) => after[table].includes(row)), "Existing migration history changed");
       const added = after[table].filter((row) => !original.has(row)).map(JSON.parse);
-      assert.equal(added.length, 1);
-      assert.equal(added[0].filename, migration.filename);
-      assert.equal(added[0].checksum_sha256, migration.checksum);
+      assert.deepEqual(added.map((row) => [row.filename, row.checksum_sha256]).sort(), migrations.map((entry) => [entry.filename, entry.checksum]).sort());
     }
     else if (table !== "units" || !addedUnits) assert.deepEqual(after[table], rows, `Preservation failed: ${table}`);
     else {

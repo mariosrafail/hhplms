@@ -17,6 +17,7 @@ import { verifyManagedPublicationUiAssets } from "./_builder-publication-ui-asse
 import { freezeComponentPublicationAssetPins } from "./_builder-publication-pins.js";
 import { resolvePublicationCompiler, verifyImmutableComponentRelease } from "./_builder-publication-compilers.js";
 import { verifyProductReleaseEnvelope } from "./_builder-product-publication-domain.js";
+import { overviewUiDatabaseReady, requiresOverviewUiSchema } from "./_builder-overview-ui-capability.js";
 import {
   createProductRelease,
   loadProductPublicationMutation,
@@ -161,6 +162,7 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
     getDatabase: overrides.getDatabase || getBuilderSql,
     authorize: overrides.authorize || requireBuilderUser,
     ready: overrides.ready || productPublicationDatabaseReady,
+    overviewUiReady: overrides.overviewUiReady || overviewUiDatabaseReady,
     pinReady: overrides.pinReady || productPublicationPinDatabaseReady,
     compileProduct: overrides.compileProduct || compileProduct,
     create: overrides.create || createProductRelease,
@@ -228,6 +230,8 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
         if (!builderClientMutationIdPattern.test(parsed.value.clientMutationId) || typeof parsed.value.releaseNote !== "string" || parsed.value.releaseNote.length > 240) return json(400, { error: "invalid_request" });
         if (!pinSchemaReady) return json(409, { error: "release_pin_schema_unavailable" });
         const compiledMembers = await dependencies.compileProduct(sql, configuration, dependencies);
+        if (compiledMembers.some((entry) => requiresOverviewUiSchema(entry.compiled.teacherProjection?.ui))
+          && !await dependencies.overviewUiReady(sql)) return json(409, { error: "publication_ui_schema_unavailable" });
         const storage = prepareStorage(context, dependencies);
         for (const entry of compiledMembers) if (entry.compiled.canonicalAssetSources?.length) {
           await dependencies.materializeCanonical(storage, { bookSlug: parsedRoute.bookSlug, componentSlug: entry.componentSlug, ...entry.compiled, fetchAsset: dependencies.canonicalFetch(context) });
@@ -263,6 +267,11 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
         if (!UUID.test(parsed.value.productReleaseId) || !Number.isSafeInteger(parsed.value.expectedHeadRevision) || parsed.value.expectedHeadRevision < 0 || !builderClientMutationIdPattern.test(parsed.value.clientMutationId)) return json(400, { error: "invalid_request" });
         const candidate = await dependencies.loadRelease(sql, { bookSlug: parsedRoute.bookSlug, productReleaseId: parsed.value.productReleaseId });
         if (!candidate) return json(404, { error: "release_not_found" });
+        if (parsedRoute.bookSlug !== "ultimate-b2") {
+          const rows = await dependencies.loadComponentRows(sql, { bookSlug: parsedRoute.bookSlug, productReleaseId: candidate.id });
+          if (rows.some((row) => requiresOverviewUiSchema(row.teacher_projection?.ui))
+            && !await dependencies.overviewUiReady(sql)) return json(409, { error: "publication_ui_schema_unavailable" });
+        }
         try { await dependencies.verifyCandidate(sql, candidate, dependencies); } catch { return json(409, { error: "release_integrity_failed" }); }
         if (candidate.compilerId !== configuration.contract.compilerId) return json(409, { error: "legacy_release_read_only" });
         const requestSha256 = sha256(stableBuilderJson({ productReleaseId: parsed.value.productReleaseId, expectedHeadRevision: parsed.value.expectedHeadRevision }));

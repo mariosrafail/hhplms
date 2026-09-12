@@ -59,7 +59,7 @@ const fakeInspect = async ({ bytes, originalFilename, descriptor }) => {
 };
 
 test("hosted Teacher UI catalog is the unique live subset of canonical bindings", () => {
-  assert.equal(HOSTED_EDITABLE_UI_BINDINGS.length, 142);
+  assert.equal(HOSTED_EDITABLE_UI_BINDINGS.length, 144);
   assert.equal(HOSTED_EDITABLE_UI_BINDINGS_BY_ID["navigation.videoWorksheet"].label, "Video Worksheet");
   assert.equal(ultimateB2TeacherAppDefaultAssets["navigation.videoWorksheet"].repositoryPath, ultimateB2TeacherAppDefaultAssets["navigation.video"].repositoryPath);
   assert.equal(new Set(HOSTED_EDITABLE_UI_BINDINGS.map(({ id }) => id)).size, HOSTED_EDITABLE_UI_BINDINGS.length);

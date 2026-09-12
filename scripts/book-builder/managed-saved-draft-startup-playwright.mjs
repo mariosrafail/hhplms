@@ -107,7 +107,8 @@ export async function assertManagedSavedDraftStartup(browser, viewerRoot) {
       }), false);
       assert.equal(fixture.requests.length, beforeSwitchAttempt, "programmatic disabled switch performs no component preparation");
       await expect(page.locator(".teacher-unit-page-card")).toHaveCount(2);
-      await page.getByRole("button", { name: /^Open Page 1,/ }).click();
+      await expect(page.locator(".teacher-unit-page-card").first().locator("strong")).toHaveCount(0);
+      await page.getByRole("button", { name: "Open pg 1", exact: true }).click();
       await expect(page.locator('.teacher-book-navigation [data-book-id="grammar-book"]')).toHaveAttribute("title", "Grammar Book is currently disabled for this package.");
       await expect.poll(() => page.locator(".teacher-offline-page-image img").evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
       await page.getByRole("button", { name: "Home", exact: true }).click();

@@ -49,7 +49,7 @@ test('062 upgrades an existing B2 historical release, head, assignment and submi
   assertStudentsBookDatabasePreserved(before, await captureStudentsBookPreservation(pool), { migration: migrations.at(-1) });
   const beforeUi = await captureStudentsBookPreservation(pool);
   const uiMigrations = await applyCanonicalProductionMigrations(pool);
-  assertStudentsBookDatabasePreserved(beforeUi, await captureStudentsBookPreservation(pool), { migration: uiMigrations.at(-1) });
+  assertStudentsBookDatabasePreserved(beforeUi, await captureStudentsBookPreservation(pool), { migrations: uiMigrations.slice(migrations.length) });
   assert.deepEqual(verifyImmutableComponentRelease((await pool.query('select * from book_component_releases where id=$1', [seeded.releaseId])).rows[0]), original);
 });
 
@@ -71,7 +71,7 @@ test('B1/B1 Plus real managed publication: all members, SQL parity, immutable R1
   assertStudentsBookDatabasePreserved(before, await captureStudentsBookPreservation(pool), { migration: migrations.at(-1) });
   const beforeUi = await captureStudentsBookPreservation(pool);
   const uiMigrations = await applyCanonicalProductionMigrations(pool);
-  assertStudentsBookDatabasePreserved(beforeUi, await captureStudentsBookPreservation(pool), { migration: uiMigrations.at(-1) });
+  assertStudentsBookDatabasePreserved(beforeUi, await captureStudentsBookPreservation(pool), { migrations: uiMigrations.slice(migrations.length) });
   assert.equal(await productPublicationDatabaseReady(sql, 'ultimate-b1'), true);
   for (const sample of [{ a: 1, z: [0.0000001, 0.000001, 1e21, 1.23, 'Ελληνικά\n"'] }, { z: true, a: null }]) {
     const actual = (await pool.query('select builder_publication_stable_json($1::jsonb) value', [JSON.stringify(sample)])).rows[0].value;

@@ -105,6 +105,8 @@ function buildDefaultAssets() {
   const entries = [
     asset("background.main", "background", `${legacyRoot}/backgrounds/classroom-glacier.png`),
     asset("background.students-book-parts", "background", "src/assets/books/ultimate-b2/legacy-source/assets/books/book1/unit/2/parts/HD/parts_BG.png"),
+    asset("background.workbook-parts", "background", "src/assets/books/ultimate-b2/legacy-source/assets/books/book1/unit/2/parts/HD/parts_BG.png"),
+    asset("background.grammar-book-parts", "background", "src/assets/books/ultimate-b2/legacy-source/assets/books/book1/unit/2/parts/HD/parts_BG.png"),
     asset("branding.publisher-logo", "branding", `${legacyRoot}/branding/hamilton-house-logo.png`),
     asset("title.gaf", "animation", `${legacyRoot}/branding/menu-title-animation/logo.gaf`, "application/x-gaf"),
     asset("title.sd.1", "animation-atlas", `${legacyRoot}/branding/menu-title-animation/logo_SD.png`),

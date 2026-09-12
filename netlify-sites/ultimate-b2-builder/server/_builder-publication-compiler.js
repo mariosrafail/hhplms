@@ -27,7 +27,7 @@ export function ultimateB2PublicationCanonicalSeeds() {
   }));
 }
 
-export function ultimateB2PublicationCompatibilityDescriptor(teacherUiBindingIds = Object.keys(HOSTED_EDITABLE_UI_BINDINGS_BY_ID).sort()) {
+export function ultimateB2PublicationCompatibilityDescriptor(teacherUiBindingIds = Object.keys(HOSTED_EDITABLE_UI_BINDINGS_BY_ID).filter((id) => !["background.workbook-parts", "background.grammar-book-parts"].includes(id)).sort()) {
   const seeds = ultimateB2PublicationCanonicalSeeds();
   return {
     compilerId: ULTIMATE_B2_COMPONENT_RELEASE_COMPILER_ID,
@@ -48,7 +48,7 @@ export function ultimateB2PublicationCompatibility() {
 
 export function ultimateB2PublicationCompatibilityBeforeVideoWorksheetBinding() {
   return builderDocumentSha256(ultimateB2PublicationCompatibilityDescriptor(
-    Object.keys(HOSTED_EDITABLE_UI_BINDINGS_BY_ID).filter((id) => id !== "navigation.videoWorksheet"),
+    Object.keys(HOSTED_EDITABLE_UI_BINDINGS_BY_ID).filter((id) => id !== "navigation.videoWorksheet" && !["background.workbook-parts", "background.grammar-book-parts"].includes(id)),
   ));
 }
 

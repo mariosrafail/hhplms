@@ -65,6 +65,7 @@ Apply production migrations in this exact order:
 61. `061_students_book_publication_v3.sql`
 62. `062_b1_managed_publication.sql`
 63. `063_b1_immutable_package_ui.sql`
+64. `064_teacher_overview_ui.sql`
 
 The two `010` files are historical, already-deployed migrations. Their duplicate number is resolved by this manifest rather than renaming applied files. New migrations must use a unique, increasing number.
 

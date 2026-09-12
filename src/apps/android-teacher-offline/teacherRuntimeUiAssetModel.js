@@ -3,7 +3,9 @@ import { HOSTED_VIEWER_RUNTIME_MODES, hostedReleasePath, resolveHostedViewerRunt
 
 export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAssetUrl, hostedPreview = null, runtimeContext = resolveHostedViewerRuntimeContext(), identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" } }) {
   if (!authoring || typeof resolveCanonicalAssetUrl !== "function") throw new TypeError("Teacher runtime UI asset factory requires canonical authoring and a URL resolver.");
-  const overrides = hostedPreview ? normalizeHostedTeacherUiPreview(hostedPreview, { packageId: identity.componentSlug }).assets : {};
+  const preview = hostedPreview ? normalizeHostedTeacherUiPreview(hostedPreview, { packageId: identity.componentSlug }) : null;
+  const overrides = preview?.assets || {};
+  const partsFallback = () => preview?.independentPartsBackgrounds ? resolveCanonicalAssetUrl(authoring.shell.studentsBookPartsBackground) : url(authoring.shell.studentsBookPartsBackground);
   const context = runtimeContext;
   const url = (binding) => {
     if (!overrides[binding.id]) return resolveCanonicalAssetUrl(binding);
@@ -16,7 +18,13 @@ export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAs
     id: item.id, label: item.label, controlId: item.controlId, normal: url(item.normal), active: url(item.active), sound: url(item.sound),
   })));
   const classroom = Object.freeze({
-    backgrounds: Object.freeze({ classroomGlacier: url(authoring.shell.background), studentsBookPartsBackground: url(authoring.shell.studentsBookPartsBackground) }),
+    overviewCaptionFontFamily: preview?.overviewCaptionFontFamily || null,
+    backgrounds: Object.freeze({
+      classroomGlacier: url(authoring.shell.background),
+      studentsBookPartsBackground: url(authoring.shell.studentsBookPartsBackground),
+      workbookPartsBackground: overrides["background.workbook-parts"] ? url({ id: "background.workbook-parts" }) : partsFallback(),
+      grammarBookPartsBackground: overrides["background.grammar-book-parts"] ? url({ id: "background.grammar-book-parts" }) : partsFallback(),
+    }),
     branding: Object.freeze({
       hamiltonHouseLogo: url(authoring.shell.publisherLogo),
       menuTitle: Object.freeze({ gaf: url(authoring.shell.titleAnimation.gaf), sd: Object.freeze(authoring.shell.titleAnimation.sd.map(url)), hd: Object.freeze(authoring.shell.titleAnimation.hd.map(url)) }),

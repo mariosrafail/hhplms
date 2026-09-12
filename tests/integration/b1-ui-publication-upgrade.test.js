@@ -10,9 +10,10 @@ import { freezeComponentPublicationAssetPins } from "../../netlify-sites/ultimat
 import { createProductRelease, loadProductRelease, productPublicationDatabaseReady } from "../../netlify-sites/ultimate-b2-builder/server/_builder-product-publication-store.js";
 import { verifyProductReleaseEnvelope } from "../../netlify-sites/ultimate-b2-builder/server/_builder-product-publication-domain.js";
 import { clientSql } from "./_b1-page-placement-regression.mjs";
+import { verifyOverviewPre064 } from "./_overview-pre064-regression.mjs";
 
 const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.TEST_DATABASE_CONFIRMATION === "isolated-test-database";
-test("063 upgrades real historical B1/B1+ v1 product families without changing releases, hashes, pins or heads", { skip: !enabled }, async (t) => {
+test("063 preserves historical B1/B1+ families and serves legacy publication before optional 064 UI activation", { skip: !enabled }, async (t) => {
   const url = new URL(process.env.TEST_DATABASE_URL); assert.ok(["localhost", "127.0.0.1", "[::1]"].includes(url.hostname));
   const schema = `ui_history_${randomBytes(8).toString("hex")}`, admin = new pg.Pool({ connectionString: url.href, max: 1 });
   await admin.query(`create schema "${schema}"`); url.searchParams.set("options", `-c search_path=${schema}`);
@@ -64,8 +65,9 @@ test("063 upgrades real historical B1/B1+ v1 product families without changing r
   };
   await verify();
   assert.equal(await productPublicationDatabaseReady(sql, 'ultimate-b1'), false, 'Current v2 PREPARE remains gated on 063');
-  await applyCanonicalProductionMigrations(pool);
+  await applyCanonicalProductionMigrations(pool, { through: "063_b1_immutable_package_ui.sql" });
   assert.equal(await productPublicationDatabaseReady(sql, 'ultimate-b1'), true);
   await verify(); assert.deepEqual(await capture(), before);
   for (const input of historicalInputs) assert.equal((await createProductRelease(sql, { ...input, productReleaseId: randomUUID(), clientMutationId: randomUUID() })).outcome, 'invalid_request', 'Current SQL writer cannot prepare a new product-v1');
+  await verifyOverviewPre064({ pool, sql, actor, storage, families });
 });

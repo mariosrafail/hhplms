@@ -58,7 +58,7 @@ export function studentsBookCurrentPageUnitsFromCatalog(payload, authorization) 
       if (url.search) throw new Error("Students Book managed image parameters are invalid.");
       image = authorizedHostedPreviewPath(url.pathname, authorization);
     }
-    unit.pages.push(Object.freeze({ id: page.id, sourcePageId: page.id, part: page.partNumber, title: studentsBookPageTitle(page), label: page.printedLabel ? `pg ${page.printedLabel}` : page.label,
+    unit.pages.push(Object.freeze({ id: page.id, sourcePageId: page.id, part: page.partNumber, title: studentsBookPageTitle(page), overviewLabel: studentsBookPageTitle(page), label: page.printedLabel ? `pg ${page.printedLabel}` : page.label,
       pageNumber: page.printedPages?.[0] || null, pageNumbers: Object.freeze([...(page.printedPages || [])]), spreadNumber: page.printedLabel,
       navigationOrder: page.sortOrder, sortOrder: page.sortOrder, imageWidth: page.image.width, imageHeight: page.image.height,
       images: Object.freeze([image]), activities: Object.freeze([]), actions: Object.freeze([]), media: Object.freeze([]), continuesToVideo: false }));

@@ -1,3 +1,4 @@
+import { NATIVE_ACTIVITY_SYSTEM_FONT_FAMILIES } from "../native-activities/nativeActivityFont.js";
 import {
   HOSTED_EDITABLE_UI_BINDINGS_BY_ID,
   HOSTED_TEACHER_UI_MEDIA_POLICIES,
@@ -5,6 +6,32 @@ import {
   HOSTED_TEACHER_UI_SCHEMA_VERSION,
   HOSTED_TEACHER_UI_TITLE_BINDING_IDS,
 } from "./hostedTeacherUiBindingCatalog.js";
+
+export const HOSTED_OVERVIEW_FONT_FAMILIES = NATIVE_ACTIVITY_SYSTEM_FONT_FAMILIES;
+
+function optionalSettings(candidate) {
+  const settings = {};
+  if (!candidate || typeof candidate !== "object") return settings;
+  if (Object.hasOwn(candidate, "overviewCaptionFontFamily")) {
+    if (!HOSTED_OVERVIEW_FONT_FAMILIES.includes(candidate.overviewCaptionFontFamily)) throw new Error("Invalid overview caption font family.");
+    settings.overviewCaptionFontFamily = candidate.overviewCaptionFontFamily;
+  }
+  if (Object.hasOwn(candidate, "independentPartsBackgrounds")) {
+    if (candidate.independentPartsBackgrounds !== true) throw new Error("Invalid independent parts backgrounds setting.");
+    settings.independentPartsBackgrounds = true;
+  }
+  return settings;
+}
+
+// Materialize only the legacy inherited choices when an old draft is first edited.
+// Immutable readers never add defaults, preserving historical document bytes/hashes.
+export function independentHostedPartsAssets(document) {
+  const assets = { ...document.assets };
+  if (!document.independentPartsBackgrounds && assets["background.students-book-parts"]) {
+    for (const id of ["background.workbook-parts", "background.grammar-book-parts"]) assets[id] ||= assets["background.students-book-parts"];
+  }
+  return assets;
+}
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const SAFE_FILENAME = /^[A-Za-z0-9][A-Za-z0-9._() -]{0,179}$/;
@@ -52,12 +79,12 @@ export function createEmptyHostedTeacherUiDocument(packageId = HOSTED_TEACHER_UI
 }
 
 export function normalizeHostedTeacherUiDocument(candidate, { packageId = HOSTED_TEACHER_UI_PACKAGE_ID } = {}) {
-  exactObject(candidate, ["schemaVersion", "packageId", "assets"], "Invalid hosted Teacher UI document.");
+  exactObject(candidate, ["schemaVersion", "packageId", "assets", ...Object.keys(optionalSettings(candidate))], "Invalid hosted Teacher UI document.");
   if (!SAFE_ID.test(packageId) || candidate.schemaVersion !== HOSTED_TEACHER_UI_SCHEMA_VERSION || candidate.packageId !== packageId) throw new Error("Unsupported hosted Teacher UI document identity.");
   exactObject(candidate.assets, Object.keys(candidate.assets || {}), "Invalid hosted Teacher UI asset map.");
   const assets = Object.fromEntries(Object.entries(candidate.assets).map(([id, value]) => [id, normalizeAsset(id, value)]));
   assertAtomicTitle(assets);
-  return Object.freeze({ schemaVersion: candidate.schemaVersion, packageId: candidate.packageId, assets: Object.freeze(assets) });
+  return Object.freeze({ schemaVersion: candidate.schemaVersion, packageId: candidate.packageId, ...optionalSettings(candidate), assets: Object.freeze(assets) });
 }
 
 export function projectHostedTeacherUiPreview(candidate, options) {
@@ -70,16 +97,16 @@ export function projectHostedTeacherUiPreview(candidate, options) {
     width: value.width,
     height: value.height,
   }, { publicProjection: true })]));
-  return Object.freeze({ schemaVersion: document.schemaVersion, packageId: document.packageId, assets: Object.freeze(assets) });
+  return Object.freeze({ schemaVersion: document.schemaVersion, packageId: document.packageId, ...optionalSettings(document), assets: Object.freeze(assets) });
 }
 
 export function normalizeHostedTeacherUiPreview(candidate, { packageId = HOSTED_TEACHER_UI_PACKAGE_ID } = {}) {
-  exactObject(candidate, ["schemaVersion", "packageId", "assets"], "Invalid hosted Teacher UI preview.");
+  exactObject(candidate, ["schemaVersion", "packageId", "assets", ...Object.keys(optionalSettings(candidate))], "Invalid hosted Teacher UI preview.");
   if (!SAFE_ID.test(packageId) || candidate.schemaVersion !== HOSTED_TEACHER_UI_SCHEMA_VERSION || candidate.packageId !== packageId) throw new Error("Unsupported hosted Teacher UI preview identity.");
   exactObject(candidate.assets, Object.keys(candidate.assets || {}), "Invalid hosted Teacher UI preview asset map.");
   const assets = Object.fromEntries(Object.entries(candidate.assets).map(([id, value]) => [id, normalizeAsset(id, value, { publicProjection: true })]));
   assertAtomicTitle(assets);
-  return Object.freeze({ schemaVersion: candidate.schemaVersion, packageId: candidate.packageId, assets: Object.freeze(assets) });
+  return Object.freeze({ schemaVersion: candidate.schemaVersion, packageId: candidate.packageId, ...optionalSettings(candidate), assets: Object.freeze(assets) });
 }
 
 export function hostedTeacherUiAssetPath(asset, identity = LEGACY_IDENTITY) {

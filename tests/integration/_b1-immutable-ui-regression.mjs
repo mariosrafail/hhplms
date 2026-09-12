@@ -9,6 +9,10 @@ export async function verifyB1ImmutableUi({ pool, actor, save, media, publicatio
     headers: { host: "builder.example", origin: "https://builder.example", "content-type": "application/json" }, body: JSON.stringify(body) });
   for (const book of ["ultimate-b1", "ultimate-b1-plus"]) {
     const slug = `${book}-students-book`, ui = await publishedManagedUiFixture(slug);
+    ui.payload.overviewCaptionFontFamily = "Georgia";
+    ui.payload.independentPartsBackgrounds = true;
+    for (const component of ["students-book", "workbook", "grammar-book"]) ui.payload.assets[`background.${component}-parts`] = { ...ui.payload.assets["background.main"] };
+    ui.sha256 = builderDocumentSha256(ui.payload);
     for (const [key, bytes] of ui.objects) media.set(key, bytes);
     await save(book, slug, "ui-controller", ui.payload);
     const soundKey = [...ui.objects.keys()].find((key) => key.endsWith(".wav")), originalSound = media.get(soundKey);
@@ -20,6 +24,8 @@ export async function verifyB1ImmutableUi({ pool, actor, save, media, publicatio
     const rows = (await pool.query("select r.* from book_component_releases r join book_product_release_members m on m.component_release_id=r.id where m.product_release_id=$1 order by m.member_order", [prepared.productReleaseId])).rows;
     const frozen = JSON.stringify(rows), sb = rows[0]; verifyImmutableComponentRelease(sb);
     assert.equal(sb.compiler_id, `${slug}-v2`); assert.equal(sb.teacher_projection.ui.packageId, slug);
+    assert.equal(sb.teacher_projection.ui.overviewCaptionFontFamily, "Georgia");
+    assert.equal(sb.teacher_projection.ui.independentPartsBackgrounds, true);
     assert.equal(rows[1].compiler_id, `${book}-workbook-v1`); assert.equal(Object.hasOwn(rows[1].teacher_projection, "ui"), false);
     assert.equal((await pool.query("select builder_b1_product_integrity($1) valid", [prepared.productReleaseId])).rows[0].valid, true);
     assert.equal((await pool.query("select count(*)::int count from book_component_release_asset_pins where component_release_id=$1 and asset_role='teacher_ui'", [sb.id])).rows[0].count, 0);

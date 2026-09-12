@@ -92,14 +92,11 @@
   overflow: hidden;
   border: calc(var(--teacher-students-book-stage-border-width) + 1px) solid rgba(229, 250, 255, 0.96);
   border-radius: var(--teacher-students-book-stage-radius);
-  background: #d65ee7 var(--legacy-students-book-parts-background) center center / cover no-repeat;
+  background: #d65ee7 var(--overview-parts-background, var(--legacy-students-book-parts-background)) center center / cover no-repeat;
   box-shadow: var(--teacher-students-book-stage-shadow);
   color: #fff;
 }
 
-.teacher-offline-unit-overview-screen .teacher-offline-unit-overview:is([data-overview-book="workbook"], [data-overview-book="grammar-book"]) {
-  --teacher-unit-overview-thumbnail-height: clamp(118px, 14.75vw, 270px);
-}
 
 .teacher-offline-unit-overview-screen .teacher-unit-overview-grid {
   position: relative;
@@ -116,10 +113,6 @@
   overflow: visible;
 }
 
-.teacher-offline-unit-overview-screen .teacher-offline-unit-overview:is([data-overview-book="workbook"], [data-overview-book="grammar-book"]) .teacher-unit-overview-grid {
-  box-sizing: border-box;
-  padding-inline: 14px;
-}
 
 .teacher-offline-unit-overview-screen .teacher-unit-overview-empty {
   grid-column: 1 / -1;
@@ -145,8 +138,8 @@
 .legacy-overview-unit-1 .teacher-unit-page-card:is([data-page-ids="ub2-sb-unit-1-part-7"], [data-page-ids="ub2-sb-unit-1-part-9,ub2-sb-unit-1-part-10"]) { grid-column: span 6; }
 .legacy-overview-unit-2 .teacher-unit-page-card:is([data-page-ids="reading-19"], [data-page-ids="listening-26"], [data-page-ids="speaking-27"], [data-page-ids="review-30"]) { grid-column: span 3; }
 .legacy-overview-unit-2 .teacher-unit-page-card:is([data-page-ids="reading-20-21"], [data-page-ids="vocabulary-22-23"], [data-page-ids="grammar-24-25"], [data-page-ids="writing-28-29"], [data-page-ids="practice-31,practice-32"], [data-page-ids="progress-check-33,progress-check-34"]) { grid-column: span 6; }
-.teacher-offline-unit-overview-screen .teacher-unit-page-card[data-overview-row="1"] { grid-row: 1; }
-.teacher-offline-unit-overview-screen .teacher-unit-page-card[data-overview-row="2"] { grid-row: 2; }
+.teacher-offline-unit-overview-screen .teacher-unit-page-card[data-overview-row="1"] { grid-row: 1; --overview-row-height: var(--overview-row-1-height); }
+.teacher-offline-unit-overview-screen .teacher-unit-page-card[data-overview-row="2"] { grid-row: 2; --overview-row-height: var(--overview-row-2-height); }
 .teacher-offline-unit-overview-screen .teacher-unit-page-card[data-overview-column-span] {
   grid-column: var(--overview-column-start) / span var(--overview-column-span);
 }
@@ -191,18 +184,18 @@
 
 .teacher-offline-unit-overview-screen .teacher-unit-page-copy strong {
   max-width: 100%;
-  overflow: visible;
-  font-family: "PF Stiele Futura Medium", "Arial Narrow", Arial, sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--overview-caption-font, "PF Stiele Futura Medium"), "Arial Narrow", Arial, sans-serif;
   font-size: clamp(1.2rem, 1.6vw, 1.9rem);
   font-stretch: normal;
   font-weight: 400;
   line-height: 1;
-  text-overflow: clip;
   white-space: nowrap;
 }
 
 .teacher-offline-unit-overview-screen .teacher-unit-page-copy b {
-  font-family: "PF Stiele Futura Medium", "Arial Narrow", Arial, sans-serif;
+  font-family: var(--overview-caption-font, "PF Stiele Futura Medium"), "Arial Narrow", Arial, sans-serif;
   font-weight: 400;
   font-size: clamp(1.06rem, 1.28vw, 1.46rem);
   line-height: 1.05;
@@ -223,7 +216,7 @@
 .teacher-offline-unit-overview-screen .teacher-unit-page-thumb {
   position: relative;
   width: 100%;
-  height: var(--teacher-unit-overview-thumbnail-height);
+  height: var(--overview-row-height, var(--teacher-unit-overview-thumbnail-height));
   min-height: 0;
   aspect-ratio: auto;
   align-self: start;
@@ -250,10 +243,6 @@
   box-shadow: none;
 }
 
-.teacher-offline-unit-overview-screen .teacher-offline-unit-overview:is([data-overview-book="workbook"], [data-overview-book="grammar-book"]) .teacher-unit-page-thumb img {
-  height: auto;
-  max-height: 100%;
-}
 
 .teacher-offline-unit-overview-screen .teacher-unit-page-thumb.grouped img {
   max-width: calc(50% - 2px);
@@ -308,7 +297,7 @@
   .legacy-overview-heading .legacy-page-window-controls { gap: 5px; }
   .legacy-overview-heading .legacy-page-window-controls button { width: 30px; height: 30px; min-height: 30px; border-width: 2px; font-size: 1.1rem; }
   .teacher-offline-unit-overview-screen .teacher-offline-unit-overview { --teacher-unit-overview-thumbnail-height: clamp(72px, 12.25vw, 98px); width: auto; max-width: var(--teacher-students-book-stage-max-width); padding: 5px 7px; border-width: calc(var(--teacher-students-book-stage-border-width) + 1px); border-radius: var(--teacher-students-book-stage-radius); }
-  .teacher-offline-unit-overview-screen .teacher-offline-unit-overview:is([data-overview-book="workbook"], [data-overview-book="grammar-book"]) { --teacher-unit-overview-thumbnail-height: clamp(86px, 14.75vw, 118px); }
+
   .teacher-unit-side-navigation { width: 44px; height: 44px; min-height: 44px; border-width: 2px; box-shadow: 0 0 0 1px rgba(70, 31, 104, 0.78), 0 3px 0 rgba(52, 24, 79, 0.72), 0 5px 10px rgba(18, 29, 66, 0.26); }
   .teacher-unit-side-navigation.previous { left: max(6px, env(safe-area-inset-left)); }
   .teacher-unit-side-navigation.next { right: max(6px, env(safe-area-inset-right)); }
@@ -341,7 +330,7 @@
   .teacher-unit-side-navigation.next { right: max(32px, env(safe-area-inset-right)); }
   .teacher-unit-side-navigation svg { width: 48px; height: 48px; }
   .teacher-offline-unit-overview-screen .teacher-offline-unit-overview { --teacher-unit-overview-thumbnail-height: 260px; width: auto; padding: 42px; border-width: calc(var(--teacher-students-book-stage-border-width) + 1px); border-radius: var(--teacher-students-book-stage-radius); }
-  .teacher-offline-unit-overview-screen .teacher-offline-unit-overview:is([data-overview-book="workbook"], [data-overview-book="grammar-book"]) { --teacher-unit-overview-thumbnail-height: 290px; }
+
   .teacher-offline-unit-overview-screen .teacher-unit-overview-grid { gap: 28px 12px; }
   .teacher-offline-unit-overview-screen .teacher-unit-page-copy { min-height: 96px; }
   .teacher-offline-unit-overview-screen .teacher-unit-page-copy strong { font-size: 3.1rem; }

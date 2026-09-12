@@ -64,7 +64,8 @@ function ComponentSelection({ book }) {
         return <article className="hosted-builder-component-card" data-available={available || undefined} key={component.slug}>
           {component.cover ? <img src={component.cover} alt="" /> : <div className="hosted-builder-cover-placeholder" aria-hidden="true"><span>{book.level}</span></div>}
           <div><span>{component.type.replaceAll("_", " ")}</span><h2>{component.title}</h2><p>{component.status}</p>{available
-            ? <a className="hosted-builder-action" href={hostedBuilderHash({ bookSlug: book.slug, componentSlug: component.slug })}>Open workspace</a>
+            // Temporarily hide only the Grammar Book workspace CTA; its adapter remains available.
+            ? component.type !== "grammar_book" && <a className="hosted-builder-action" href={hostedBuilderHash({ bookSlug: book.slug, componentSlug: component.slug })}>Open workspace</a>
             : <span className="hosted-builder-unavailable">Authoring adapter pending</span>}</div>
         </article>;
       })}

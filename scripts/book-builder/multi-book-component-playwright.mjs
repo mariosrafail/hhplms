@@ -5,6 +5,7 @@ import { componentActivityOrderEntries, projectComponentActivityOrder } from "..
 import { managedHotspots } from "./hosted-native-activity-document-fixtures.mjs";
 import { exerciseMarkWordsAuthoring } from "./hosted-native-activity-mark-words.mjs";
 import assert from "node:assert/strict";
+import { openComponentWorkspace } from "./component-workspace-assertions.mjs";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -563,8 +564,7 @@ try {
     assert.equal(new URL(page.url()).hash, `#/books/${shell.bookSlug}`);
 
     for (const component of shell.components) {
-      const componentCard = page.locator(".hosted-builder-component-card").filter({ has: page.getByRole("heading", { name: component.componentTitle, exact: true }) });
-      await componentCard.getByRole("link", { name: "Open workspace", exact: true }).click();
+      await openComponentWorkspace(page, origin, shell, component);
       await page.locator(`[data-component-adapter="${component.componentSlug}"]`).waitFor();
       await page.locator(`[data-component-pages="${component.componentSlug}"]`).waitFor();
       assert.equal(new URL(page.url()).hash, `#/books/${shell.bookSlug}/components/${component.componentSlug}`);
@@ -597,7 +597,7 @@ try {
   await page.goto(`${origin}/#/books/ultimate-b2`, { waitUntil: "domcontentloaded" });
   for (const title of ["Students Book", "Workbook", "Grammar Book", "Test Book"]) await page.getByRole("heading", { name: title, exact: true }).waitFor();
   assert.equal(await page.locator(".hosted-builder-component-card[data-available]").count(), 3);
-  for (const title of ["Workbook", "Grammar Book"]) assert.equal(await page.locator(`.hosted-builder-component-card:has-text("${title}") a:has-text("Open workspace")`).count(), 1);
+  for (const [title, count] of [["Students Book", 1], ["Workbook", 1], ["Grammar Book", 0]]) assert.equal(await page.locator(`.hosted-builder-component-card:has-text("${title}") a:has-text("Open workspace")`).count(), count);
   await page.locator('.hosted-builder-component-card:has-text("Test Book") .hosted-builder-unavailable').waitFor();
 
   for (const [componentSlug, title] of [[components.workbook, "Workbook"], [components.grammar, "Grammar Book"]]) {
@@ -724,7 +724,7 @@ try {
     columnTotals: [24, 24],
     overviewBook: "students-book",
     imageHeightParityTolerance: 1,
-    singleImageHeight: 129.25,
+    singleImageHeight: 124.76, // shared row fit accounts for the narrowest single-page card
   }, "Students Book Unit 5 interactive Review", { directory: overviewScreenshotDir, fileName: "students-book-unit-5-overview.png" });
   assert.equal(studentsOverviewMetrics.thumbnailToken, "235px", "Students Book launcher keeps its established thumbnail token");
   await studentsPagesReview.getByRole("button", { name: /^Open Reading, pg 66-67$/ }).click();
@@ -755,18 +755,18 @@ try {
   await studentsPagesReview.getByRole("button", { name: /^Open Unit 7:/ }).click();
   await studentsPagesReview.getByRole("heading", { name: "Unit 7", exact: true }).waitFor();
   const workbookOverviewMetrics = await assertInteractiveOverview(studentsPagesReview, {
-    labels: ["Page 1", "Page 2", "Page 3", "Page 4", "Page 5", "Page 6", "Page 7"],
+    labels: ["pg 1", "pg 2", "pg 3", "pg 4", "pg 5", "pg 6", "pg 7"],
     rows: [1, 1, 1, 2, 2, 2, 2],
     weights: [2, 2, 2, 1, 1, 2, 2],
     spans: [8, 8, 8, 4, 4, 8, 8],
     columnTotals: [24, 24],
     overviewBook: "workbook",
     imageHeightParityTolerance: 2,
-    singleImageHeight: 154,
+    singleImageHeight: 129.25,
     verifyNaturalAspectRatio: true,
   }, "Workbook Unit 7 interactive Review", { directory: overviewScreenshotDir, fileName: "workbook-unit-7-overview.png" });
-  assert.equal(workbookOverviewMetrics.thumbnailToken, "280px", "Workbook launcher uses the larger managed thumbnail token");
-  assert.ok(Math.min(...workbookOverviewMetrics.thumbnailHeights) >= Math.min(...studentsOverviewMetrics.thumbnailHeights) * 1.18, "Workbook launcher thumbnails are at least 18% larger without scaling labels");
+  assert.equal(workbookOverviewMetrics.thumbnailToken, "235px", "Workbook launcher uses the shared Students Book thumbnail token");
+  assert.ok(Math.abs(workbookOverviewMetrics.singleImageHeight - studentsOverviewMetrics.singleImageHeight) < 5, "Workbook and Students Book artwork share the same visual scale, allowing dense-row fit");
   assert.deepEqual([...new Set(workbookOverviewMetrics.titleFontSizes)], [...new Set(studentsOverviewMetrics.titleFontSizes)], "Workbook title font size remains unchanged");
   assert.deepEqual([...new Set(workbookOverviewMetrics.pageLabelFontSizes)], [...new Set(studentsOverviewMetrics.pageLabelFontSizes)], "Workbook page-label font size remains unchanged");
   await studentsPagesReview.getByRole("button", { name: /^Open Workbook Unit 7 page 1,/ }).click();
@@ -777,17 +777,17 @@ try {
   await studentsPagesReview.getByRole("button", { name: /^Open Unit 3:/ }).click();
   await studentsPagesReview.getByRole("heading", { name: "Unit 3", exact: true }).waitFor();
   const grammarOverviewMetrics = await assertInteractiveOverview(studentsPagesReview, {
-    labels: ["Page 1", "Page 2", "Page 3", "Page 4", "Page 5", "Page 6", "Page 7"],
+    labels: ["pg 1", "pg 2", "pg 3", "pg 4", "pg 5", "pg 6", "pg 7"],
     rows: [1, 1, 1, 1, 2, 2, 2],
     weights: [1, 2, 2, 1, 2, 1, 2],
     spans: [4, 8, 8, 4, 8, 4, 8],
     columnTotals: [24, 20],
     overviewBook: "grammar-book",
     imageHeightParityTolerance: 2,
-    singleImageHeight: 154,
+    singleImageHeight: 129.25,
     verifyNaturalAspectRatio: true,
   }, "Grammar Book Unit 3 interactive Review", { directory: overviewScreenshotDir, fileName: "grammar-book-unit-3-overview.png" });
-  assert.equal(grammarOverviewMetrics.thumbnailToken, "280px", "Grammar Book safely shares the managed thumbnail token");
+  assert.equal(grammarOverviewMetrics.thumbnailToken, "235px", "Grammar Book uses the shared Students Book thumbnail token");
   assert.ok(grammarOverviewMetrics.thumbnailHeights.every((height) => Math.abs(height - workbookOverviewMetrics.thumbnailHeights[0]) < 0.1), "Grammar Book safely shares the managed launcher thumbnail size");
   assert.deepEqual([...new Set(grammarOverviewMetrics.titleFontSizes)], [...new Set(studentsOverviewMetrics.titleFontSizes)], "Grammar Book title font size remains unchanged");
   await studentsPagesReview.getByRole("button", { name: /^Open Grammar Book Unit 3 page 2,/ }).click();

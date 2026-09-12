@@ -1,3 +1,4 @@
+import { NATIVE_ACTIVITY_SYSTEM_FONT_FAMILIES } from "./nativeActivityFont.js";
 import { isNativeChildId } from "./nativeChildIdentity.js";
 import { nativeActivityFontFamily } from "./nativeActivityFont.js";
 import { NATIVE_IMAGE_DEFAULT_SURFACE, NATIVE_IMAGE_LIMITS, normalizeNativeImageInteraction } from "./nativeImage.js";
@@ -25,7 +26,7 @@ export const NATIVE_DRAG_DROP_LIMITS = Object.freeze({
 });
 
 export const NATIVE_DRAG_DROP_DEFAULT_SURFACE = NATIVE_IMAGE_DEFAULT_SURFACE;
-export const NATIVE_DRAG_DROP_FONT_FAMILIES = Object.freeze(["Arial", "Georgia", "Verdana"]);
+export const NATIVE_DRAG_DROP_FONT_FAMILIES = NATIVE_ACTIVITY_SYSTEM_FONT_FAMILIES;
 export const NATIVE_DRAG_DROP_DEFAULT_PRESENTATION = Object.freeze({
   bankWordStyle: Object.freeze({ fontFamily: "Arial", fontSize: 18, color: "#172033", fontAssetSlot: null }),
   placedAnswerStyle: Object.freeze({ fontFamily: "Arial", fontSize: 21, color: "#172033", fontAssetSlot: null }),

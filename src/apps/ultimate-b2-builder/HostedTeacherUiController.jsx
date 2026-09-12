@@ -13,7 +13,7 @@ import {
   HOSTED_TEACHER_UI_CATEGORY_LABELS,
   HOSTED_TEACHER_UI_TITLE_BINDING_IDS,
 } from "../../data/ultimate-b2/hostedTeacherUiBindingCatalog.js";
-import { hostedTeacherUiAssetPath, normalizeHostedTeacherUiDocument } from "../../data/ultimate-b2/hostedTeacherUiDocument.js";
+import { HOSTED_OVERVIEW_FONT_FAMILIES, independentHostedPartsAssets, hostedTeacherUiAssetPath, normalizeHostedTeacherUiDocument } from "../../data/ultimate-b2/hostedTeacherUiDocument.js";
 import { resolveUltimateB2BuilderVisualAssetUrl } from "../../data/ultimate-b2/ultimateB2BuilderVisualAssetUrls.js";
 import { ultimateB2TeacherAppAuthoring } from "../../data/ultimate-b2/teacherAppAuthoring.js";
 import { useBuilderReview } from "../book-builder/hosted/HostedPackageReview.jsx";
@@ -86,6 +86,7 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
   const identity = useMemo(() => ({ bookSlug, componentSlug, resource: "ui-controller" }), [bookSlug, componentSlug]);
   const documentIdentity = useMemo(() => ({ packageId: componentSlug }), [componentSlug]);
   const [loaded, setLoaded] = useState(null);
+  const [fontChoice, setFontChoice] = useState(undefined);
   const [changes, setChanges] = useState({});
   const [candidateUploads, setCandidateUploads] = useState({});
   const [previewUrls, setPreviewUrls] = useState({});
@@ -97,7 +98,7 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
   const [viewerRefresh, setViewerRefresh] = useState(0);
   const previewUrlsRef = useRef(previewUrls);
   previewUrlsRef.current = previewUrls;
-  const dirty = Object.keys(changes).length > 0;
+  const dirty = Object.keys(changes).length > 0 || fontChoice !== undefined;
   useEffect(() => {
     registerToolContext("ui", {
       view: "page",
@@ -112,7 +113,7 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
     try {
       const payload = await getBuilderContent(identity);
       setLoaded({ revision: payload.revision, document: normalizeHostedTeacherUiDocument(payload.document, documentIdentity) });
-      if (!preserveChanges) { setChanges({}); setCandidateUploads({}); }
+      if (!preserveChanges) { setChanges({}); setFontChoice(undefined); setCandidateUploads({}); }
       setConflict(false); setStatus(preserveChanges && dirty ? "Unsaved changes" : "Ready");
     } catch (reason) { setError(reason.message); setStatus("Load failed"); }
   };
@@ -125,7 +126,7 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
   }, [dirty]);
   useEffect(() => () => Object.values(previewUrlsRef.current).forEach((url) => URL.revokeObjectURL(url)), []);
 
-  const savedAssets = loaded?.document.assets || {};
+  const savedAssets = useMemo(() => loaded ? independentHostedPartsAssets(loaded.document) : {}, [loaded]);
   const draftAssets = useMemo(() => applyChanges(savedAssets, changes), [savedAssets, changes]);
   const visualBindings = useMemo(() => HOSTED_EDITABLE_UI_BINDINGS.filter(({ category, mediaFamily }) => category !== "sounds" && mediaFamily !== "audio"), []);
   const categories = useMemo(() => [...new Set(visualBindings.map(({ category }) => category))], [visualBindings]);
@@ -188,11 +189,21 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
     if (!dirty || !loaded) return;
     setStatus("Saving"); setError("");
     try {
-      const document = normalizeHostedTeacherUiDocument({ ...loaded.document, assets: draftAssets }, documentIdentity);
+      const independent = loaded.document.independentPartsBackgrounds || ["background.students-book-parts", "background.workbook-parts", "background.grammar-book-parts"].some((id) => Object.hasOwn(changes, id));
+      const assets = { ...draftAssets };
+      // An unrelated legacy edit must not opt into the new parts contract.
+      if (!independent) for (const id of ["background.workbook-parts", "background.grammar-book-parts"]) {
+        if (!Object.hasOwn(loaded.document.assets, id)) delete assets[id];
+      }
+      const candidate = { ...loaded.document, ...(independent ? { independentPartsBackgrounds: true } : {}), assets };
+      const selectedFont = fontChoice ?? loaded.document.overviewCaptionFontFamily;
+      if (selectedFont) candidate.overviewCaptionFontFamily = selectedFont;
+      else delete candidate.overviewCaptionFontFamily;
+      const document = normalizeHostedTeacherUiDocument(candidate, documentIdentity);
       const candidateUploadIds = [...new Set(Object.keys(changes).filter((id) => changes[id]).map((id) => candidateUploads[id]).filter(Boolean))];
       const payload = await saveTeacherUiDocument({ bookSlug, componentSlug, expectedRevision: loaded.revision, clientMutationId: newBuilderClientMutationId(), document, candidateUploadIds });
       Object.values(previewUrls).forEach((url) => URL.revokeObjectURL(url));
-      setPreviewUrls({}); setCandidateUploads({}); setChanges({}); setConflict(false);
+      setPreviewUrls({}); setCandidateUploads({}); setChanges({}); setFontChoice(undefined); setConflict(false);
       setLoaded({ revision: payload.revision, document: normalizeHostedTeacherUiDocument(payload.document, documentIdentity) });
       setStatus("Saved"); setViewerRefresh((value) => value + 1);
     } catch (reason) {
@@ -212,6 +223,7 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
       <nav aria-label="UI Controller sections"><button type="button" aria-current={section === "overview" ? "page" : undefined} onClick={() => setSection("overview")}>Overview</button>{categories.map((id) => <button key={id} type="button" aria-current={section === id ? "page" : undefined} onClick={() => setSection(id)}>{HOSTED_TEACHER_UI_CATEGORY_LABELS[id]}</button>)}</nav>
       <section className="b2-hosted-ui-editor-panel">
         {section === "overview" ? <div className="b2-hosted-ui-overview"><h2>Bound Teacher interface graphics</h2><dl><div><dt>Editable visual bindings</dt><dd>{visualBindings.length}</dd></div><div><dt>Saved overrides</dt><dd>{Object.keys(savedAssets).filter((id) => !id.startsWith("sound.")).length}</dd></div><div><dt>Unsaved changes</dt><dd>{Object.keys(changes).length}</dd></div></dl><p>Stable control IDs, actions, labels, routing, layout, accessibility semantics, and existing sound overrides remain canonical.</p></div> : null}
+        {section === "shell-background" ? <label className="b2-hosted-ui-slot">Page overview captions font family<select aria-label="Page overview captions font family" value={fontChoice ?? loaded.document.overviewCaptionFontFamily ?? ""} onChange={(event) => { setFontChoice(event.target.value); setStatus("Unsaved changes"); }}><option value="">Default (existing appearance)</option>{HOSTED_OVERVIEW_FONT_FAMILIES.map((family) => <option key={family} value={family}>{family}</option>)}</select></label> : null}
         {section === "branding-title" ? <TitleGroup bindings={titleBindings} savedAssets={savedAssets} changes={changes} previewUrls={previewUrls} identity={identity} activity={activity["title-animation"]} onValidate={validateFiles} onRevert={() => revert(HOSTED_TEACHER_UI_TITLE_BINDING_IDS)} /> : null}
         {section !== "overview" ? <div className="b2-hosted-ui-slots">{visibleBindings.map((binding) => <AssetSlot key={binding.id} binding={binding} savedAssets={savedAssets} changes={changes} previewUrls={previewUrls} identity={identity} activity={activity[binding.id]} onReplace={(selected, file) => validateFiles([{ bindingId: selected.id, file }])} onRevert={revert} />)}</div> : null}
       </section>

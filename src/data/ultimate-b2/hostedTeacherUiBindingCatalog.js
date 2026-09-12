@@ -55,6 +55,8 @@ const title = [
 export const HOSTED_EDITABLE_UI_BINDINGS = Object.freeze([
   entry("background.main", "Main classroom background", "shell-background"),
   entry("background.students-book-parts", "Students Book parts background", "shell-background"),
+  entry("background.workbook-parts", "Workbook parts background", "shell-background"),
+  entry("background.grammar-book-parts", "Grammar Book parts background", "shell-background"),
   entry("branding.publisher-logo", "Publisher logo", "branding-title"),
   ...title,
   ...navigation.map(([id, label]) => entry(`navigation.${id}`, label, "navigation-window")),

@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
+import { assertAhemRendering } from "./hosted-native-activity-authoring-helpers.mjs";
 
 const phase = process.argv.includes("--before") ? "before" : "after";
 const directory = path.resolve("artifacts/overview-appearance", phase);
@@ -69,6 +70,34 @@ try {
     const firstId = await page.locator(".teacher-unit-page-card").first().getAttribute("data-page-ids");
     await page.locator(".teacher-unit-page-card").first().click();
     assert.equal(await page.evaluate(() => window.selectedPage), firstId);
+    const fontBytes = Buffer.from(await readFile("tests/fixtures/fonts/Ahem.ttf.base64", "utf8"), "base64");
+    const requests = [];
+    await page.route(/\/preview\/(content|releases)\/.*(?:ui-controller\/font|teacher-ui-font)/, (route) => {
+      const url = new URL(route.request().url()); requests.push(url.pathname);
+      assert.ok(url.searchParams.has("previewAuthorization"));
+      return route.fulfill({ contentType: "font/ttf", body: fontBytes });
+    });
+    for (const mode of ["builder-preview", "release-preview"]) for (const [index, bookSlug] of ["ultimate-b1", "ultimate-b1-plus", "ultimate-b2"].entries()) {
+      const assetId = `12345678-1234-4567-89ab-00000000000${index}`;
+      const reference = { assetId, checksumSha256: "b719ecb31c5b21fc573c03f6421c74ac63c271a5a3ff841e34f9705fb94b8448", role: "activity_font", slot: `font-${assetId.replaceAll("-", "")}` };
+      const ui = { schemaVersion: "1.0", packageId: `${bookSlug}-students-book`, assets: {}, overviewCaptionFontAsset: reference };
+      const runtimeContext = { kind: mode, authorization: `${mode === "builder-preview" ? "v2" : "v3"}.YQ.${"a".repeat(43)}`, releaseId: "12345678-1234-4567-89ab-000000000099" };
+      for (const component of ["students-book", "workbook", "grammar-book"]) {
+        await page.evaluate((input) => window.renderOverview(input), { bookSlug, component, ui, runtimeContext });
+        await expect.poll(() => page.locator(".teacher-unit-page-copy b").first().evaluate((node) => getComputedStyle(node).fontFamily)).toContain(assetId.replaceAll("-", ""));
+        for (const tag of ["strong", "b"]) await assertAhemRendering(page.locator(`.teacher-unit-page-copy ${tag}`).first(), `${mode}/${bookSlug}/${component}/${tag}`);
+        assert.equal(await page.locator(".classroom-teaching-toolbar").evaluate((node) => getComputedStyle(node).fontFamily), toolbarFont);
+      }
+      await page.screenshot({ path: path.join(directory, `${bookSlug}-${mode}-managed-font.png`) });
+      await page.evaluate(() => window.renderOverview({ bookSlug: "ultimate-b1" }));
+      await expect.poll(() => page.locator(".teacher-unit-page-copy b").first().evaluate((node) => getComputedStyle(node).fontFamily)).not.toContain("hh-native-font");
+    }
+    assert.ok(requests.some((url) => url.endsWith("/ui-controller/font")) && requests.some((url) => url.endsWith("/teacher-ui-font")));
+    assert.equal(requests.some((url) => url.includes("/builder/api/")), false);
+    await page.unroute(/\/preview\/(content|releases)\/.*(?:ui-controller\/font|teacher-ui-font)/);
+    await page.route("**/ui-controller/font?**", (route) => route.fulfill({ status: 404, body: "" }));
+    await page.evaluate(() => window.renderOverview({ ui: { schemaVersion: "1.0", packageId: "ultimate-b1-students-book", assets: {}, overviewCaptionFontAsset: { assetId: "12345678-1234-4567-89ab-000000000098", checksumSha256: "a".repeat(64), role: "activity_font", slot: "font-123456781234456789ab000000000098" } }, runtimeContext: { kind: "builder-preview", authorization: `v2.YQ.${"b".repeat(43)}` } }));
+    await expect.poll(() => page.locator(".teacher-unit-page-copy b").first().evaluate((node) => getComputedStyle(node).fontFamily)).not.toContain("hh-native-font");
   }
   assert.deepEqual(errors, []);
 } finally {

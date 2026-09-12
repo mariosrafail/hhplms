@@ -61,7 +61,7 @@ test("runtime readiness requires expected history but allows forward-compatible 
   }
 
   const optional = runtimeSchemaContract.expectedMigrations.filter((entry) => entry.featureOptional).map((entry) => entry.filename);
-  assert.deepEqual(optional, ["062_b1_managed_publication.sql", "063_b1_immutable_package_ui.sql", "064_teacher_overview_ui.sql"]);
+  assert.deepEqual(optional, ["062_b1_managed_publication.sql", "063_b1_immutable_package_ui.sql", "064_teacher_overview_ui.sql", "065_teacher_overview_managed_font.sql"]);
   assert.equal((await checkRuntimeSchemaReadiness(fakeSql(readyState({ history: readyState().history.filter((row) => !optional.includes(row.filename)) })))).ready, true);
   assert.equal((await checkRuntimeSchemaReadiness(fakeSql(readyState({ history: readyState().history.map((row) => optional.includes(row.filename) ? { ...row, checksum_sha256: "0".repeat(64) } : row) })))).ready, false);
 

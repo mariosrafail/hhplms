@@ -35,13 +35,18 @@ import { managedPublicationComponentsV1, findManagedPublicationComponentV1 } fro
 import { managedUiV2Components, compileManagedUiReleaseV2, verifyManagedUiReleaseV2 } from "./_builder-managed-ui-publication-compiler.js";
 import { collectManagedUiPublicationSources } from "./_builder-managed-ui-publication-sources.js";
 import { collectManagedPublicationSources } from "./_builder-publication-store.js";
+import { overviewCaptionFontManifest } from "../../../src/data/ultimate-b2/hostedTeacherUiDocument.js";
 
 function expectedAssetManifest(publicProjection, teacherProjection) {
-  return [
+  const assets = [
     ...publicProjection.assets,
     ...[...new Map(Object.values(teacherProjection.nativeActivities || {}).flatMap((entry) => nativeTeacherAnswerAssetDescriptors(entry.document)).map((asset) => [`${asset.sha256}.${asset.extension}.${asset.role}`, asset])).values()],
     ...Object.values(teacherProjection.ui.assets).map((asset) => ({ sha256: asset.sha256, extension: asset.extension, mediaType: asset.mediaType, role: COMPONENT_PUBLICATION_ASSET_ROLES.TEACHER_UI })),
-  ].sort((left, right) => `${left.sha256}.${left.extension}.${left.role}`.localeCompare(`${right.sha256}.${right.extension}.${right.role}`));
+    ...overviewCaptionFontManifest(teacherProjection.ui),
+  ];
+  const manifest = teacherProjection.ui.overviewCaptionFontAsset
+    ? [...new Map(assets.map((asset) => [`${asset.sha256}.${asset.extension}.${asset.role}`, asset])).values()] : assets;
+  return manifest.sort((left, right) => `${left.sha256}.${left.extension}.${left.role}`.localeCompare(`${right.sha256}.${right.extension}.${right.role}`));
 }
 
 function verifyManifest(release, expected) {

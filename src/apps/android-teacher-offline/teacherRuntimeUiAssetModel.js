@@ -1,7 +1,7 @@
 import { hostedTeacherUiAssetPath, normalizeHostedTeacherUiPreview } from "../../data/ultimate-b2/hostedTeacherUiDocument.js";
-import { HOSTED_VIEWER_RUNTIME_MODES, hostedReleasePath, resolveHostedViewerRuntimeContext } from "./hostedReleasePreview.js";
+import { HOSTED_VIEWER_RUNTIME_MODES, authorizedHostedPreviewPath, hostedReleasePath, resolveHostedViewerRuntimeContext } from "./hostedReleasePreview.js";
 
-export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAssetUrl, hostedPreview = null, runtimeContext = resolveHostedViewerRuntimeContext(), identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" } }) {
+export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAssetUrl, resolveFrozenFontUrl = null, hostedPreview = null, runtimeContext = resolveHostedViewerRuntimeContext(), identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" } }) {
   if (!authoring || typeof resolveCanonicalAssetUrl !== "function") throw new TypeError("Teacher runtime UI asset factory requires canonical authoring and a URL resolver.");
   const preview = hostedPreview ? normalizeHostedTeacherUiPreview(hostedPreview, { packageId: identity.componentSlug }) : null;
   const overrides = preview?.assets || {};
@@ -19,6 +19,12 @@ export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAs
   })));
   const classroom = Object.freeze({
     overviewCaptionFontFamily: preview?.overviewCaptionFontFamily || null,
+    overviewCaptionFontAsset: preview?.overviewCaptionFontAsset || null,
+    overviewCaptionFontUrl: !preview?.overviewCaptionFontAsset ? null
+      : import.meta.env?.VITE_APP_MODE === "android-teacher-offline" ? resolveFrozenFontUrl?.(preview.overviewCaptionFontAsset) || null
+        : context.kind === HOSTED_VIEWER_RUNTIME_MODES.RELEASE_PREVIEW ? hostedReleasePath(context, identity, "teacher-ui-font")
+        : context.kind === HOSTED_VIEWER_RUNTIME_MODES.BUILDER_PREVIEW ? authorizedHostedPreviewPath(`/preview/content/books/${identity.bookSlug}/components/${identity.componentSlug}/ui-controller/font`, context.authorization)
+          : resolveFrozenFontUrl?.(preview.overviewCaptionFontAsset) || null,
     backgrounds: Object.freeze({
       classroomGlacier: url(authoring.shell.background),
       studentsBookPartsBackground: url(authoring.shell.studentsBookPartsBackground),

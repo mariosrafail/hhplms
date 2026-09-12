@@ -17,6 +17,7 @@ import { materializeCanonicalReleaseAssets, canonicalPublicationAssetFetcher } f
 import { ultimateB2PublicationCanonicalSeeds } from "./_builder-publication-compiler.js";
 import { createComponentRelease, loadComponentPublicationMutation, loadComponentPublicationStatus, loadComponentRelease, loadComponentReleaseAssetPin, publicationV2DatabaseReady, publishComponentRelease } from "./_builder-publication-store.js";
 import { publicationV3DatabaseReady } from "./_builder-publication-store.js";
+import { overviewFontDatabaseReady, requiresOverviewFontSchema, deliverOverviewFont } from "./_builder-overview-font.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256 = /^[a-f0-9]{64}$/;
@@ -27,7 +28,7 @@ function route(event) {
   const pathname = String(event.path || "").split("?")[0];
   let match = pathname.match(/(?:\/builder\/api\/publication|\/\.netlify\/functions\/builder-publication)\/books\/([^/]+)\/components\/([^/]+)(?:\/(prepare|publish))?\/?$/);
   if (match) return { boundary: "builder", bookSlug: decodeURIComponent(match[1]), componentSlug: decodeURIComponent(match[2]), action: match[3] || "status" };
-  match = pathname.match(/(?:\/builder\/preview\/releases|\/\.netlify\/functions\/builder-publication\/preview\/releases)\/books\/([^/]+)\/components\/([^/]+)\/([0-9a-f-]+)\/(public|teacher-ui|teacher-solution|native-teacher|native-answer|assets)(?:\/([^/]+))?\/?$/i);
+  match = pathname.match(/(?:\/builder\/preview\/releases|\/\.netlify\/functions\/builder-publication\/preview\/releases)\/books\/([^/]+)\/components\/([^/]+)\/([0-9a-f-]+)\/(public|teacher-ui|teacher-ui-font|teacher-solution|native-teacher|native-answer|assets)(?:\/([^/]+))?\/?$/i);
   return match ? { boundary: "preview", bookSlug: decodeURIComponent(match[1]), componentSlug: decodeURIComponent(match[2]), releaseId: match[3], action: match[4], activityId: decodeURIComponent(match[5] || "") } : null;
 }
 
@@ -93,6 +94,7 @@ export function createBuilderPublicationHandler(overrides = {}) {
     loadMutation: overrides.loadMutation || loadComponentPublicationMutation,
     v2Ready: overrides.v2Ready || (overrides.compile ? async () => true : publicationV2DatabaseReady),
     v3Ready: overrides.v3Ready || publicationV3DatabaseReady,
+    overviewFontReady: overrides.overviewFontReady || overviewFontDatabaseReady,
     materialize: overrides.materialize || materializeNativeReleaseAssets,
     materializeCanonical: overrides.materializeCanonical || materializeCanonicalReleaseAssets,
     canonicalFetch: overrides.canonicalFetch || canonicalPublicationAssetFetcher,
@@ -106,14 +108,19 @@ export function createBuilderPublicationHandler(overrides = {}) {
     try {
       const sql = dependencies.getDatabase();
       if (parsedRoute.boundary === "preview") {
-        const methodAllowed = event.httpMethod === "GET" || (["assets", "native-answer"].includes(parsedRoute.action) && event.httpMethod === "HEAD");
+        const methodAllowed = event.httpMethod === "GET" || (["assets", "native-answer", "teacher-ui-font"].includes(parsedRoute.action) && event.httpMethod === "HEAD");
         if (!methodAllowed || !UUID.test(parsedRoute.releaseId)) return json(methodAllowed ? 404 : 405, { error: "release_not_found" });
-        const previewAction = { public: "release-public", assets: "release-asset", "teacher-ui": "release-teacher-ui", "teacher-solution": "release-teacher-solution", "native-teacher": "release-native-teacher", "native-answer": "release-native-teacher" }[parsedRoute.action];
+        const previewAction = { public: "release-public", assets: "release-asset", "teacher-ui": "release-teacher-ui", "teacher-ui-font": "release-teacher-ui", "teacher-solution": "release-teacher-solution", "native-teacher": "release-native-teacher", "native-answer": "release-native-teacher" }[parsedRoute.action];
         const authorized = await dependencies.authorizePreview(event, sql, { action: previewAction, bookSlug: parsedRoute.bookSlug, componentSlug: parsedRoute.componentSlug, releaseId: parsedRoute.releaseId, ...(["teacher-solution", "native-teacher", "native-answer"].includes(parsedRoute.action) ? { activityId: parsedRoute.activityId } : {}) });
         if (!authorized) return json(401, { error: "Unauthorized" });
         const release = await dependencies.loadRelease(sql, parsedRoute);
         if (!release) return json(404, { error: "release_not_found" });
         let verified; try { verified = verifyImmutableRelease(release); } catch { return json(409, { error: "release_integrity_failed" }); }
+        if (parsedRoute.action === "teacher-ui-font") {
+          try { return await deliverOverviewFont({ release, verified, method: event.httpMethod, storage: dependencies.storage(),
+            loadPin: (asset) => dependencies.loadAssetPin(sql, { ...parsedRoute, ...asset }) }); }
+          catch { return json(404, { error: "overview_font_not_found" }, { "Cache-Control": "private, no-store" }); }
+        }
         if (parsedRoute.action === "native-answer") {
           try { return await deliverNativeTeacherAnswer({ release, verified, activityId: parsedRoute.activityId, sectionId: event.queryStringParameters?.sectionId || null, method: event.httpMethod,
             storage: dependencies.storage(), loadPin: (asset) => dependencies.loadAssetPin(sql, { ...parsedRoute, ...asset }) }); }
@@ -175,6 +182,7 @@ export function createBuilderPublicationHandler(overrides = {}) {
         if (!builderClientMutationIdPattern.test(parsed.value.clientMutationId) || typeof parsed.value.releaseNote !== "string" || parsed.value.releaseNote.length > 240) return json(400, { error: "invalid_request" });
         if (configuredCompiler.releaseSchemaVersion === "2.0" && !await dependencies.v2Ready(sql)) return json(409, { error: "publication_schema_unavailable" });
         const compiled = await collectAndCompile();
+        if (requiresOverviewFontSchema(compiled.teacherProjection?.ui) && !await dependencies.overviewFontReady(sql)) return json(409, { error: "overview_font_schema_unavailable" });
         const storage = dependencies.storage();
         if (compiled.canonicalAssetSources?.length) await dependencies.materializeCanonical(storage, { ...parsedRoute, ...compiled, fetchAsset: dependencies.canonicalFetch(context) });
         await dependencies.materialize(storage, { bookSlug: parsedRoute.bookSlug, componentSlug: parsedRoute.componentSlug, nativeAssetSources: compiled.nativeAssetSources || [] });
@@ -190,6 +198,7 @@ export function createBuilderPublicationHandler(overrides = {}) {
         if (!UUID.test(parsed.value.releaseId) || !Number.isSafeInteger(parsed.value.expectedHeadRevision) || parsed.value.expectedHeadRevision < 0 || !builderClientMutationIdPattern.test(parsed.value.clientMutationId)) return json(400, { error: "invalid_request" });
         const candidate = await dependencies.loadRelease(sql, { ...parsedRoute, releaseId: parsed.value.releaseId });
         if (!candidate) return json(404, { error: "release_not_found" });
+        if (requiresOverviewFontSchema(candidate.teacher_projection?.ui) && !await dependencies.overviewFontReady(sql)) return json(409, { error: "overview_font_schema_unavailable" });
         try { verifyImmutableRelease(candidate); } catch { return json(409, { error: "release_integrity_failed" }); }
         if (candidate.compiler_id !== component.publication.compilerId || candidate.release_schema_version !== configuredCompiler.releaseSchemaVersion) return json(409, { error: "publication_compiler_mismatch" });
         if (configuredCompiler.releaseSchemaVersion === "2.0" && !await dependencies.v2Ready(sql)) return json(409, { error: "publication_schema_unavailable" });

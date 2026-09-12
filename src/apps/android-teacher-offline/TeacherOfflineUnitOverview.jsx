@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
+import { useNativeActivityFonts } from "../../components/native-activity-assets/useNativeActivityFonts.js";
 import { useOverviewThumbnailSizing } from "./useOverviewThumbnailSizing.js";
 import { useTeacherRuntimeUiAssets } from "./legacyClassroomAssets.js";
 import ClassroomStageTransform from "./ClassroomStageTransform.jsx";
@@ -9,6 +10,11 @@ import { buildTeacherUnitOverviewEntries } from "./studentsBookOverviewLayout.js
 
 export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackToLibrary, selectedBookId = "students-book", onBookSwitch, unavailableBookIds, unavailableBookMessages, unavailableBookLabels, componentIdentity }) {
   const { classroom } = useTeacherRuntimeUiAssets();
+  const fontDocument = useMemo(() => ({ assets: classroom.overviewCaptionFontAsset && classroom.overviewCaptionFontUrl ? [classroom.overviewCaptionFontAsset] : [] }), [classroom.overviewCaptionFontAsset, classroom.overviewCaptionFontUrl]);
+  const fontUrl = useCallback(() => classroom.overviewCaptionFontUrl, [classroom.overviewCaptionFontUrl]);
+  const fontState = useNativeActivityFonts(fontDocument, fontUrl);
+  const loadedFont = fontState.fonts.find((font) => font.status === "loaded");
+  const captionFont = loadedFont ? `"${loadedFont.alias}", Arial, sans-serif` : classroom.overviewCaptionFontFamily || undefined;
   const backgroundKey = { "students-book": "studentsBookPartsBackground", workbook: "workbookPartsBackground", "grammar-book": "grammarBookPartsBackground" }[selectedBookId];
   const entries = buildTeacherUnitOverviewEntries({ unit, selectedBookId, componentIdentity });
   const panelRef = useRef(null);
@@ -17,7 +23,7 @@ export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackT
   const surfaceKey = `${selectedBookId}:overview:unit-${unitNumber}`;
 
   return (
-    <section className="teacher-offline-pages teacher-offline-unit-overview-screen" aria-label={`Unit ${unit.number} page overview`} style={{ "--overview-parts-background": `url(${classroom.backgrounds[backgroundKey] || classroom.backgrounds.studentsBookPartsBackground})`, "--overview-caption-font": classroom.overviewCaptionFontFamily || undefined }}>
+    <section className="teacher-offline-pages teacher-offline-unit-overview-screen" aria-label={`Unit ${unit.number} page overview`} style={{ "--overview-parts-background": `url(${classroom.backgrounds[backgroundKey] || classroom.backgrounds.studentsBookPartsBackground})`, "--overview-caption-font": captionFont }}>
       <header className="legacy-page-heading legacy-overview-heading">
         <div aria-hidden="true" />
         <div><h2>Unit {unit.number}</h2></div>

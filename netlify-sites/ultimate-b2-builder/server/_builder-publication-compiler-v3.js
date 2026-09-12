@@ -7,6 +7,7 @@ import { projectComponentActivityOrder } from "../../../src/data/native-activiti
 import { builderDocumentSha256, stableBuilderJson } from "./_builder-content-security.js";
 import { resolveStudentsBookPageAuthority, studentsBookPageScope } from "./_students-book-page-authority.js";
 import { collectNativeEntriesForPublication, validateNativePublicationAssetRows, validateUnitExtraAssetRows, NativePublicationError } from "./_builder-publication-compiler-v2.js";
+import { overviewFontSources, mergeOverviewFontSources } from "./_builder-overview-font.js";
 
 export const studentsBookV3Compatibility = builderDocumentSha256(STUDENTS_BOOK_V3_COMPATIBILITY);
 const extensionByType = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
@@ -84,7 +85,8 @@ export function compileStudentsBookReleaseV3(sources) {
   const ui = projectHostedTeacherUiPreview(uiDocument);
   const publicNative = Object.fromEntries(selected.map(([id, entry]) => [id, { kind: entry.publicDocument.kind, document: entry.publicDocument }]));
   const teacherNative = Object.fromEntries(selected.map(([id, entry]) => [id, { kind: entry.teacherDocument.kind, document: entry.teacherDocument }]));
-  const nativeAssetSources = [...new Map([...pageLibrary.nativeAssetSources, ...nativeAssets, ...extrasAssets].map((entry) => [assetIdentity(entry.descriptor), entry])).values()];
+  const activitySources = [...new Map([...pageLibrary.nativeAssetSources, ...nativeAssets, ...extrasAssets].map((entry) => [assetIdentity(entry.descriptor), entry])).values()];
+  const nativeAssetSources = mergeOverviewFontSources(activitySources, overviewFontSources(sources, ui, studentsBookPageScope));
   const allAssets = sortedAssets([...nativeAssetSources.map((entry) => entry.descriptor), ...pageLibrary.canonicalAssetSources.map((entry) => entry.descriptor), ...Object.values(ui.assets).map((asset) => ({ sha256: asset.sha256, extension: asset.extension, mediaType: asset.mediaType, role: "teacher_ui" }))]);
   const sourceSnapshot = normalizeStudentsBookV3Sources({
     schemaVersion: STUDENTS_BOOK_V3_SCHEMA,
@@ -96,7 +98,7 @@ export function compileStudentsBookReleaseV3(sources) {
   });
   const publicProjection = normalizeStudentsBookV3Public({ ...studentsBookPageScope, schemaVersion: STUDENTS_BOOK_V3_SCHEMA, compatibility: studentsBookV3Compatibility, units: pageLibrary.units, pages: pageLibrary.pages, hotspots, nativeActivities: publicNative,
     activityOrder: projectComponentActivityOrder(index.activities.map((entry) => ({ ...entry, pageId: entry.placement.pageId })), new Set(Object.keys(publicNative))), unitExtras,
-    assets: allAssets.filter((asset) => !["native_teacher_answer", "teacher_ui"].includes(asset.role)),
+    assets: allAssets.filter((asset) => !["native_teacher_answer", "teacher_ui"].includes(asset.role) && (asset.role !== "activity_font" || activitySources.some((entry) => assetIdentity(entry.descriptor) === assetIdentity(asset)))),
   }, studentsBookV3Compatibility);
   const teacherProjection = normalizeStudentsBookV3Teacher({ ...studentsBookPageScope, schemaVersion: STUDENTS_BOOK_V3_SCHEMA, nativeActivities: teacherNative, ui }, publicProjection);
   const value = { compatibility: studentsBookV3Compatibility, sourceSnapshot, publicProjection, teacherProjection };

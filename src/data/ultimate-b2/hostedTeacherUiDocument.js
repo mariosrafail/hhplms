@@ -1,4 +1,5 @@
 import { NATIVE_ACTIVITY_SYSTEM_FONT_FAMILIES } from "../native-activities/nativeActivityFont.js";
+import { normalizeNativeManagedAssetReference } from "../native-activities/nativeActivityPublic.js";
 import {
   HOSTED_EDITABLE_UI_BINDINGS_BY_ID,
   HOSTED_TEACHER_UI_MEDIA_POLICIES,
@@ -9,9 +10,25 @@ import {
 
 export const HOSTED_OVERVIEW_FONT_FAMILIES = NATIVE_ACTIVITY_SYSTEM_FONT_FAMILIES;
 
+export function normalizeOverviewCaptionFontAsset(value) {
+  const reference = normalizeNativeManagedAssetReference(value);
+  if (reference.role !== "activity_font" || reference.slot !== `font-${reference.assetId.replaceAll("-", "")}`) throw new Error("Invalid overview caption font reference.");
+  return Object.freeze(reference);
+}
+
+export function overviewCaptionFontManifest(ui) {
+  if (!ui?.overviewCaptionFontAsset) return [];
+  const reference = normalizeOverviewCaptionFontAsset(ui.overviewCaptionFontAsset);
+  return [{ sha256: reference.checksumSha256, extension: "ttf", mediaType: "font/ttf", role: "activity_font" }];
+}
+
 function optionalSettings(candidate) {
   const settings = {};
   if (!candidate || typeof candidate !== "object") return settings;
+  if (Object.hasOwn(candidate, "overviewCaptionFontAsset")) {
+    if (Object.hasOwn(candidate, "overviewCaptionFontFamily")) throw new Error("Overview font selections conflict.");
+    settings.overviewCaptionFontAsset = normalizeOverviewCaptionFontAsset(candidate.overviewCaptionFontAsset);
+  }
   if (Object.hasOwn(candidate, "overviewCaptionFontFamily")) {
     if (!HOSTED_OVERVIEW_FONT_FAMILIES.includes(candidate.overviewCaptionFontFamily)) throw new Error("Invalid overview caption font family.");
     settings.overviewCaptionFontFamily = candidate.overviewCaptionFontFamily;

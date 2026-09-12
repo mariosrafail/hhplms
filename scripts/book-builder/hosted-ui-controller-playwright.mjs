@@ -226,7 +226,7 @@ try {
   assert.equal(await page.locator(".hosted-viewer-preview iframe").count(), 1);
   await editor.getByRole("button", { name: "Shell / Background", exact: true }).click();
   assert.deepEqual(await editor.locator('[data-binding-id^="background."]').evaluateAll((slots) => slots.map((slot) => slot.dataset.bindingId)), ["background.main", "background.students-book-parts", "background.workbook-parts", "background.grammar-book-parts"]);
-  await editor.getByLabel("Page overview captions font family", { exact: true }).selectOption("Georgia");
+  await editor.getByLabel("Page overview captions font", { exact: true }).selectOption("Georgia");
   const canonicalThumbnail = editor.locator('[data-binding-id="background.main"] img');
   await canonicalThumbnail.waitFor();
   await canonicalThumbnail.evaluate((image) => image.decode());
@@ -273,7 +273,7 @@ try {
   assert.equal(Object.hasOwn(saved.document.assets, "background.workbook-parts"), false);
   assert.equal(Object.hasOwn(saved.document.assets, "background.grammar-book-parts"), false);
   await editor.getByRole("button", { name: "Shell / Background", exact: true }).click();
-  assert.equal(await editor.getByLabel("Page overview captions font family", { exact: true }).inputValue(), "Georgia");
+  assert.equal(await editor.getByLabel("Page overview captions font", { exact: true }).inputValue(), "Georgia");
   await editor.getByRole("button", { name: "Supporting UI", exact: true }).click();
   const invalidSlot = page.locator('[data-binding-id="control.activity-hotspot"]');
   await invalidSlot.locator('input[type="file"]').setInputFiles(fixture(invalidHostedTeacherUiPngFixture.name, invalidHostedTeacherUiPngFixture));

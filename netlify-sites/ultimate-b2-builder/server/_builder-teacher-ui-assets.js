@@ -15,6 +15,7 @@ import {
 import { getBuilderSql, json, requireBuilderOrigin, requireBuilderUser } from "./_builder-auth.js";
 import { resolveBuilderPackageUi } from "./_builder-component-registry.js";
 import { overviewUiDatabaseReady, requiresOverviewUiSchema } from "./_builder-overview-ui-capability.js";
+import { collectOverviewFont, overviewFontDatabaseReady, requiresOverviewFontSchema } from "./_builder-overview-font.js";
 import { builderClientMutationIdPattern, builderDocumentSha256, stableBuilderJson } from "./_builder-content-security.js";
 import { resolveBuilderContentResource } from "./_builder-content-registry.js";
 import { loadBuilderComponentDocument, saveBuilderComponentDocument } from "./_builder-content-store.js";
@@ -170,6 +171,8 @@ export function createBuilderTeacherUiAssetsHandler(overrides = {}) {
     loadDocument: overrides.loadDocument || loadBuilderComponentDocument,
     saveDocument: overrides.saveDocument || saveBuilderComponentDocument,
     overviewUiReady: overrides.overviewUiReady || overviewUiDatabaseReady,
+    overviewFontReady: overrides.overviewFontReady || overviewFontDatabaseReady,
+    collectOverviewFont: overrides.collectOverviewFont || collectOverviewFont,
     storage: overrides.storage || (() => createBookAssetStorage()),
     prepare: overrides.prepare || prepareTeacherUiAssetUploadSession,
     claim: overrides.claim || claimTeacherUiAssetUploadSession,
@@ -293,6 +296,11 @@ export function createBuilderTeacherUiAssetsHandler(overrides = {}) {
         if (!Array.isArray(parsed.value.candidateUploadIds) || new Set(parsed.value.candidateUploadIds).size !== parsed.value.candidateUploadIds.length || parsed.value.candidateUploadIds.some((id) => !uuidV4Pattern.test(String(id)))) return uiJson(400, { error: "invalid_candidate_upload_ids" });
         let document;
         try { document = resource.validate(parsed.value.document); } catch (error) { return uiJson(400, { error: "invalid_document", detail: String(error.message).slice(0, 240) }); }
+        if (requiresOverviewFontSchema(document)) {
+          if (!await dependencies.overviewFontReady(sql)) return uiJson(409, { error: "overview_font_schema_unavailable" });
+          try { await dependencies.collectOverviewFont(sql, document, identity); }
+          catch { return uiJson(400, { error: "invalid_overview_font_reference" }); }
+        }
         if (requiresOverviewUiSchema(document) && !await dependencies.overviewUiReady(sql)) {
           return uiJson(409, { error: "publication_ui_schema_unavailable" });
         }

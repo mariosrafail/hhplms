@@ -130,6 +130,8 @@ jobs:
       - run: npm run build:netlify:ultimate-b2-interactive
       - name: Verify B1 and B1 Plus publication through Builder and entitled LMS
         run: npm run test:b1-publication
+      - name: Verify managed overview font library interoperability and rendering
+        run: npm run test:builder:overview-fonts && node scripts/book-builder/overview-appearance-playwright.mjs
       - name: Verify current Unit Extras editor against isolated PostgreSQL
         run: npm run test:builder:extras
       - name: Remove temporary integration schemas

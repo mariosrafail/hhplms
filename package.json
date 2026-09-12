@@ -84,6 +84,7 @@
     "test:builder:hosted-native-activity": "npm run build:netlify:ultimate-b2-interactive && node scripts/book-builder/hosted-native-activity-playwright.mjs",
     "test:builder:hosted-open-response-import": "node scripts/book-builder/hosted-open-response-import-playwright.mjs",
     "test:builder:hosted-ui-controller": "node scripts/book-builder/hosted-ui-controller-playwright.mjs",
+    "test:builder:overview-fonts": "node scripts/book-builder/overview-managed-font-playwright.mjs",
     "test:builder:multi-book": "node scripts/book-builder/multi-book-component-playwright.mjs",
     "test:builder:multi-component-authoring": "node scripts/book-builder/multi-book-component-playwright.mjs",
     "test:builder:extras": "node scripts/book-builder/students-book-extras-playwright.mjs",

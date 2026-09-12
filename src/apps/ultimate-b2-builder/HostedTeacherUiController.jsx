@@ -17,6 +17,10 @@ import { HOSTED_OVERVIEW_FONT_FAMILIES, independentHostedPartsAssets, hostedTeac
 import { resolveUltimateB2BuilderVisualAssetUrl } from "../../data/ultimate-b2/ultimateB2BuilderVisualAssetUrls.js";
 import { ultimateB2TeacherAppAuthoring } from "../../data/ultimate-b2/teacherAppAuthoring.js";
 import { useBuilderReview } from "../book-builder/hosted/HostedPackageReview.jsx";
+import { findManagedHostedPackage } from "../../data/managedHostedComponentCatalog.js";
+import { normalizeOverviewCaptionFontAsset } from "../../data/ultimate-b2/hostedTeacherUiDocument.js";
+import { NativeActivityFontControls } from "../book-builder/hosted/NativeCompleteSentencesFontControls.jsx";
+import { useBuilderFontLibrary } from "../book-builder/hosted/useBuilderFontLibrary.js";
 
 const titleIds = new Set(HOSTED_TEACHER_UI_TITLE_BINDING_IDS);
 
@@ -82,6 +86,11 @@ function TitleGroup({ bindings, savedAssets, changes, previewUrls, identity, act
 }
 
 export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentSlug = "ultimate-b2-students-book", bookTitle = "Ultimate B2" }) {
+  const owner = findManagedHostedPackage(bookSlug)?.uiOwnerComponentSlug || componentSlug;
+  return <TeacherUiController key={`${bookSlug}/${owner}`} bookSlug={bookSlug} componentSlug={owner} bookTitle={bookTitle} />;
+}
+
+function TeacherUiController({ bookSlug, componentSlug, bookTitle }) {
   const { registerToolContext } = useBuilderReview();
   const identity = useMemo(() => ({ bookSlug, componentSlug, resource: "ui-controller" }), [bookSlug, componentSlug]);
   const documentIdentity = useMemo(() => ({ packageId: componentSlug }), [componentSlug]);
@@ -96,6 +105,8 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
   const [error, setError] = useState("");
   const [conflict, setConflict] = useState(false);
   const [viewerRefresh, setViewerRefresh] = useState(0);
+  const [fontUploading, setFontUploading] = useState(false);
+  const { fonts, recordUploadedFont } = useBuilderFontLibrary({ bookSlug, componentSlug, onMessage: setError });
   const previewUrlsRef = useRef(previewUrls);
   previewUrlsRef.current = previewUrls;
   const dirty = Object.keys(changes).length > 0 || fontChoice !== undefined;
@@ -186,7 +197,7 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
   };
 
   const save = async () => {
-    if (!dirty || !loaded) return;
+    if (!dirty || !loaded || fontUploading) return;
     setStatus("Saving"); setError("");
     try {
       const independent = loaded.document.independentPartsBackgrounds || ["background.students-book-parts", "background.workbook-parts", "background.grammar-book-parts"].some((id) => Object.hasOwn(changes, id));
@@ -196,9 +207,12 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
         if (!Object.hasOwn(loaded.document.assets, id)) delete assets[id];
       }
       const candidate = { ...loaded.document, ...(independent ? { independentPartsBackgrounds: true } : {}), assets };
-      const selectedFont = fontChoice ?? loaded.document.overviewCaptionFontFamily;
-      if (selectedFont) candidate.overviewCaptionFontFamily = selectedFont;
-      else delete candidate.overviewCaptionFontFamily;
+      if (fontChoice !== undefined) {
+        delete candidate.overviewCaptionFontFamily;
+        delete candidate.overviewCaptionFontAsset;
+        if (typeof fontChoice === "string" && fontChoice) candidate.overviewCaptionFontFamily = fontChoice;
+        else if (fontChoice) candidate.overviewCaptionFontAsset = fontChoice;
+      }
       const document = normalizeHostedTeacherUiDocument(candidate, documentIdentity);
       const candidateUploadIds = [...new Set(Object.keys(changes).filter((id) => changes[id]).map((id) => candidateUploads[id]).filter(Boolean))];
       const payload = await saveTeacherUiDocument({ bookSlug, componentSlug, expectedRevision: loaded.revision, clientMutationId: newBuilderClientMutationId(), document, candidateUploadIds });
@@ -216,14 +230,18 @@ export function HostedTeacherUiController({ bookSlug = "ultimate-b2", componentS
   if (!loaded) return <main className="b2-teacher-app-builder b2-hosted-ui-editor"><p role="status">{error || status}</p></main>;
   const titleBindings = visualBindings.filter(({ id }) => titleIds.has(id));
   const visibleBindings = visualBindings.filter(({ category, id }) => category === section && !titleIds.has(id));
+  const selectedFont = fontChoice === undefined ? loaded.document.overviewCaptionFontAsset || loaded.document.overviewCaptionFontFamily : fontChoice;
 
   return <main className="b2-teacher-app-builder b2-hosted-ui-editor">
-    <header className="b2-teacher-app-header"><div><span>{bookTitle} package tools</span><h1>Page UI Controller</h1><p>Edit approved shared graphics for stable, runtime-wired Teacher interface bindings across all package components.</p></div><div className="b2-hosted-ui-save-state" role="status"><strong>{status}</strong><span>Revision {loaded.revision}</span>{error ? <small>{error}</small> : null}<button type="button" onClick={save} disabled={!dirty || status === "Saving"}><Save size={16} /> Save UI draft</button>{conflict ? <button type="button" onClick={() => load({ preserveChanges: true })}>Reload latest and keep local choices</button> : null}</div></header>
+    <header className="b2-teacher-app-header"><div><span>{bookTitle} package tools</span><h1>Page UI Controller</h1><p>Edit approved shared graphics for stable, runtime-wired Teacher interface bindings across all package components.</p></div><div className="b2-hosted-ui-save-state" role="status"><strong>{status}</strong><span>Revision {loaded.revision}</span>{error ? <small>{error}</small> : null}<button type="button" onClick={save} disabled={!dirty || fontUploading || status === "Saving"}><Save size={16} /> Save UI draft</button>{conflict ? <button type="button" onClick={() => load({ preserveChanges: true })}>Reload latest and keep local choices</button> : null}</div></header>
     <div className="b2-hosted-ui-workspace">
       <nav aria-label="UI Controller sections"><button type="button" aria-current={section === "overview" ? "page" : undefined} onClick={() => setSection("overview")}>Overview</button>{categories.map((id) => <button key={id} type="button" aria-current={section === id ? "page" : undefined} onClick={() => setSection(id)}>{HOSTED_TEACHER_UI_CATEGORY_LABELS[id]}</button>)}</nav>
       <section className="b2-hosted-ui-editor-panel">
         {section === "overview" ? <div className="b2-hosted-ui-overview"><h2>Bound Teacher interface graphics</h2><dl><div><dt>Editable visual bindings</dt><dd>{visualBindings.length}</dd></div><div><dt>Saved overrides</dt><dd>{Object.keys(savedAssets).filter((id) => !id.startsWith("sound.")).length}</dd></div><div><dt>Unsaved changes</dt><dd>{Object.keys(changes).length}</dd></div></dl><p>Stable control IDs, actions, labels, routing, layout, accessibility semantics, and existing sound overrides remain canonical.</p></div> : null}
-        {section === "shell-background" ? <label className="b2-hosted-ui-slot">Page overview captions font family<select aria-label="Page overview captions font family" value={fontChoice ?? loaded.document.overviewCaptionFontFamily ?? ""} onChange={(event) => { setFontChoice(event.target.value); setStatus("Unsaved changes"); }}><option value="">Default (existing appearance)</option>{HOSTED_OVERVIEW_FONT_FAMILIES.map((family) => <option key={family} value={family}>{family}</option>)}</select></label> : null}
+        {section === "shell-background" ? <div className="studio-editor b2-hosted-ui-font"><NativeActivityFontControls bookSlug={bookSlug} componentSlug={componentSlug} fonts={fonts} label="Page overview captions font"
+          selectedSlot={selectedFont?.slot} selectedFamily={typeof selectedFont === "string" ? selectedFont : ""} systemFamilies={HOSTED_OVERVIEW_FONT_FAMILIES}
+          onSelect={(font) => { setFontChoice(font ? normalizeOverviewCaptionFontAsset({ assetId: font.assetId, checksumSha256: font.checksumSha256, role: font.role, slot: font.slot }) : null); setStatus("Unsaved changes"); }}
+          onSelectFamily={(family) => { setFontChoice(family); setStatus("Unsaved changes"); }} onUploaded={recordUploadedFont} onMessage={setStatus} onUploadStateChange={setFontUploading} disabled={status === "Saving"} /></div> : null}
         {section === "branding-title" ? <TitleGroup bindings={titleBindings} savedAssets={savedAssets} changes={changes} previewUrls={previewUrls} identity={identity} activity={activity["title-animation"]} onValidate={validateFiles} onRevert={() => revert(HOSTED_TEACHER_UI_TITLE_BINDING_IDS)} /> : null}
         {section !== "overview" ? <div className="b2-hosted-ui-slots">{visibleBindings.map((binding) => <AssetSlot key={binding.id} binding={binding} savedAssets={savedAssets} changes={changes} previewUrls={previewUrls} identity={identity} activity={activity[binding.id]} onReplace={(selected, file) => validateFiles([{ bindingId: selected.id, file }])} onRevert={revert} />)}</div> : null}
       </section>

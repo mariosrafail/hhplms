@@ -11,6 +11,7 @@ import { createProductRelease, loadProductRelease, productPublicationDatabaseRea
 import { verifyProductReleaseEnvelope } from "../../netlify-sites/ultimate-b2-builder/server/_builder-product-publication-domain.js";
 import { clientSql } from "./_b1-page-placement-regression.mjs";
 import { verifyOverviewPre064 } from "./_overview-pre064-regression.mjs";
+import { verifyOverviewPre065 } from "./_overview-pre065-regression.mjs";
 
 const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.TEST_DATABASE_CONFIRMATION === "isolated-test-database";
 test("063 preserves historical B1/B1+ families and serves legacy publication before optional 064 UI activation", { skip: !enabled }, async (t) => {
@@ -70,4 +71,5 @@ test("063 preserves historical B1/B1+ families and serves legacy publication bef
   await verify(); assert.deepEqual(await capture(), before);
   for (const input of historicalInputs) assert.equal((await createProductRelease(sql, { ...input, productReleaseId: randomUUID(), clientMutationId: randomUUID() })).outcome, 'invalid_request', 'Current SQL writer cannot prepare a new product-v1');
   await verifyOverviewPre064({ pool, sql, actor, storage, families });
+  await verifyOverviewPre065({ pool, sql, actor, storage, families });
 });

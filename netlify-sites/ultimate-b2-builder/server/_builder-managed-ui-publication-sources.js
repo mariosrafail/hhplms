@@ -1,6 +1,7 @@
 import { collectManagedPublicationSources, normalizeStoredBuilderDocument } from "./_builder-publication-store.js";
 import { resolveBuilderContentResource } from "./_builder-content-registry.js";
 import { managedUiV2Components } from "./_builder-managed-ui-publication-compiler.js";
+import { collectOverviewFont } from "./_builder-overview-font.js";
 
 export async function collectManagedUiPublicationSources(sql, bookSlug, componentSlug) {
   if (!managedUiV2Components.includes(componentSlug) || componentSlug !== `${bookSlug}-students-book`) throw new Error("publication_compiler_mismatch");
@@ -20,5 +21,6 @@ export async function collectManagedUiPublicationSources(sql, bookSlug, componen
     if (resource.validateReadContext) await resource.validateReadContext({ document: rows[0].payload, sql });
     teacherUi = { ...teacherUi, payload: structuredClone(rows[0].payload) };
   }
-  return { ...sources, documents: { ...sources.documents, teacherUi } };
+  const overviewFontSources = await collectOverviewFont(sql, teacherUi?.payload, { bookSlug, componentSlug });
+  return { ...sources, overviewFontSources, documents: { ...sources.documents, teacherUi } };
 }

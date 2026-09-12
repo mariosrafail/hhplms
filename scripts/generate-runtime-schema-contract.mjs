@@ -103,7 +103,7 @@ export function runtimeSchemaContractData(migrations) {
       compatibleChecksums: [...compatibleChecksums].sort(),
       // Publication capabilities gate these additive functions separately; login
       // and historical reads remain available before the authorized feature migration.
-      ...(["062_b1_managed_publication.sql", "063_b1_immutable_package_ui.sql", "064_teacher_overview_ui.sql"].includes(filename) ? { featureOptional: true } : {}),
+      ...(["062_b1_managed_publication.sql", "063_b1_immutable_package_ui.sql", "064_teacher_overview_ui.sql", "065_teacher_overview_managed_font.sql"].includes(filename) ? { featureOptional: true } : {}),
     })),
     requiredTables: Object.entries(requiredRuntimeSchema).map(([table, columns]) => ({
       table,

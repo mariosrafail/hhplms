@@ -514,3 +514,45 @@ Additive migration `063_b1_immutable_package_ui.sql` adds versioned integrity/cu
 **Actual production operational readiness:** **NOT ESTABLISHED**. Presence checks, exact-SHA CI, provider metadata και historical local restore δεν αποδεικνύουν production-scale load, external scheduling/monitoring ownership, complete disaster recovery, role/grant equivalence ή compliance readiness.
 
 **Εγκατάσταση:** η παρούσα v2 αντιγράφεται στο `docs/HHPLMS_OPERATING_CONTEXT.md`, με μόνο repository-copy normalization, μαζί με το root `AGENTS.md` στο ίδιο τοπικό docs-only candidate. Δεν ενημερώνει Project source ή installed skill και δεν δηλώνει push ή remote εγκατάσταση.
+
+
+## 13. Managed overview fonts ? local candidate delta
+
+**verifiedAt: 2026-09-12; scope: repository implementation and disposable local validation.**
+The fresh task baseline is `origin/dev` at `9a79c8036c5918985065b92d8068ed26b2addd57`.
+The Page UI Controller now shares the existing migration-054 component TTF
+library and upload flow with native activity authoring. Canonical package UI
+ownership selects the corresponding Students Book library for B1/B1+/B2;
+fonts are not aggregated across components or books. The optional durable
+`overviewCaptionFontAsset` stores UUID/checksum/activity_font/stable slot;
+Default and historical Arial/Georgia/Verdana behavior are retained.
+
+Teacher publication freezes overview fonts through the existing B1/B1+ pins
+or B2 materialization, with immutable authorized delivery and no overview-only
+font in Student/public projections. Draft delivery remains authorized and
+private. Runtime uses the existing FontFace loader, affects both caption lines
+and falls back on loading failure. The current canonical Git Android Teacher
+pack does not consume hosted releases; this change does not introduce that
+separate capability.
+
+**Schema:** additive `065_teacher_overview_managed_font.sql` is feature-optional.
+Save gates the proposed managed reference, PREPARE gates the compiled Teacher
+projection, and PUBLISH gates the immutable candidate. Schema 064 continues to
+support legacy/system-font operations and status/history. 065 extends strict
+SQL reference/source/projection/pin checks without rewriting history or changing
+historical compiler fingerprints. This task applies it only to disposable local
+PostgreSQL and performs no hosted mutation, commit, push or deployment.
+
+**064 operational evidence (earlier authorized task):** shared-staging 064 was
+applied and verified at `2026-09-12T14:17:19.662Z`; source is the stored receipt
+`C:\Users\mario\hhplms-064-migration-evidence\20260912\REPORT.md`.
+That earlier receipt does not imply hosted 065 installation.
+
+**Sources:** `docs/hosted-teacher-ui-authoring.md`,
+`netlify-sites/ultimate-b2-builder/server/_builder-overview-font.js`,
+`database/065_teacher_overview_managed_font.sql`,
+`tests/overview-managed-font.test.js`,
+`tests/integration/_overview-pre065-regression.mjs`,
+`tests/integration/_overview-b2-font-regression.mjs`,
+`scripts/book-builder/overview-managed-font-playwright.mjs`, and
+`scripts/book-builder/overview-appearance-playwright.mjs`.

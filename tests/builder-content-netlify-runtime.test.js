@@ -16,7 +16,7 @@ const registryPath = path.resolve("netlify-sites/ultimate-b2-builder/server/_bui
 async function commonJsArtifact(input, plugins = []) {
   const bundle = await rolldown({ input, plugins });
   try {
-    const generated = await bundle.generate({ format: "cjs" });
+    const generated = await bundle.generate({ format: "cjs", codeSplitting: false });
     return generated.output.find((output) => output.type === "chunk")?.code || "";
   } finally {
     await bundle.close();

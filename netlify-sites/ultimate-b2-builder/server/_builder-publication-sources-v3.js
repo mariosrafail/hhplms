@@ -3,6 +3,7 @@ import { resolveBuilderContentResource } from "./_builder-content-registry.js";
 import { normalizeStoredBuilderDocument, loadNativePublicationAssets } from "./_builder-publication-store.js";
 import { nativeTeacherAnswerImages } from "../../../src/data/native-activities/nativeImageSampleAnswer.js";
 import { studentsBookPageScope } from "./_students-book-page-authority.js";
+import { collectOverviewFont } from "./_builder-overview-font.js";
 
 export async function collectStudentsBookPublicationV3Sources(sql) {
   const { bookSlug, componentSlug } = studentsBookPageScope;
@@ -46,5 +47,6 @@ export async function collectStudentsBookPublicationV3Sources(sql) {
   const [assetRows, extraRows] = await Promise.all([
     loadNativePublicationAssets(sql, { ...studentsBookPageScope, references }), loadNativePublicationAssets(sql, { ...studentsBookPageScope, references: extraReferences }),
   ]);
-  return { pages, documents: { hotspots, teacherUi }, native: { index, activities, assetRows }, unitExtras: { document: unitExtras, assetRows: extraRows } };
+  const overviewFontSources = await collectOverviewFont(sql, teacherUi?.payload, studentsBookPageScope);
+  return { pages, overviewFontSources, documents: { hotspots, teacherUi }, native: { index, activities, assetRows }, unitExtras: { document: unitExtras, assetRows: extraRows } };
 }

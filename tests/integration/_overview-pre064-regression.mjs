@@ -68,7 +68,7 @@ export async function verifyOverviewPre064({ pool, sql, actor, storage, families
   }
   await verifyHistory();
   const preUpgrade = (await pool.query("select * from book_component_releases order by id")).rows;
-  await applyCanonicalProductionMigrations(pool);
+  await applyCanonicalProductionMigrations(pool, { through: "064_teacher_overview_ui.sql" });
   assert.equal(await overviewUiDatabaseReady(sql), true);
   assert.equal((await checkRuntimeSchemaReadiness(sql, { cacheTtlMs: 0 })).ready, true);
   for (const { book } of families) {

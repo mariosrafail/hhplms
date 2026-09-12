@@ -12,6 +12,7 @@ import { createAssignment, listAssignmentsForStudent } from "../../netlify/funct
 import { createHomework, getTeacherHomework, updateHomework } from "../../netlify/functions/_book-content/homework-actions.js";
 import { fetchActivity, fetchPackageTree } from "../../netlify/functions/_book-content-utils.js";
 import { studentSafePackageTree } from "../../netlify/functions/_book-content/shared.js";
+import { verifyB2OverviewFont } from "./_overview-b2-font-regression.mjs";
 
 const databaseUrl = process.env.TEST_DATABASE_URL || "";
 const enabled = Boolean(databaseUrl) && process.env.TEST_DATABASE_CONFIRMATION === "isolated-test-database";
@@ -53,6 +54,7 @@ test("Students Book v3 SQL freshness agrees with the actual collector/compiler a
   const activated = await publishComponentRelease(sql, { bookSlug: "ultimate-b2", componentSlug: component.slug, releaseId: created.releaseId, expectedHeadRevision: 0, requestSha256: "b".repeat(64), builderUserId: actor, clientMutationId: randomUUID() });
   assert.equal(activated.outcome, "published");
   await verifyTransition();
+  await verifyB2OverviewFont({ pool, sql, actor });
 });
 
 async function seedLegacyTransition(pool, sql, component) {

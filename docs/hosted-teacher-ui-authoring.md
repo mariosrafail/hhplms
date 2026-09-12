@@ -13,3 +13,42 @@ An explicit Builder preview reads the no-store Teacher `ui-controller` projectio
 Repository tests use isolated PostgreSQL and fake/local object storage. A real review environment still needs independently verified S3/R2 credentials, private signed-PUT CORS, and public CDN CORS that permits Viewer image/audio loads and `fetch()` of GAF files after redirects. The public and private buckets, lifecycle/expired-staging cleanup, concurrency/throughput, monitoring, backups, and disaster recovery remain operational responsibilities. Do not mutate production/shared bucket CORS or storage during repository validation.
 
 This is draft/review authoring, not publication and not production Teacher authorization.
+
+
+## Managed overview caption fonts (local candidate, 2026-09-12)
+
+B1, B1+ and B2 now use the existing component TTF library from migration 054.
+The package registry resolves one UI owner (currently its Students Book), and
+both the Page UI Controller and native activity controls share
+`useBuilderFontLibrary` and `NativeActivityFontControls`. Upload TTF uses the
+existing prepare / private PUT / inspect / finalize flow. It adds and selects
+the asset immediately; only Save UI draft persists the selection. Default
+removes both font settings. Arial, Georgia and Verdana remain system options.
+
+The optional `overviewCaptionFontAsset` is exactly
+`{ assetId, checksumSha256, role: "activity_font", slot: "font-<UUID without hyphens>" }`.
+It is mutually exclusive with `overviewCaptionFontFamily`. Save checks the
+canonical owner, active private component-library row, checksum and object key.
+PREPARE collects the same asset into the Teacher manifest: B1/B1+ use existing
+private source pins, while B2 uses its existing immutable materialization.
+Checksum/role deduplication permits independent native activity reuse. An
+overview-only font never enters the public projection. Old documents and
+compiler fingerprints are unchanged.
+
+Saved Draft Review loads the authorized `/ui-controller/font` preview route.
+Immutable Review uses the protected release `/teacher-ui-font` route and its
+frozen manifest/pin or materialized bytes, without consulting the mutable font
+library. The existing FontFace loader applies the stable family only after
+loading; both caption lines fall back safely on failure. The current Android
+Teacher pack is built from canonical Git assets and does not import hosted
+releases. Its offline behavior remains unchanged; a future frozen-pack provider
+can supply the model's `resolveFrozenFontUrl` without a Builder network request.
+
+Migration `065_teacher_overview_managed_font.sql` extends strict SQL validation
+and checks release source/projection equality and private pins. It is a
+feature-optional schema requirement: only Save with a managed reference,
+PREPARE whose compiled Teacher UI contains one, or PUBLISH of an immutable
+candidate containing one requires 065 (`overview_font_schema_unavailable`).
+GET/status, historical releases, system fonts and unrelated writes remain
+compatible with 064. The migration was tested only in disposable local
+PostgreSQL; it has not been applied to hosted staging by this task.

@@ -144,6 +144,7 @@ function harness(overrides = {}) {
     loadRelease: async () => release,
     loadAssetModes: async () => release.members.map((member) => ({ product_release_id: release.id, component_slug: member.componentSlug, asset_storage_mode: "pinned-source-v1" })),
     verifyCandidate: async () => true,
+    loadComponentRows: async () => [],
     loadMutation: async () => overrides.replay || null,
     publish: async (sql, input) => { publishInput = input; return overrides.publish ? overrides.publish(sql, input) : { outcome: "published", productReleaseId: input.productReleaseId, releaseNumber: 1, headRevision: 1 }; },
     logger: overrides.logger || { error() {} },

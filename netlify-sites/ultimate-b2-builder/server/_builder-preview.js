@@ -4,6 +4,9 @@ import { resolveBuilderContentResource } from "./_builder-content-registry.js";
 import { assertPublicBuilderDocument } from "./_builder-content-security.js";
 import { loadBuilderComponentDocument, loadBuilderComponentDocuments } from "./_builder-content-store.js";
 import { createBuilderRelatedDocumentLoader } from "./_builder-related-context.js";
+import { collectOverviewFont } from "./_builder-overview-font.js";
+import { serveBuilderPrivateFont } from "./_builder-private-font-response.js";
+import { createBookAssetStorage } from "../../../lib/book-assets/storage.js";
 
 const previewDiagnosticStages = new Set([
   "route",
@@ -76,13 +79,18 @@ export function createBuilderPreviewHandler(overrides = {}) {
     loadDocuments: overrides.loadDocuments || loadBuilderComponentDocuments,
     authorizePreview: overrides.authorizePreview || authorizeBuilderPreviewRequestWithDiagnostic,
     logger: overrides.logger || console,
+    collectOverviewFont: overrides.collectOverviewFont || collectOverviewFont,
+    storage: overrides.storage || (() => createBookAssetStorage()),
   };
 
   return async function builderPreviewHandler(event) {
-    if (event.httpMethod !== "GET") return previewJson(405, { error: "method_not_allowed" });
+    if (!["GET", "HEAD"].includes(event.httpMethod)) return previewJson(405, { error: "method_not_allowed" });
     let stage = "route";
     try {
       const route = parseBuilderPreviewRoute(event);
+      const fontRequest = route?.resource === "ui-controller" && route.documentKey === "font";
+      if (event.httpMethod === "HEAD" && !fontRequest) return previewJson(405, { error: "method_not_allowed" });
+      if (fontRequest) route.documentKey = "";
       stage = "resolve_resource";
       const resource = route && await dependencies.resolveResource(route.bookSlug, route.componentSlug, route.resource, route.documentKey);
       if (!resource?.previewReadable || typeof resource.projectPreview !== "function") {
@@ -125,6 +133,13 @@ export function createBuilderPreviewHandler(overrides = {}) {
         }),
       } : { sql };
       const document = await resource.projectPreview(state.document, projectionContext);
+      if (fontRequest) {
+        try {
+          const [source] = await dependencies.collectOverviewFont(sql, document, route);
+          if (!source) return previewJson(404, { error: "overview_font_not_found" });
+          return await serveBuilderPrivateFont({ storage: dependencies.storage(), asset: source.row, method: event.httpMethod });
+        } catch { return previewJson(404, { error: "overview_font_not_found" }); }
+      }
       stage = "validate_projection";
       assertPublicBuilderDocument(document);
       stage = "response";

@@ -121,6 +121,6 @@ export async function loadHostedReleaseFamily({ runtimeContext = resolveHostedVi
 
 export function hostedReleasePath(runtimeContext, identity, suffix) {
   if (runtimeContext?.kind !== HOSTED_VIEWER_RUNTIME_MODES.RELEASE_PREVIEW || !SAFE_ID.test(String(identity?.bookSlug || "")) || !SAFE_ID.test(String(identity?.componentSlug || ""))
-    || !UUID.test(String(runtimeContext.releaseId || "")) || !/^(?:public|teacher-ui|teacher-solution\/[a-z0-9][a-z0-9-]{0,127}|(?:native-teacher|native-answer)\/[a-z0-9][a-z0-9-]{0,127}|assets\/[a-f0-9]{64}\.(?:png|jpg|webp|mp3|mp4|pdf|ttf|wav|gaf))$/.test(suffix)) throw new Error("Invalid hosted release preview path.");
+    || !UUID.test(String(runtimeContext.releaseId || "")) || !/^(?:public|teacher-ui|teacher-ui-font|teacher-solution\/[a-z0-9][a-z0-9-]{0,127}|(?:native-teacher|native-answer)\/[a-z0-9][a-z0-9-]{0,127}|assets\/[a-f0-9]{64}\.(?:png|jpg|webp|mp3|mp4|pdf|ttf|wav|gaf))$/.test(suffix)) throw new Error("Invalid hosted release preview path.");
   return authorizedHostedPreviewPath(`/preview/releases/books/${identity.bookSlug}/components/${identity.componentSlug}/${runtimeContext.releaseId}/${suffix}`, runtimeContext.authorization);
 }

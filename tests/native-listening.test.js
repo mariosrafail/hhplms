@@ -204,7 +204,8 @@ test("Listening renders imported markup in one stable full stage without an HTML
   for (const label of ["Accessibility label", "Padding X", "Padding Y", "Line count", "Line width", "Line spacing", "Auto-fit minimum", "Requested answer size", "Answer text color", "Answer align"]) assert.match(responseControls, new RegExp(label));
   assert.match(responseControls, /NativeActivityFontControls/);
   assert.match(responseControls, /fitNativeOpenResponseRuntimeAnswer/);
-  assert.match(responseFonts, /getBuilderFontLibrary/);
+  assert.match(responseFonts, /useBuilderFontLibrary/);
+  assert.match(await readFile("src/apps/book-builder/hosted/useBuilderFontLibrary.js", "utf8"), /getBuilderFontLibrary/);
   assert.match(responseFonts, /mergeNativeManagedAssetReference/);
   assert.match(editor, /nativeFontPreviewUrl/);
   for (const type of ["prompt", "response", "artwork", "snippet"]) assert.match(questionAuthoring, new RegExp(type));

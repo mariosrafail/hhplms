@@ -1,0 +1,81 @@
+import assert from "node:assert/strict";
+import { expect } from "@playwright/test";
+import sharp from "sharp";
+
+export async function runSharedFiveRegressions(browser, baseUrl, output) {
+  const page = await browser.newPage({ viewport: { width: 1200, height: 900 }, hasTouch: true });
+  const errors = []; page.on("pageerror", (error) => errors.push(error.message));
+  const background = await sharp({ create: { width: 1024, height: 582, channels: 3, background: "#d4e8f1" } }).png().toBuffer();
+  const graphic = await sharp({ create: { width: 120, height: 3, channels: 4, background: "#e43c44" } }).png().toBuffer();
+  await page.route("**/synthetic-shared.png", (route) => route.fulfill({ contentType: "image/png", body: background }));
+  await page.route("**/graphic.png", (route) => route.fulfill({ contentType: "image/png", body: graphic }));
+  await page.route("**/fonts", (route) => route.fulfill({ json: { fonts: [] } }));
+  await page.route("**/assets/*/preview", (route) => route.fulfill({ contentType: "image/png", body: background }));
+  const marker = page.locator(".native-mark-words-graphic");
+  const correct = page.getByRole("button", { name: "Correct target", exact: true });
+  const wrong = page.getByRole("button", { name: "Wrong no graphic", exact: true });
+  try {
+    await page.goto(`${baseUrl}tests/fixtures/native-runtime-regressions/shared-five.html`);
+    await expect(correct).toBeVisible(); assert.deepEqual(errors, []);
+    await expect(marker).toHaveCount(0);
+    await expect(page.locator(".native-multi-part-background")).toHaveCount(1);
+    await expect(page.locator(".native-multi-part-section img:not(.native-drag-drop-word img)")).toHaveCount(0);
+    const chrome = await correct.evaluate((node) => { const s = getComputedStyle(node); return [s.borderTopWidth, s.backgroundColor, s.boxShadow, s.paddingTop]; });
+    assert.deepEqual(chrome, ["0px", "rgba(0, 0, 0, 0)", "none", "0px"]);
+    await wrong.tap(); assert.equal(await wrong.evaluate((node) => getComputedStyle(node).webkitTapHighlightColor), "rgba(0, 0, 0, 0)"); await expect(wrong).toHaveAttribute("aria-pressed", "true"); await expect(marker).toHaveCount(0);
+    assert.equal(Object.keys(await page.evaluate(() => fiveFixture.responses)).length, 1);
+    await correct.focus(); await page.keyboard.press("Enter"); await expect(marker).toHaveCount(1);
+    for (const width of [1200, 600, 1000]) {
+      await page.setViewportSize({ width, height: 900 });
+      const canvas = await page.locator(".native-multi-part-panel--canvas").boundingBox(); const box = await marker.boundingBox();
+      assert.ok(Math.abs(box.x - canvas.x - 40 / 1024 * canvas.width) < 1);
+      assert.ok(Math.abs(box.y - canvas.y - 397 / 582 * canvas.height) < 1);
+      assert.ok(Math.abs(box.width - 120 / 1024 * canvas.width) < 1);
+      assert.ok(Math.abs(box.height - 3 / 582 * canvas.height) < 1);
+      assert.deepEqual(await marker.evaluate((node) => { const s = getComputedStyle(node); return [s.paddingTop, s.borderTopWidth, s.boxShadow, s.minHeight]; }), ["0px", "0px", "none", "0px"]);
+      await page.screenshot({ path: `${output}/shared-five-${width}.png` });
+    }
+    await page.getByRole("button", { name: "Wrong graphic", exact: true }).click(); await expect(marker).toHaveCount(2);
+    await page.getByRole("button", { name: "Tick", exact: true }).click();
+    await page.getByRole("button", { name: /^Place tick, contains empty/ }).click();
+    await page.getByRole("button", { name: "Choose: Yes", exact: true }).click();
+    await page.getByRole("textbox", { name: /Response for question/ }).fill("My response");
+    await page.getByRole("textbox", { name: "Answer for sentence 1" }).fill("study");
+    assert.equal(Object.keys(await page.evaluate(() => fiveFixture.responses)).length, 5);
+    const saved = await page.evaluate(() => fiveFixture.responses);
+    await page.evaluate(() => fiveFixture.setReadOnly(true)); await expect(wrong).toBeDisabled();
+    await expect(page.getByRole("textbox", { name: "Answer for sentence 1" })).toHaveAttribute("readonly", "");
+    await page.evaluate(() => { fiveFixture.setResponses({}); fiveFixture.setReadOnly(false); });
+    await expect(marker).toHaveCount(0);
+    await page.evaluate((responses) => fiveFixture.setResponses(responses), saved); await expect(marker).toHaveCount(2);
+    await page.evaluate(() => fiveFixture.setTeacher(true)); await expect(marker).toHaveCount(0);
+    await wrong.click(); await expect(marker).toHaveCount(0); await expect(correct).toHaveAttribute("aria-pressed", "false");
+    await correct.click(); await expect(marker).toHaveCount(1);
+    await page.getByRole("button", { name: "Show all", exact: true }).click();
+    await expect(page.locator(".native-or-answer-line")).not.toHaveCount(0);
+    await expect(page.locator(".native-complete-sentences-teacher-target")).toHaveAttribute("data-revealed", "true");
+    await correct.click(); await expect(marker).toHaveCount(0);
+    await page.getByRole("button", { name: "Show next", exact: true }).click(); await expect(marker).toHaveCount(1);
+    await page.getByRole("button", { name: "Reset activity", exact: true }).click(); await expect(marker).toHaveCount(0); await expect(wrong).toHaveAttribute("aria-pressed", "false");
+    await page.getByRole("button", { name: "Fullscreen fixture" }).click();
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe("five-host");
+    await correct.click(); await expect(marker).toHaveCount(1);
+    await page.screenshot({ path: `${output}/shared-five-fullscreen.png` });
+    await page.evaluate(() => document.exitFullscreen());
+    await page.evaluate(() => { fiveFixture.setStandalone(true); fiveFixture.setTeacher(false); fiveFixture.setResponses({}); });
+    await wrong.click(); await expect(wrong).toHaveAttribute("aria-pressed", "true"); await expect(marker).toHaveCount(0);
+    await correct.click(); await expect(marker).toHaveCount(1);
+    await page.evaluate(() => fiveFixture.setEditor(true));
+    await expect(page.getByRole("button", { name: "Word hotspot 1", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Word hotspot 1", exact: true }).click();
+    await page.getByLabel("Target label", { exact: true }).fill("Repeated label");
+    await page.getByLabel("Answer", { exact: true }).selectOption("incorrect");
+    await page.getByLabel("Selected graphic", { exact: true }).selectOption("");
+    await expect.poll(() => page.evaluate(() => fiveFixture.pair.publicDocument.parts[0].interaction.targets[0].label)).toBe("Repeated label");
+    await page.evaluate(() => fiveFixture.setEditor(false)); await page.evaluate(() => fiveFixture.setEditor(true));
+    await page.getByRole("button", { name: "Word hotspot 1", exact: true }).click();
+    await expect(page.getByLabel("Target label", { exact: true })).toHaveValue("Repeated label");
+    await expect(page.getByLabel("Selected graphic", { exact: true })).toHaveValue("");
+    assert.deepEqual(errors, []);
+  } finally { await page.close(); }
+}

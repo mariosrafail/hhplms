@@ -89,7 +89,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
   const [supplementalAudioIncomplete, setSupplementalAudioIncomplete] = useState(false);
   const [zoom, setZoom] = useState(1);
 
-  useCompositeEditorBinding(compositeBinding, publicDraft, teacherDraft, dirty, uploading || pendingItemUploads > 0);
+  useCompositeEditorBinding(compositeBinding, publicDraft, teacherDraft, dirty, uploading || pendingItemUploads > 0, setPublicDraft);
   useEffect(() => {
     const controller = new AbortController();
     setState({ kind: "loading", message: "" }); setPublicDraft(null); setTeacherDraft(null); setTab("content"); setDirty(false); onDirtyChange(false);

@@ -20,7 +20,7 @@ function PanelNavigation({ panelIndex, panelCount, onPrevious, onNext }) {
   </nav>;
 }
 
-function Presentation({ document, assetUrl, responses, onChange, readOnly, panelIndex = 0, onPrevious = null, onNext = null, revealed = new Set(), answers = new Map(), onTeacherReveal = null, audioHotspotPresentation = null }) {
+function Presentation({ document, assetUrl, responses, onChange, readOnly, panelIndex = 0, onPrevious = null, onNext = null, revealed = new Set(), answers = new Map(), onTeacherReveal = null, audioHotspotPresentation = null, embeddedCanvas = false }) {
   const interaction = document.parts[0].interaction;
   const panels = interaction.presentation.panels;
   const normalizedIndex = Math.min(Math.max(Number.isSafeInteger(panelIndex) ? panelIndex : 0, 0), Math.max(0, panels.length - 1));
@@ -30,10 +30,10 @@ function Presentation({ document, assetUrl, responses, onChange, readOnly, panel
   useEffect(() => { audioHotspotPresentation?.onPanelChange(panel?.id || null); }, [audioHotspotPresentation, panel?.id]);
   if (!panel) return <p role="status">No Complete the Sentences panel is available.</p>;
   const reference = document.assets.find((asset) => asset.slot === panel.backgroundAssetSlot);
-  return <>{fontState.failures.length ? <p className="native-activity-font-fallback" role="alert">Selected font could not be loaded; using the default font.</p> : null}<article className="native-complete-sentences" aria-label={document.metadata.title}>
+  return <>{fontState.failures.length ? <p className="native-activity-font-fallback" role="alert">Selected font could not be loaded; using the default font.</p> : null}<article data-embedded-canvas={embeddedCanvas || undefined} className="native-complete-sentences" aria-label={document.metadata.title}>
     <PanelNavigation panelIndex={normalizedIndex} panelCount={panels.length} onPrevious={onPrevious} onNext={onNext} />
     <div className="native-complete-sentences-stage" data-panel-id={panel.id} style={{ aspectRatio: `${panel.sourceWidth} / ${panel.sourceHeight}`, "--native-complete-sentences-ratio": panel.sourceWidth / panel.sourceHeight }}>
-      {reference ? <img src={assetUrl(reference.assetId)} alt="" /> : <p role="status">Panel background is unavailable.</p>}
+      {!embeddedCanvas && reference ? <img src={assetUrl(reference.assetId)} alt="" /> : !embeddedCanvas ? <p role="status">Panel background is unavailable.</p> : null}
       {panel.hotspots.map((hotspot, index) => {
         const item = interaction.items.find((candidate) => candidate.id === hotspot.itemId);
         const fontReference = answerStyle.fontAssetSlot ? document.assets.find((asset) => asset.slot === answerStyle.fontAssetSlot && asset.role === "activity_font") : null;
@@ -60,7 +60,7 @@ function Presentation({ document, assetUrl, responses, onChange, readOnly, panel
   </article></>;
 }
 
-export function NativeCompleteSentencesStudentSurface({ document, assetUrl = () => "", responses: controlled = null, initialResponses = null, onResponsesChange = null, readOnly = false, audioHotspotPresentation = null }) {
+export function NativeCompleteSentencesStudentSurface({ document, assetUrl = () => "", responses: controlled = null, initialResponses = null, onResponsesChange = null, readOnly = false, audioHotspotPresentation = null, embeddedCanvas = false }) {
   const [local, setLocal] = useState(() => ({ ...(initialResponses || {}) }));
   const [panelIndex, setPanelIndex] = useState(0);
   const responses = controlled && typeof controlled === "object" ? controlled : local;
@@ -70,10 +70,10 @@ export function NativeCompleteSentencesStudentSurface({ document, assetUrl = () 
     if (controlled === null) setLocal(next);
     onResponsesChange?.(next);
   };
-  return <Presentation document={document} assetUrl={assetUrl} responses={responses} onChange={change} readOnly={readOnly} panelIndex={panelIndex} onPrevious={() => setPanelIndex((current) => Math.max(0, current - 1))} onNext={() => setPanelIndex((current) => Math.min(document.parts[0].interaction.presentation.panels.length - 1, current + 1))} audioHotspotPresentation={audioHotspotPresentation} />;
+  return <Presentation document={document} assetUrl={assetUrl} responses={responses} onChange={change} readOnly={readOnly} panelIndex={panelIndex} onPrevious={() => setPanelIndex((current) => Math.max(0, current - 1))} onNext={() => setPanelIndex((current) => Math.min(document.parts[0].interaction.presentation.panels.length - 1, current + 1))} audioHotspotPresentation={audioHotspotPresentation} embeddedCanvas={embeddedCanvas} />;
 }
 
-export function NativeCompleteSentencesTeacherSurface({ publicDocument, teacherDocument, assetUrl = () => "", presentation = null, audioHotspotPresentation = null }) {
+export function NativeCompleteSentencesTeacherSurface({ publicDocument, teacherDocument, assetUrl = () => "", presentation = null, audioHotspotPresentation = null, embeddedCanvas = false }) {
   const panels = publicDocument.parts[0].interaction.presentation.panels;
   const answers = useMemo(() => new Map(teacherDocument.parts[0].solution.answers.map((answer) => [answer.itemId, answer.text])), [teacherDocument]);
   const [session, setSession] = useState(() => ({ revealed: new Set(), panelIndex: 0 }));
@@ -92,5 +92,5 @@ export function NativeCompleteSentencesTeacherSurface({ publicDocument, teacherD
     });
   }, [panels, presentation?.command]);
   useEffect(() => presentation?.onStateChange?.({ panelIndex: session.panelIndex, panelCount: panels.length, reveal: { supported: true, total: visibleItemIds.length, revealed: visibleItemIds.filter((itemId) => session.revealed.has(itemId)).length, pristine: session.panelIndex === 0 && session.revealed.size === 0 } }), [panels.length, presentation?.onStateChange, session, visibleItemIds.join("\0")]);
-  return <Presentation document={publicDocument} assetUrl={assetUrl} responses={{}} readOnly panelIndex={session.panelIndex} onPrevious={!presentation ? () => setSession((current) => ({ ...current, panelIndex: Math.max(0, current.panelIndex - 1) })) : null} onNext={!presentation ? () => setSession((current) => ({ ...current, panelIndex: Math.min(panels.length - 1, current.panelIndex + 1) })) : null} revealed={session.revealed} answers={answers} onTeacherReveal={(itemId) => setSession((current) => ({ ...current, revealed: updateNativeCompleteSentencesRevealState(current.revealed, panels[current.panelIndex]?.hotspots.map((hotspot) => hotspot.itemId) || [], { itemId }) }))} audioHotspotPresentation={audioHotspotPresentation} />;
+  return <Presentation document={publicDocument} assetUrl={assetUrl} responses={{}} readOnly panelIndex={session.panelIndex} onPrevious={!presentation ? () => setSession((current) => ({ ...current, panelIndex: Math.max(0, current.panelIndex - 1) })) : null} onNext={!presentation ? () => setSession((current) => ({ ...current, panelIndex: Math.min(panels.length - 1, current.panelIndex + 1) })) : null} revealed={session.revealed} answers={answers} onTeacherReveal={(itemId) => setSession((current) => ({ ...current, revealed: updateNativeCompleteSentencesRevealState(current.revealed, panels[current.panelIndex]?.hotspots.map((hotspot) => hotspot.itemId) || [], { itemId }) }))} audioHotspotPresentation={audioHotspotPresentation} embeddedCanvas={embeddedCanvas} />;
 }

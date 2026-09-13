@@ -65,7 +65,7 @@ export function NativeSingleChoiceEditor({ compositeBinding = null, bookSlug, co
   const [zoom, setZoom] = useState(1);
   const [dirty, setDirty] = useState(false);
 
-  useCompositeEditorBinding(compositeBinding, publicDraft, teacherDraft, dirty, uploading);
+  useCompositeEditorBinding(compositeBinding, publicDraft, teacherDraft, dirty, uploading, setPublicDraft);
   useEffect(() => {
     const controller = new AbortController();
     setMode("content"); setDirty(false); onDirtyChange(false);

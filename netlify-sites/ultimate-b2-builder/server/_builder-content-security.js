@@ -8,7 +8,7 @@ const forbiddenPublicDocumentKeys = new Set([
   "correctanswers",
   "correctoptionid",
   "correctoptionids",
-  "correctwordids",
+  "correctwordids", "correcttargetids",
   "iscorrect",
   "answercount",
   "markedsource",

@@ -267,7 +267,7 @@ export async function validateBuilderNativeAssetReferences(sql, { bookSlug, comp
   for (const requirement of requirements) {
     const reference = assets.find((asset) => asset.slot === requirement.slot);
     const asset = reference ? byId.get(reference.assetId) : null;
-    if (!asset || (requirement.mediaType && asset.mime_type !== requirement.mediaType)) throw new Error(`${requirement.label || "Native managed asset"} media type does not match its managed asset.`);
+    if (!asset || (requirement.mediaType && asset.mime_type !== requirement.mediaType) || (requirement.mediaTypes && !requirement.mediaTypes.includes(asset.mime_type))) throw new Error(`${requirement.label || "Native managed asset"} media type does not match its managed asset.`);
     if (requirement.byteSize !== undefined && Number(asset.byte_size) !== requirement.byteSize) throw new Error(`${requirement.label || "Native managed asset"} byte size does not match its managed asset.`);
     if ((requirement.width !== undefined || requirement.height !== undefined)
       && (Number(asset.width) !== requirement.width || Number(asset.height) !== requirement.height)) throw new Error(`${requirement.label || "Native managed image"} dimensions do not match its managed asset.`);

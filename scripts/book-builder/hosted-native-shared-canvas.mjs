@@ -10,7 +10,7 @@ export async function authorHostedSharedCanvas(page, editor) {
   await editor.getByLabel("Section type", { exact: true }).selectOption("drag-drop");
   await editor.getByRole("button", { name: "Add Section", exact: true }).click();
   await editor.getByLabel("Section title", { exact: true }).fill("Shared tick");
-  const drag = editor.locator(".native-drag-drop-editor");
+  const drag = editor.locator(".native-drag-drop-editor:visible");
   await drag.getByRole("button", { name: "Add word", exact: true }).click();
   await drag.getByLabel("Word 1", { exact: true }).fill("Tick");
   await drag.getByLabel("Reusable item", { exact: true }).check();
@@ -27,7 +27,7 @@ export async function authorHostedSharedCanvas(page, editor) {
   await editor.getByLabel("Section type", { exact: true }).selectOption("single-choice");
   await editor.getByRole("button", { name: "Add Section", exact: true }).click();
   await editor.getByLabel("Section title", { exact: true }).fill("Shared choice");
-  const choice = editor.locator(".native-single-choice-editor");
+  const choice = editor.locator(".native-single-choice-editor:visible");
   await choice.getByRole("button", { name: "Add Question", exact: true }).click();
   await choice.getByLabel("Prompt", { exact: true }).fill("Choose on the shared image");
   await choice.getByLabel("Option 1", { exact: true }).fill("Yes"); await choice.getByLabel("Option 2", { exact: true }).fill("No");

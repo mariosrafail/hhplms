@@ -1,8 +1,12 @@
+import { nativeOpenResponsePanels } from "./nativeOpenResponse.js";
+import { isMarkWordsVisual } from "./nativeMarkWordsVisualTargets.js";
 import { NATIVE_MULTI_PART_CHILDREN, nativeMultiPartTeacherChild } from "./nativeMultiPartChildren.js";
 import { isNativeChildId, createNativeChildId } from "./nativeChildIdentity.js";
 import { normalizeNativePedagogicalText } from "./nativePedagogicalText.js";
 
 export const NATIVE_MULTI_PART_VERSION = "multi-part.v1";
+export const NATIVE_MULTI_PART_CANVAS_VERSION = "multi-part.v2";
+export const NATIVE_MULTI_PART_CANVAS_KINDS = Object.freeze(["drag-drop", "single-choice", "mark-the-words", "open-response", "complete-sentences"]);
 export const NATIVE_MULTI_PART_LIMITS = Object.freeze({ panels: 12, sections: 24, assets: 128, bytes: 262144, responseBytes: 100000, dimension: 8192 });
 export const NATIVE_MULTI_PART_CHILD_KINDS = Object.freeze(Object.keys(NATIVE_MULTI_PART_CHILDREN));
 const exact = (value, keys, label) => {
@@ -41,21 +45,25 @@ function childPanel(interaction) {
   if (panels.length > 1) throw new Error("A Multi-Part section supports one visual panel. Move additional content into another section.");
   return panels[0];
 }
-function validateCanvas(panel, sections) {
+function validateCanvas(panel, sections, version) {
   const active = [];
   for (const section of sections) {
-    if (!["drag-drop", "single-choice"].includes(section.kind)) throw new Error("Shared canvases support Drag & Drop and Multiple Choice overlays.");
+    if (!(version === NATIVE_MULTI_PART_CANVAS_VERSION ? NATIVE_MULTI_PART_CANVAS_KINDS : ["drag-drop", "single-choice"]).includes(section.kind)) throw new Error("This shared canvas version does not support the section type.");
     const interaction = section.interaction;
-    const child = childPanel(interaction);
+    const child = section.kind === "open-response" ? nativeOpenResponsePanels(interaction)[0] : childPanel(interaction);
     if (!child) continue;
-    const surface = section.kind === "drag-drop" ? child.surface : { width: child.sourceWidth, height: child.sourceHeight };
+    const surface = ["drag-drop", "open-response"].includes(section.kind) ? child.surface : { width: child.sourceWidth, height: child.sourceHeight };
     if (surface.width !== panel.surface.width || surface.height !== panel.surface.height) throw new Error("Shared overlays must use their parent canvas coordinates.");
     if (section.kind === "drag-drop") {
       if (interaction.layoutMode === "text" || child.images.length) throw new Error("Shared Drag & Drop uses the parent background and standard layout.");
       if (!section.bankRegion) throw new Error("Shared Drag & Drop requires a reserved answer bank region.");
       active.push({ owner: section.id, area: section.bankRegion, bank: true });
-    } else if (child.backgroundAssetSlot !== panel.background?.assetSlot) throw new Error("Multiple Choice must use the shared panel background.");
-    for (const item of section.kind === "drag-drop" ? child.dropTargets : child.hotspots) active.push({ owner: section.id, area: item.area });
+    } else if (section.kind === "open-response") {
+      if (child.images.length !== 1 || child.images[0].assetSlot !== panel.background?.assetSlot || Object.entries({ x: 0, y: 0, ...panel.surface }).some(([key, value]) => child.images[0].area[key] !== value)) throw new Error("Open Response must use the shared background at its parent coordinates.");
+    } else if (child.backgroundAssetSlot !== panel.background?.assetSlot) throw new Error("Section must use the shared panel background.");
+    if (section.kind === "mark-the-words" && !isMarkWordsVisual(interaction)) throw new Error("Shared Mark the Words requires visual targets.");
+    const regions = section.kind === "open-response" ? interaction.questions.map((question) => question.responseRegion) : section.kind === "drag-drop" ? child.dropTargets : child.hotspots;
+    for (const item of regions) active.push({ owner: section.id, area: normalizeArea(item.area, panel.surface) });
   }
   for (let i = 0; i < active.length; i++) for (let j = i + 1; j < active.length; j++) {
     if ((active[i].owner !== active[j].owner || active[i].bank || active[j].bank) && overlaps(active[i].area, active[j].area)) throw new Error("Shared canvas active regions overlap ambiguously.");
@@ -69,7 +77,7 @@ export function createEmptyNativeMultiPartInteraction() {
 export function normalizeNativeMultiPartInteraction(input, { assets = [], commonAssetSlots = new Set() } = {}) {
   budget(input);
   exact(input, ["kind", "schemaVersion", "panels", "sections"], "Multi-Part interaction");
-  if (input.kind !== "multi-part" || input.schemaVersion !== NATIVE_MULTI_PART_VERSION || !Array.isArray(input.panels) || input.panels.length > 12 || !Array.isArray(input.sections) || input.sections.length > 24 || assets.length > 128) throw new Error("Multi-Part kind, version or aggregate limits are invalid.");
+  if (input.kind !== "multi-part" || ![NATIVE_MULTI_PART_VERSION, NATIVE_MULTI_PART_CANVAS_VERSION].includes(input.schemaVersion) || !Array.isArray(input.panels) || input.panels.length > 12 || !Array.isArray(input.sections) || input.sections.length > 24 || assets.length > 128) throw new Error("Multi-Part kind, version or aggregate limits are invalid.");
   const panelIds = new Set(); const sectionIds = new Set(); const used = new Set(commonAssetSlots);
   const panels = input.panels.map((panel) => {
     exact(panel, ["id", "title", "layout", "surface", "background"], "Multi-Part panel");
@@ -92,22 +100,28 @@ export function normalizeNativeMultiPartInteraction(input, { assets = [], common
     sectionIds.add(section.id);
     const panel = panels.find((entry) => entry.id === section.panelId);
     const slots = nativeMultiPartAssetSlots(section.interaction);
-    const interaction = adapter.normalizeInteraction(section.interaction, { assets: assets.filter((asset) => slots.has(asset.slot)), commonAssetSlots: new Set() });
-    childPanel(interaction);
+    let interaction;
+    try {
+      interaction = adapter.normalizeInteraction(section.interaction, { assets: assets.filter((asset) => slots.has(asset.slot)), commonAssetSlots: new Set() });
+      childPanel(interaction);
+    } catch (error) { throw new Error(`${panel.title || panel.id} / ${section.title || section.kind}: ${error.message}`); }
     nativeMultiPartAssetSlots(interaction).forEach((slot) => used.add(slot));
     const bankRegion = section.bankRegion === null ? null : normalizeArea(section.bankRegion, panel.surface);
     if (bankRegion && (panel.layout !== "canvas" || section.kind !== "drag-drop")) throw new Error("Reserved answer banks belong to shared Drag & Drop sections.");
     return { id: section.id, kind: section.kind, title: normalizeNativePedagogicalText(section.title, "Section title", 300), panelId: section.panelId, bankRegion, interaction };
   });
-  for (const panel of panels) if (panel.layout === "canvas") validateCanvas(panel, sections.filter((section) => section.panelId === panel.id));
+  for (const panel of panels) if (panel.layout === "canvas") {
+    try { validateCanvas(panel, sections.filter((section) => section.panelId === panel.id), input.schemaVersion); }
+    catch (error) { throw new Error(`${panel.title || panel.id}: ${error.message}`); }
+  }
   if (assets.some((asset) => !used.has(asset.slot))) throw new Error("Multi-Part managed assets must be used by a section, panel or common media.");
-  return { kind: "multi-part", schemaVersion: NATIVE_MULTI_PART_VERSION, panels, sections };
+  return { kind: "multi-part", schemaVersion: input.schemaVersion, panels, sections };
 }
 
 export function normalizeNativeMultiPartSolution(input) {
   budget(input);
   exact(input, ["kind", "schemaVersion", "sections"], "Multi-Part Teacher solution");
-  if (input.kind !== "multi-part" || input.schemaVersion !== NATIVE_MULTI_PART_VERSION || !Array.isArray(input.sections) || input.sections.length > 24) throw new Error("Multi-Part Teacher limits or version are invalid.");
+  if (input.kind !== "multi-part" || ![NATIVE_MULTI_PART_VERSION, NATIVE_MULTI_PART_CANVAS_VERSION].includes(input.schemaVersion) || !Array.isArray(input.sections) || input.sections.length > 24) throw new Error("Multi-Part Teacher limits or version are invalid.");
   const seen = new Set();
   const sections = input.sections.map((entry) => {
     exact(entry, ["id", "kind", "solution"], "Multi-Part Teacher section");
@@ -115,10 +129,11 @@ export function normalizeNativeMultiPartSolution(input) {
     seen.add(entry.id);
     return { id: entry.id, kind: entry.kind, solution: nativeMultiPartTeacherChild(entry.kind).normalizeSolution(entry.solution) };
   });
-  return { kind: "multi-part", schemaVersion: NATIVE_MULTI_PART_VERSION, sections };
+  return { kind: "multi-part", schemaVersion: input.schemaVersion, sections };
 }
 
 export function validateNativeMultiPartTopology(publicDocument, teacherDocument) {
+  if (publicDocument.parts[0].interaction.schemaVersion !== teacherDocument.parts[0].solution.schemaVersion) throw new Error("Multi-Part public and Teacher versions must match.");
   const sections = publicDocument.parts[0].interaction.sections;
   const solutions = teacherDocument.parts[0].solution.sections;
   if (sections.length !== solutions.length || sections.some((section) => !solutions.some((entry) => entry.id === section.id && entry.kind === section.kind))) throw new Error("Multi-Part public and Teacher section identities must match exactly.");
@@ -148,7 +163,7 @@ export function assessNativeMultiPartReadiness(publicDocument, teacherDocument) 
       child.publicDocument.parts[0].interaction.panels[0].images = [{ id: "img-00000000000000000000000000000000", assetSlot: reference.slot, area: { x: 0, y: 0, ...panel.surface }, order: 0, altText: panel.background.altText, decorative: true, fit: "contain", locked: true }];
     }
     const readiness = nativeMultiPartTeacherChild(section.kind).readiness(child.publicDocument, child.teacherDocument);
-    issues.push(...readiness.issues.map((issue) => `${section.title || section.kind}: ${issue}`));
+    issues.push(...readiness.issues.map((issue) => `${panel.title || panel.id} / ${section.title || section.kind}: ${issue}`));
   }
   return { ready: !issues.length, issues };
 }
@@ -157,7 +172,8 @@ export function duplicateNativeMultiPartSection(section, privateSection, newId =
   const ids = new Map();
   const collect = (value) => { if (!value || typeof value !== "object") return; for (const [key, entry] of Object.entries(value)) { if (key === "id" && typeof entry === "string" && /^[a-z]+-[a-f0-9]{32}$/.test(entry)) ids.set(entry, createNativeChildId(entry.split("-")[0])); else if (entry && typeof entry === "object") collect(entry); } };
   collect(section.interaction);
-  const remap = (value) => typeof value === "string" ? ids.get(value) || value : Array.isArray(value) ? value.map(remap) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, remap(entry)])) : value;
+  const remapString = (value) => ids.get(value) || value.replace(/^(q-[a-f0-9]{32})(-response)$/, (_, id, suffix) => `${ids.get(id) || id}${suffix}`);
+  const remap = (value) => typeof value === "string" ? remapString(value) : Array.isArray(value) ? value.map(remap) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, remap(entry)])) : value;
   return { section: { ...remap(section), id: newId, title: `${section.title} copy`.trim() }, privateSection: { ...remap(privateSection), id: newId } };
 }
 

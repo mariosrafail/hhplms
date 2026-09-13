@@ -45,7 +45,7 @@ export function NativeCompleteSentencesEditor({ compositeBinding = null, bookSlu
   const [readableIncomplete, setReadableIncomplete] = useState(false);
   const [videoIncomplete, setVideoIncomplete] = useState(false);
   const [supplementalAudioIncomplete, setSupplementalAudioIncomplete] = useState(false);
-  useCompositeEditorBinding(compositeBinding, publicDraft, teacherDraft, dirty, uploading);
+  useCompositeEditorBinding(compositeBinding, publicDraft, teacherDraft, dirty, uploading, setPublicDraft);
   useEffect(() => {
     const controller = new AbortController();
     setTab("content");
@@ -555,7 +555,7 @@ export function NativeCompleteSentencesEditor({ compositeBinding = null, bookSlu
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/webp"
-                      disabled={uploading}
+                      disabled={uploading || compositeBinding?.sharedCanvas}
                       onChange={(event) => {
                         uploadBackground(event.target.files?.[0]);
                         event.target.value = "";

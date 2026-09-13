@@ -556,3 +556,33 @@ That earlier receipt does not imply hosted 065 installation.
 `tests/integration/_overview-b2-font-regression.mjs`,
 `scripts/book-builder/overview-managed-font-playwright.mjs`, and
 `scripts/book-builder/overview-appearance-playwright.mjs`.
+
+
+## Native visual targets and shared canvas (local candidate)
+
+VerifiedAt: 2026-09-13. The local candidate introduces explicit native `mark-the-words.visual.v1` and `multi-part.v2` payloads, preserving legacy branches and immutable publication envelopes. See [native visual/shared contract](NATIVE_VISUAL_TARGETS_AND_SHARED_CANVAS.md) for geometry, managed assets, private assessment boundaries and executable regression entry points. No database migration or hosted mutation is part of this candidate.
+
+Sources: `src/data/native-activities/nativeMarkWordsVisualTargets.js` and
+`nativeMultiPart.js` define the explicit versions, geometry and topology;
+`src/apps/book-builder/hosted/NativeMultiPartEditor.jsx` and
+`nativeCompositeEditorBinding.js` coordinate the mounted child editors;
+`src/components/native-multi-part/NativeMultiPartLayout.jsx` and
+`nativeMultiPart.css` allocate toolbar/body space and distinguish flow scrolling
+from shared-canvas scaling. Visual `correctTargetIds` remain in private Teacher
+solutions. Managed graphics retain activity ownership, artwork roles and MIME
+validation through the existing native Save/preview/publication handlers.
+Legacy payloads retain their versions; immutable reads use frozen documents and
+asset dependencies, without consulting mutable drafts or rewriting compiler
+fingerprints, historical releases or assignment pins.
+
+Regression entry points: `npm test` includes
+`tests/native-visual-targets.test.js`; `test:lms-native-drag-drop-layout` invokes
+`scripts/book-builder/native-runtime-regressions.mjs`, including shared-five,
+mounted authoring and full-height CTS clipping checks;
+`test:builder:hosted-native-activity` invokes visual-target creation through
+`hosted-native-activity-mark-words.mjs`; `test:integration` invokes
+`tests/integration/_visual-target-persistence.mjs` through
+`native-composition-persistence.test.js` on disposable PostgreSQL.
+These are repository/local regression contracts, not hosted functional
+acceptance. Release validation and deployment status require separate exact-SHA
+receipts. The ChatGPT Project copy is not automatically synchronized.

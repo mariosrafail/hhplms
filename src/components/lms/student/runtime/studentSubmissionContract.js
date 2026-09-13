@@ -1,3 +1,4 @@
+import { markWordsResponseGroups } from "../../../../data/native-activities/nativeMarkWordsVisualTargets.js";
 export function buildLegacyFinalSubmission({ assignmentId, activityId, result } = {}) {
   return {
     assignmentId,
@@ -12,7 +13,7 @@ export function buildNativeFinalSubmission({ assignmentId, target, responses = {
     assignmentId,
     response: { schemaVersion: "native-multi-response.v1", sections: (interaction.sections || []).filter((section) => section.kind !== "image").map((section) => ({ id: section.id, kind: section.kind, response: buildNativeFinalSubmission({ target: { nativeKind: section.kind, capability: { responseSchemaVersion: "native-response.v1" }, entry: { document: { parts: [{ interaction: section.interaction }] } } }, responses: responses[section.id] || {} }).response })) },
   };
-  const questions = target?.nativeKind === "drag-drop"
+  const questions = target?.nativeKind === "mark-the-words" ? markWordsResponseGroups(interaction) : target?.nativeKind === "drag-drop"
     ? (interaction.panels || []).flatMap((panel) => panel.dropTargets || [])
     : interaction.questions || interaction.items || [];
   return {

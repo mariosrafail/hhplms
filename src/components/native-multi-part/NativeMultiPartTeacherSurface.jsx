@@ -32,21 +32,19 @@ function Session({ publicDocument: document, teacherDocument, assetUrl = () => "
   }, [presentation?.command, command]);
   useEffect(() => {
     const reveal = Object.values(states).reduce((sum, state) => ({ supported: sum.supported || state.reveal?.supported === true, total: sum.total + (state.reveal?.total || 0), revealed: sum.revealed + (state.reveal?.revealed || 0) }), { supported: false, total: 0, revealed: 0 });
-    presentation?.onStateChange?.({ panelIndex, panelCount: interaction.panels.length, reveal: { ...reveal, pristine: reveal.revealed === 0 } });
+    presentation?.onStateChange?.({ panelIndex, panelCount: interaction.panels.length, reveal: { ...reveal, pristine: Object.values(states).every((state) => state.reveal?.pristine !== false) } });
   }, [states, panelIndex, interaction.panels.length, presentation?.onStateChange]);
-  return <>
-    {!presentation ? <div role="group" aria-label="Multi-Part Teacher presentation"><button type="button" onClick={() => command("show-next")}>Show next</button><button type="button" onClick={() => command("show-all")}>Show all</button><button type="button" onClick={() => command("reset-activity")}>Reset activity</button></div> : null}
-    <NativeMultiPartLayout {...{ document, teacherDocument, assetUrl, panelIndex, setPanelIndex }} externalNavigation={Boolean(presentation)} renderSection={(section, child, embeddedCanvas, visible) => {
+  const controls = !presentation ? <div className="native-multi-part-controls" role="group" aria-label="Multi-Part Teacher presentation"><button type="button" onClick={() => command("show-next")}>Show next</button><button type="button" onClick={() => command("show-all")}>Show all</button><button type="button" onClick={() => command("reset-activity")}>Reset activity</button></div> : null;
+  return <NativeMultiPartLayout controls={controls} {...{ document, teacherDocument, assetUrl, panelIndex, setPanelIndex }} externalNavigation={Boolean(presentation)} renderSection={(section, child, embeddedCanvas, visible) => {
       const props = { ...child, assetUrl, presentation: { command: commands[section.id], onStateChange: onChildState[section.id] } };
       if (section.kind === "drag-drop") return <NativeDragDropTeacherSurface {...props} embeddedCanvas={embeddedCanvas} />;
       if (section.kind === "single-choice") return <NativeSingleChoiceTeacherSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
-      if (section.kind === "complete-sentences") return <NativeCompleteSentencesTeacherSurface {...props} />;
-      if (section.kind === "open-response") return <NativeOpenResponseTeacherSurface {...props} />;
-      if (section.kind === "mark-the-words") return <NativeMarkWordsTeacherSurface {...props} />;
+      if (section.kind === "complete-sentences") return <NativeCompleteSentencesTeacherSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
+      if (section.kind === "open-response") return <NativeOpenResponseTeacherSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
+      if (section.kind === "mark-the-words") return <NativeMarkWordsTeacherSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
       if (section.kind === "image") return <NativeImageTeacherPresentation document={child.publicDocument} teacherDocument={visible ? child.teacherDocument : null} assetUrl={assetUrl} teacherAssetUrl={teacherAssetUrl ? (assetId) => teacherAssetUrl(assetId, section.id) : undefined} identity={section.id} />;
       throw new Error("Unsupported Multi-Part Teacher section.");
-    }} />
-  </>;
+    }} />;
 }
 export function NativeMultiPartTeacherSurface({ identity = "", ...props }) {
   return <Session key={`${props.publicDocument.activityId}:${identity}`} {...props} />;

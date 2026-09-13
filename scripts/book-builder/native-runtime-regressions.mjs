@@ -1,3 +1,6 @@
+import { runSharedAuthoringRegressions } from "./native-shared-authoring-regressions.mjs";
+import { runSharedFiveRegressions } from "./native-shared-five-regressions.mjs";
+import { runMultiPartSizingRegressions } from "./native-multi-part-sizing-regressions.mjs";
 import { runNativeMultiPartRegressions } from "./native-multi-part-regressions.mjs";
 import { runHistoricalFocusRegressions } from "./native-historical-focus-regressions.mjs";
 import assert from "node:assert/strict";
@@ -85,6 +88,9 @@ try {
   await runNativePresentationRegressions(browser, output);
   await runHistoricalFocusRegressions(browser, output);
   await runNativeDragImageRegressions(browser, server.resolvedUrls.local[0], output);
+  await runSharedAuthoringRegressions(browser, server.resolvedUrls.local[0], output);
+  await runSharedFiveRegressions(browser, server.resolvedUrls.local[0], output);
+  await runMultiPartSizingRegressions(browser, server.resolvedUrls.local[0], output);
   await runNativeMultiPartRegressions(browser, server.resolvedUrls.local[0], output);
   console.log("Native runtime browser regressions passed.");
 } finally { await browser.close(); await server.close(); }

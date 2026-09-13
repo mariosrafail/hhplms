@@ -753,7 +753,7 @@ async function nativeCatalog(dependencies, sql, parsedRoute) {
       for (const requirement of requirements) {
         const reference = publicDocument.assets.find((asset) => asset.slot === requirement.slot);
         const asset = reference ? assetRows.get(reference.assetId) : null;
-        if (!asset || (requirement.mediaType && asset.mime_type !== requirement.mediaType)) {
+        if (!asset || (requirement.mediaType && asset.mime_type !== requirement.mediaType) || (requirement.mediaTypes && !requirement.mediaTypes.includes(asset.mime_type))) {
           issues.push(`${requirement.label || "Native managed asset"} media type does not match the managed asset.`);
         } else if (requirement.width !== undefined
           && (Number(asset.width) !== requirement.width || Number(asset.height) !== requirement.height)) {

@@ -27,3 +27,6 @@
 .native-complete-sentences-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .native-complete-sentences-inline-blank{display:inline-block;min-width:5em;margin:0 .15em;border-bottom:2px solid currentColor;text-align:center;letter-spacing:.08em}
 .native-activity-font-fallback { margin: 0; padding: 7px 10px; color: #9a3412; background: #fff1e8; border: 1px solid #fdba74; border-radius: 6px; font: 700 13px/1.3 system-ui, sans-serif; }
+
+.native-complete-sentences[data-embedded-canvas], .native-complete-sentences[data-embedded-canvas] .native-complete-sentences-stage { width: 100%; height: 100%; max-width: none; max-height: none; padding: 0; margin: 0; border: 0; background: transparent; aspect-ratio: auto !important; pointer-events: none; }
+.native-complete-sentences[data-embedded-canvas] .native-complete-sentences-blank { pointer-events: auto; }

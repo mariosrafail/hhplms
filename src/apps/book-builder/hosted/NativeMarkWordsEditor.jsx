@@ -1,3 +1,4 @@
+import { isMarkWordsVisual } from "../../../data/native-activities/nativeMarkWordsVisualTargets.js";
 import { compositeEditorContent, compositeEditorTabs, useCompositeEditorBinding } from "./nativeCompositeEditorBinding.js";
 import { useEffect, useRef, useState } from "react";
 import { BookOpenText, Eye, FileText, Film, KeyRound, LayoutPanelTop, Music } from "lucide-react";
@@ -26,7 +27,7 @@ export function NativeMarkWordsEditor({ compositeBinding = null, bookSlug, compo
   const [dirty, setDirty] = useState(false); const [mode, setMode] = useState("content"); const [preview, setPreview] = useState("student");
   const [textEdits, setTextEdits] = useState({}); const [uploading, setUploading] = useState(false);
   const [readableIncomplete, setReadableIncomplete] = useState(false); const [videoIncomplete, setVideoIncomplete] = useState(false); const [audioIncomplete, setAudioIncomplete] = useState(false);
-  useCompositeEditorBinding(compositeBinding, pair?.publicDocument, pair?.teacherDocument, dirty, uploading);
+  useCompositeEditorBinding(compositeBinding, pair?.publicDocument, pair?.teacherDocument, dirty, uploading, (publicDocument) => setPair((current) => ({ ...current, publicDocument })));
   const alive = useRef(false);
   const scope = { bookSlug, componentSlug, activityId };
   const message = (value) => { if (alive.current) setState((current) => ({ ...current, message: value })); };
@@ -38,6 +39,7 @@ export function NativeMarkWordsEditor({ compositeBinding = null, bookSlug, compo
       if (controller.signal.aborted) return;
       validateMarkWordsAuthoringPair(pub.document, teacher.document);
       install({ publicDocument: projectNativeActivityPublicForAuthoring(pub.document), teacherDocument: teacher.document });
+      if (isMarkWordsVisual(pub.document.parts[0].interaction) || !pub.document.parts[0].interaction.items?.length) setMode("visual");
       setState({ kind: "ready", message: "Saved draft", publicRevision: pub.revision, teacherRevision: teacher.revision, saving: false });
     }).catch((error) => { if (!controller.signal.aborted) setState({ kind: "error", message: error.message }); });
     return () => { alive.current = false; controller.abort(); };
@@ -52,7 +54,7 @@ export function NativeMarkWordsEditor({ compositeBinding = null, bookSlug, compo
   if (state.kind === "loading") return <p role="status">Loading Mark the Words…</p>;
   if (!pair || state.kind === "error") return <p role="alert">{state.message}</p>;
   const { publicDocument: publicDraft, teacherDocument: teacherDraft } = pair;
-  const { items, presentation } = publicDraft.parts[0].interaction;
+  const { items = [], presentation } = publicDraft.parts[0].interaction;
   const readiness = assessNativeMarkWordsReadiness(publicDraft, teacherDraft);
   const pendingText = items.some((item) => Object.hasOwn(textEdits, item.id) && textEdits[item.id] !== item.text);
   const issues = [...readiness.issues, ...(pendingText ? ["Apply or discard pending passage text edits."] : []), ...([readableIncomplete, videoIncomplete, audioIncomplete].some(Boolean) ? ["Complete the enabled media setup before saving."] : []), ...(uploading ? ["Wait for the asset upload to finish."] : [])];
@@ -79,9 +81,9 @@ export function NativeMarkWordsEditor({ compositeBinding = null, bookSlug, compo
     <header className="studio-editor-header"><div><span className="studio-eyebrow">{placementLabel} · Mark the Words</span><h2>{publicDraft.metadata.title}</h2></div></header>
     <fieldset disabled={state.saving || uploading} style={{ border: 0, padding: 0, minWidth: 0 }}>
       <StudioTabWorkspace id="native-mark-words-tabs" value={mode} onChange={setMode} tabs={compositeEditorTabs(compositeBinding, tabs)} label="Mark the Words authoring modes">
-        {mode === "content" ? <><StudioField label="Activity title"><input maxLength={300} value={publicDraft.metadata.title} onChange={(event) => mutatePublic((next) => { next.metadata.title = event.target.value; })} /></StudioField><NativeBulkGenerator kind="mark-the-words" hasExistingContent={items.length > 0} onGenerate={generate} /><StudioButton disabled={items.length >= NATIVE_MARK_WORDS_LIMITS.passages} onClick={() => mutatePair(addNativeMarkWordsPassage)}>Add passage</StudioButton></> : null}
+        {mode === "content" && !isMarkWordsVisual(publicDraft.parts[0].interaction) ? <><StudioField label="Activity title"><input maxLength={300} value={publicDraft.metadata.title} onChange={(event) => mutatePublic((next) => { next.metadata.title = event.target.value; })} /></StudioField><NativeBulkGenerator kind="mark-the-words" hasExistingContent={items.length > 0} onGenerate={generate} /><StudioButton disabled={items.length >= NATIVE_MARK_WORDS_LIMITS.passages} onClick={() => mutatePair(addNativeMarkWordsPassage)}>Add passage</StudioButton></> : null}
         {["content", "answer-key"].includes(mode) ? items.map((item, index) => <section key={item.id} className="studio-content-panel"><h3>Passage {index + 1}</h3>
-          {mode === "content" ? <><StudioField label={`Passage ${index + 1} text`}><textarea rows={4} maxLength={NATIVE_MARK_WORDS_LIMITS.text} value={textEdits[item.id] ?? item.text} onChange={(event) => { setTextEdits((current) => ({ ...current, [item.id]: event.target.value })); changed(); }} /></StudioField>
+          {mode === "content" && !isMarkWordsVisual(publicDraft.parts[0].interaction) ? <><StudioField label={`Passage ${index + 1} text`}><textarea rows={4} maxLength={NATIVE_MARK_WORDS_LIMITS.text} value={textEdits[item.id] ?? item.text} onChange={(event) => { setTextEdits((current) => ({ ...current, [item.id]: event.target.value })); changed(); }} /></StudioField>
             <StudioButton disabled={!Object.hasOwn(textEdits, item.id) || textEdits[item.id] === item.text} onClick={() => {
               if (!globalThis.confirm("Rebuild this passage's words? Its private answers and word hotspots will be cleared. Other passages remain unchanged.")) return;
               mutatePair((pub, teacher) => rebuildNativeMarkWordsPassage(pub, teacher, item.id, textEdits[item.id], { confirmed: true }));
@@ -91,7 +93,7 @@ export function NativeMarkWordsEditor({ compositeBinding = null, bookSlug, compo
           </> : <p>Click each correct occurrence. Repeated words are independent.</p>}
           <div className="native-mark-words" data-marking={presentation.marking}><NativeMarkWordsPassage item={item} itemNumber={index + 1} readOnly={mode !== "answer-key"} selected={mode === "answer-key" ? teacherDraft.parts[0].solution.answers.find((answer) => answer.itemId === item.id)?.correctWordIds || [] : []} onToggle={(itemId, wordId) => mutatePair((pub, teacher) => { const current = teacher.parts[0].solution.answers.find((answer) => answer.itemId === itemId).correctWordIds; setNativeMarkWordsAnswers(pub, teacher, itemId, current.includes(wordId) ? current.filter((id) => id !== wordId) : [...current, wordId]); })} /></div>
         </section>) : null}
-        {mode === "visual" ? <NativeMarkWordsVisualEditor {...scope} publicDraft={publicDraft} mutatePublic={mutatePublic} assetUrl={assetUrl} onMessage={message} onUploading={setUploading} isActive={() => alive.current} /> : null}
+        {mode === "visual" || (mode === "answer-key" && isMarkWordsVisual(publicDraft.parts[0].interaction)) ? <NativeMarkWordsVisualEditor {...scope} publicDraft={publicDraft} teacherDraft={teacherDraft} mutatePair={mutatePair} sharedCanvas={compositeBinding?.sharedCanvas} mutatePublic={mutatePublic} assetUrl={assetUrl} onMessage={message} onUploading={setUploading} isActive={() => alive.current} /> : null}
         <div hidden={mode !== "readable-text"}><NativeReadableTextEditor {...mediaProps} onIncompleteChange={setReadableIncomplete} /></div>
         <div hidden={mode !== "video"}><NativeVideoEditor {...mediaProps} onIncompleteChange={setVideoIncomplete} /></div>
         <div hidden={mode !== "supplemental-audio"}><NativeSupplementalAudioEditor {...mediaProps} onIncompleteChange={setAudioIncomplete} /></div>

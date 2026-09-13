@@ -181,7 +181,7 @@ export function nativeActivityUsesManagedAssetSlot(publicDocument, slot) {
     || interaction?.presentation?.textStyle?.fontAssetSlot === slot
     || interaction?.presentation?.placedAnswerStyle?.fontAssetSlot === slot
     || interaction?.presentation?.backgroundAssetSlot === slot
-    || Boolean(interaction?.presentation?.panels?.some((panel) => panel.hotspots?.some((hotspot) => hotspot.presentation?.fontAssetSlot === slot)))
+    || Boolean(interaction?.presentation?.panels?.some((panel) => panel.hotspots?.some((hotspot) => (hotspot.presentation?.fontAssetSlot === slot || hotspot.graphicAssetSlot === slot))))
     || Boolean(interaction?.questions?.some((question) => question.responseRegion?.presentation?.answerFontAssetSlot === slot))
     || Boolean(interaction?.presentation?.panels?.some((panel) => panel.images?.some((item) => item.assetSlot === slot)))
     || Boolean(interaction?.presentation?.panels?.some((panel) => panel.backgroundAssetSlot === slot))

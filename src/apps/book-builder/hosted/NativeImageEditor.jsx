@@ -47,7 +47,7 @@ export function NativeImageEditor({ compositeBinding = null, bookSlug, component
   const [videoIncomplete, setVideoIncomplete] = useState(false);
   const [supplementalAudioIncomplete, setSupplementalAudioIncomplete] = useState(false);
 
-  useCompositeEditorBinding(compositeBinding, publicDraft, teacherDraft, dirty, uploading || answerUploading);
+  useCompositeEditorBinding(compositeBinding, publicDraft, teacherDraft, dirty, uploading || answerUploading, setPublicDraft);
   useEffect(() => {
     const controller = new AbortController();
     setState({ kind: "loading", message: "" });

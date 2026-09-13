@@ -19,7 +19,7 @@ function TeacherAnswer({ publicDocument, fontState, panel, question, texts, visi
   </button>;
 }
 
-function NativeOpenResponseTeacherSession({ publicDocument, teacherDocument, assetUrl, onOverflow, presentation, audioHotspotPresentation }) {
+function NativeOpenResponseTeacherSession({ publicDocument, teacherDocument, assetUrl, onOverflow, presentation, audioHotspotPresentation, embeddedCanvas }) {
   const [revealed, setRevealed] = useState(() => new Set());
   const [panelIndex, setPanelIndex] = useState(0);
   const interaction = publicDocument.parts[0].interaction;
@@ -62,11 +62,11 @@ function NativeOpenResponseTeacherSession({ publicDocument, teacherDocument, ass
   if (!panel) return <p role="status">This Open Response activity has no panels yet.</p>;
   const visibleResponseIds = nativeOpenResponsePanelResponseIds(panel);
   const visibleQuestions = interaction.questions.filter((question) => visibleResponseIds.includes(question.id));
-  return <section className="native-or-panel-session">{fontState.failures.length ? <p className="native-activity-font-fallback" role="alert">Selected font could not be loaded; using the default font.</p> : null}<NativeOpenResponseFontSurface document={publicDocument} panel={panel} assetUrl={assetUrl} audioHotspotPresentation={audioHotspotPresentation}>
+  return <section className="native-or-panel-session" data-embedded-surface={embeddedCanvas || undefined}>{fontState.failures.length ? <p className="native-activity-font-fallback" role="alert">Selected font could not be loaded; using the default font.</p> : null}<NativeOpenResponseFontSurface document={publicDocument} panel={panel} assetUrl={assetUrl} audioHotspotPresentation={audioHotspotPresentation} embeddedCanvas={embeddedCanvas}>
     {visibleQuestions.map((question) => <TeacherAnswer key={question.id} publicDocument={publicDocument} fontState={fontState} panel={panel} question={question} texts={answers.get(question.id) || []} visible={revealed.has(question.id)} onToggle={() => toggle(question.id)} onOverflow={onOverflow} />)}
   </NativeOpenResponseFontSurface>{!presentation && panels.length > 1 ? <nav className="native-or-panel-navigation" aria-label="Open Response panels"><button type="button" disabled={panelIndex === 0} onClick={() => setPanelIndex((current) => Math.max(0, current - 1))}>Previous</button><span>Panel {panelIndex + 1} of {panels.length}</span><button type="button" disabled={panelIndex === panels.length - 1} onClick={() => setPanelIndex((current) => Math.min(panels.length - 1, current + 1))}>Next</button></nav> : null}</section>;
 }
 
-export function NativeOpenResponseTeacherSurface({ publicDocument, teacherDocument, assetUrl = () => "", onOverflow = () => {}, presentation = null, audioHotspotPresentation = null }) {
-  return <NativeOpenResponseTeacherSession key={publicDocument.activityId} publicDocument={publicDocument} teacherDocument={teacherDocument} assetUrl={assetUrl} onOverflow={onOverflow} presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} />;
+export function NativeOpenResponseTeacherSurface({ publicDocument, teacherDocument, assetUrl = () => "", onOverflow = () => {}, presentation = null, audioHotspotPresentation = null, embeddedCanvas = false }) {
+  return <NativeOpenResponseTeacherSession key={publicDocument.activityId} publicDocument={publicDocument} teacherDocument={teacherDocument} assetUrl={assetUrl} onOverflow={onOverflow} presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} embeddedCanvas={embeddedCanvas} />;
 }

@@ -1,3 +1,4 @@
+import { isMarkWordsVisual, MARK_WORDS_VISUAL_VERSION, normalizeMarkWordsVisualInteraction, normalizeMarkWordsVisualSolution, validateMarkWordsVisualTopology } from "./nativeMarkWordsVisualTargets.js";
 import { isNativeChildId } from "./nativeChildIdentity.js";
 import { normalizeNativeLineEndings } from "./nativePedagogicalText.js";
 import { validateNativeActivityDocumentPair } from "./nativeActivityTeacher.js";
@@ -51,6 +52,7 @@ export function createEmptyNativeMarkWordsInteraction() {
 }
 
 export function normalizeNativeMarkWordsInteraction(input, { assets = [] } = {}) {
+  if (isMarkWordsVisual(input) || input?.schemaVersion === MARK_WORDS_VISUAL_VERSION) return normalizeMarkWordsVisualInteraction(input, { assets });
   markWordsExact(input, ["kind", "items", "presentation"], "Mark the Words interaction");
   if (input.kind !== "mark-the-words" || !Array.isArray(input.items) || input.items.length > NATIVE_MARK_WORDS_LIMITS.passages) throw new Error("Mark the Words passages are invalid.");
   const seen = new Set();
@@ -108,6 +110,7 @@ export function normalizeNativeMarkWordsInteraction(input, { assets = [] } = {})
 }
 
 export function normalizeNativeMarkWordsSolution(input) {
+  if (input?.schemaVersion === MARK_WORDS_VISUAL_VERSION) return normalizeMarkWordsVisualSolution(input);
   markWordsExact(input, ["kind", "answers"], "Mark the Words Teacher solution");
   if (input.kind !== "mark-the-words" || !Array.isArray(input.answers) || input.answers.length > NATIVE_MARK_WORDS_LIMITS.passages) throw new Error("Mark the Words Teacher answers are invalid.");
   const seen = new Set();
@@ -123,6 +126,7 @@ export function normalizeNativeMarkWordsSolution(input) {
 
 export function validateNativeMarkWordsTopology(publicDocument, teacherDocument) {
   validateNativeActivityDocumentPair(publicDocument, teacherDocument);
+  if (isMarkWordsVisual(publicDocument.parts[0].interaction)) { validateMarkWordsVisualTopology(publicDocument.parts[0].interaction, teacherDocument.parts[0].solution); return true; }
   const items = publicDocument.parts[0].interaction.items;
   const answers = teacherDocument.parts[0].solution.answers;
   if (items.length !== answers.length || items.some((item, index) => {
@@ -141,6 +145,14 @@ export function assessNativeMarkWordsReadiness(publicDocument, teacherDocument) 
     validateNativeMarkWordsTopology(publicDocument, teacherDocument);
   } catch (error) { return { ready: false, issues: [error.message] }; }
   const { items, presentation } = publicDocument.parts[0].interaction;
+  if (isMarkWordsVisual(publicDocument.parts[0].interaction)) {
+    if (!publicDocument.parts[0].interaction.targets.length) issues.push("Draw at least one visual target.");
+    presentation.panels.forEach((panel, index) => {
+      if (!panel.backgroundAssetSlot) issues.push(`Panel ${index + 1} needs a managed background.`);
+      if (!teacherDocument.parts[0].solution.answers[index].correctTargetIds.length) issues.push(`Panel ${index + 1} needs at least one correct target.`);
+    });
+    return { ready: !issues.length, issues };
+  }
   if (!items.length) issues.push("Add at least one exercise passage.");
   items.forEach((item, index) => {
     if (!item.words.length) issues.push(`Passage ${index + 1} needs at least one lexical word.`);
@@ -157,5 +169,6 @@ export function assessNativeMarkWordsReadiness(publicDocument, teacherDocument) 
 
 export function nativeMarkWordsAssetRequirements(document) {
   const presentation = document.parts[0].interaction.presentation;
+  if (isMarkWordsVisual(document.parts[0].interaction)) return [...presentation.panels.filter((panel) => panel.backgroundAssetSlot).map((panel) => ({ slot: panel.backgroundAssetSlot, width: panel.sourceWidth, height: panel.sourceHeight })), ...[...new Set(presentation.panels.flatMap((panel) => panel.hotspots.map((hotspot) => hotspot.graphicAssetSlot)).filter(Boolean))].map((slot) => ({ slot, mediaTypes: ["image/png", "image/jpeg", "image/webp"], label: "Target graphic" }))];
   return [...presentation.panels.filter((panel) => panel.backgroundAssetSlot).map((panel) => ({ slot: panel.backgroundAssetSlot, width: panel.sourceWidth, height: panel.sourceHeight })), ...(presentation.textStyle.fontAssetSlot ? [{ slot: presentation.textStyle.fontAssetSlot, mediaType: "font/ttf", label: "Passage font" }] : [])];
 }

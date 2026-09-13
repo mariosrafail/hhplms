@@ -235,7 +235,7 @@ export function validateNativePublicationAssetRows(nativeEntries, assetRows) {
       for (const requirement of requirements) {
         const reference = references.find((asset) => asset.slot === requirement.slot);
         const row = reference ? byId.get(reference.assetId) : null;
-        if (!row || (requirement.mediaType && row.mime_type !== requirement.mediaType)) {
+        if (!row || (requirement.mediaType && row.mime_type !== requirement.mediaType) || (requirement.mediaTypes && !requirement.mediaTypes.includes(row.mime_type))) {
           throw new NativePublicationError("native_activity_asset_invalid", activityId, [`${requirement.label || "Native managed asset"} media type does not match the managed asset.`]);
         }
         if (requirement.byteSize !== undefined && Number(row.byte_size) !== requirement.byteSize) {

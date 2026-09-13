@@ -13,14 +13,20 @@ export function compositeEditorTabs(binding, tabs) {
   return binding ? tabs.filter((tab) => !["readable-text", "video", "supplemental-audio", "preview"].includes(tab.id)) : tabs;
 }
 
-export function useCompositeEditorBinding(binding, publicDocument, teacherDocument, dirty, busy) {
+export function useCompositeEditorBinding(binding, publicDocument, teacherDocument, dirty, busy, receivePublicDocument) {
   const callbacks = useRef(binding); callbacks.current = binding;
+  const revision = useRef(binding?.backgroundRevision);
   useEffect(() => {
+    if (revision.current !== binding?.backgroundRevision) {
+      revision.current = binding?.backgroundRevision;
+      receivePublicDocument?.(structuredClone(binding.publicDocument));
+      return;
+    }
     if (dirty && publicDocument && teacherDocument) callbacks.current?.onPairChange({ publicDocument, teacherDocument });
-  }, [publicDocument, teacherDocument, dirty]);
+  }, [publicDocument, teacherDocument, dirty, binding?.backgroundRevision]);
   useEffect(() => {
-    callbacks.current?.onBusyChange(Boolean(busy));
-    return () => callbacks.current?.onBusyChange(false);
+    callbacks.current?.onBusyChange?.(Boolean(busy));
+    return () => callbacks.current?.onBusyChange?.(false);
   }, [busy]);
 }
 

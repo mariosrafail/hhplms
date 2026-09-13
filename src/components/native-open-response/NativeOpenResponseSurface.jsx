@@ -19,7 +19,7 @@ function ResponseLines({ question, surface, onActivate, selected }) {
   return <button type="button" className={`native-or-response native-or-selectable ${selected ? "is-selected" : ""}`} style={style} aria-label={region.ariaLabel} onClick={onActivate}>{content}</button>;
 }
 
-export function NativeOpenResponseSurface({ document, panel: selectedPanel = null, assetUrl = () => "", onSelect = null, selected = null, children = null, className = "", audioHotspotPresentation = null }) {
+export function NativeOpenResponseSurface({ document, panel: selectedPanel = null, assetUrl = () => "", onSelect = null, selected = null, children = null, className = "", audioHotspotPresentation = null, embeddedCanvas = false }) {
   const interaction = document.parts[0].interaction;
   const panel = selectedPanel || nativeOpenResponsePanels(interaction)[0];
   if (!panel) return <p role="status">This Open Response activity has no panels yet.</p>;
@@ -30,8 +30,8 @@ export function NativeOpenResponseSurface({ document, panel: selectedPanel = nul
   const responses = interaction.questions.filter((question) => responseIds.includes(question.id));
   const assets = new Map(document.assets.map((asset) => [asset.slot, asset]));
   const staticLayer = !onSelect;
-  return <div className={`native-or-surface ${className}`.trim()} style={{ aspectRatio: `${surface.width} / ${surface.height}` }} data-studio-stage data-native-or-presentation={staticLayer ? "runtime" : "authoring"} data-surface-width={surface.width} data-surface-height={surface.height} onClick={(event) => { if (event.button === 0 && event.target === event.currentTarget) onSelect?.(null); }}>
-    {panel.images.map((item) => {
+  return <div className={`native-or-surface ${className}`.trim()} style={{ aspectRatio: `${surface.width} / ${surface.height}` }} data-embedded-canvas={embeddedCanvas || undefined} data-studio-stage data-native-or-presentation={staticLayer ? "runtime" : "authoring"} data-surface-width={surface.width} data-surface-height={surface.height} onClick={(event) => { if (event.button === 0 && event.target === event.currentTarget) onSelect?.(null); }}>
+    {!embeddedCanvas && panel.images.map((item) => {
       const reference = assets.get(item.assetSlot);
       const authoringLocked = Boolean(onSelect && item.locked);
       const content = reference ? <img src={assetUrl(reference.assetId)} alt={item.decorative ? "" : item.altText} style={{ objectFit: item.fit }} /> : null;
@@ -39,10 +39,10 @@ export function NativeOpenResponseSurface({ document, panel: selectedPanel = nul
       if (staticLayer) return <div key={item.id} {...props}>{content}</div>;
       return <button key={item.id} {...props} type="button" aria-label={`${item.decorative ? "Decorative artwork" : item.altText || "Artwork"}${authoringLocked ? " (locked)" : ""}`} onClick={() => onSelect({ type: "artwork", id: item.id })}>{content}</button>;
     })}
-    {prompts.map((question) => staticLayer
+    {!embeddedCanvas && prompts.map((question) => staticLayer
       ? <div key={`prompt-${question.id}`} className="native-or-prompt native-or-selectable native-or-static" style={{ ...logicalAreaStyle(question.promptArea, surface), fontFamily: question.promptStyle.fontFamily, fontSize: `${(question.promptStyle.fontSize / surface.width) * 100}cqw`, color: question.promptStyle.color, textAlign: question.promptStyle.align, pointerEvents: "none" }}>{question.prompt || "Prompt"}</div>
       : <button key={`prompt-${question.id}`} type="button" className={`native-or-prompt native-or-selectable ${selected?.type === "prompt" && selected.id === question.id ? "is-selected" : ""}`} style={{ ...logicalAreaStyle(question.promptArea, surface), fontFamily: question.promptStyle.fontFamily, fontSize: `${(question.promptStyle.fontSize / surface.width) * 100}cqw`, color: question.promptStyle.color, textAlign: question.promptStyle.align }} onClick={() => onSelect({ type: "prompt", id: question.id })}>{question.prompt || "Prompt"}</button>)}
-    {responses.map((question) => <ResponseLines key={`response-${question.id}`} question={question} surface={surface} selected={selected?.type === "response" && selected.id === question.id} onActivate={onSelect ? () => onSelect({ type: "response", id: question.id }) : null} />)}
+    {!embeddedCanvas && responses.map((question) => <ResponseLines key={`response-${question.id}`} question={question} surface={surface} selected={selected?.type === "response" && selected.id === question.id} onActivate={onSelect ? () => onSelect({ type: "response", id: question.id }) : null} />)}
     <NativeAudioTextHotspotButtons panelId={panel.legacy ? null : panel.id} surface={surface} presentation={audioHotspotPresentation} />
     {children}
   </div>;

@@ -1,3 +1,4 @@
+import { exerciseVisualTargetPersistence } from "./_visual-target-persistence.mjs";
 import assert from "node:assert/strict";
 import { randomUUID, randomBytes } from "node:crypto";
 import test from "node:test";
@@ -72,5 +73,6 @@ test("isolated PostgreSQL transitions protected assets without changing public r
   assert.equal(multi.statusCode, 200, multi.body);
   const multiId = JSON.parse(multi.body).activityId;
   const docs = (await pool.query("select payload from builder_component_documents where document_key=$1 and document_type in ('native_activity_public','native_activity_teacher')", [multiId])).rows;
+  await exerciseVisualTargetPersistence({ pool, sql, handler, event, actor, identity });
   assert.equal(docs.length, 2); assert.ok(docs.every((entry) => entry.payload.kind === "multi-part" && entry.payload.parts.length === 1));
 });

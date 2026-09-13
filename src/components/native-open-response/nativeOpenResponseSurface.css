@@ -7,3 +7,6 @@
 .native-or-answer-variants > span { display: grid; gap: 1px; }
 .native-or-answer-variants strong { font-size: .72em; text-transform: uppercase; }
 .native-or-answer-variants > span > span { overflow-wrap: anywhere; white-space: pre-wrap; }
+
+.native-or-panel-session[data-embedded-surface], .native-or-surface[data-embedded-canvas] { height: 100%; width: 100%; padding: 0; margin: 0; border: 0; box-shadow: none; background: transparent; aspect-ratio: auto !important; pointer-events: none; }
+.native-or-surface[data-embedded-canvas] :is(.native-or-student-response, .native-or-answer-layer) { pointer-events: auto; }

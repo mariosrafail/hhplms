@@ -1,3 +1,4 @@
+import { exerciseVisualTargetAuthoring } from "./hosted-visual-target-authoring.mjs";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
@@ -7,11 +8,13 @@ import { assertAhemRendering } from "./hosted-native-activity-authoring-helpers.
 import { normalizeNativeRuntimePublicDocument, normalizeNativeRuntimeTeacherDocument } from "../../src/data/native-activities/nativeActivityRuntimeValidation.js";
 
 export async function exerciseMarkWordsAuthoring(page, { screenshotRoot, savedPair = null, title = "Browser Mark the Words", visual = true }) {
+  if (visual) await exerciseVisualTargetAuthoring(page, { screenshotRoot, savedPair, title });
   await page.getByRole("button", { name: "Add Activity", exact: true }).click();
   await page.getByRole("radio", { name: /Mark the Words/ }).check(); await page.getByLabel(/Initial title/).fill(title);
   await page.getByRole("button", { name: "Create activity", exact: true }).click();
   const editor = page.locator(".native-mark-words-editor"); await editor.waitFor();
   await expect(editor.getByRole("button", { name: "Save Draft", exact: true })).toBeDisabled();
+  await editor.getByRole("tab", { name: "Content", exact: true }).click();
   await editor.getByText("Bulk generate from text", { exact: true }).click();
   await editor.getByLabel("Paste numbered Mark the Words content").fill("1. I *watch* watch.\n2. They *work* now.");
   await editor.getByRole("button", { name: "Generate content", exact: true }).click();

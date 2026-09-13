@@ -23,7 +23,7 @@ export async function exerciseHostedComposition(page, { nativeDocuments, imageId
   for (const [name, prompt] of [["First choices", "Which first?"], ["Second choices", "Which second?"]]) {
     await editor.getByRole("button", { name: "Add Section", exact: true }).click();
     await editor.getByLabel("Section title", { exact: true }).fill(name);
-    const child = editor.locator(".native-single-choice-editor");
+    const child = editor.locator(".native-single-choice-editor:visible");
     await child.getByRole("button", { name: "Add Question", exact: true }).click();
     await child.getByLabel("Prompt", { exact: true }).fill(prompt);
     await child.getByLabel("Option 1", { exact: true }).fill("Yes");
@@ -39,7 +39,7 @@ export async function exerciseHostedComposition(page, { nativeDocuments, imageId
   assert.equal(saved.publicDocument.parts[0].interaction.sections.length, 2);
   const publicDocument = normalizeNativeRuntimePublicDocument(saved.publicDocument, { activityId: id, kind: "multi-part" });
   normalizeNativeRuntimeTeacherDocument(saved.teacherDocument, { activityId: id, kind: "multi-part", publicDocument });
-  await editor.getByRole("button", { name: "Preview whole activity", exact: true }).click();
+  await editor.getByRole("tab", { name: "Preview whole activity", exact: true }).click();
   await editor.getByRole("radio", { name: "Yes", exact: true }).first().check();
   await editor.getByRole("radio", { name: "No", exact: true }).last().check();
   await expect(editor.getByRole("radio", { name: "Yes", exact: true }).first()).toBeChecked();
@@ -50,7 +50,7 @@ export async function exerciseHostedComposition(page, { nativeDocuments, imageId
   await expect(editor.getByRole("button", { name: "First choices", exact: true })).toBeVisible();
   assert.deepEqual(nativeDocuments.get(id), saved);
   await editor.getByRole("button", { name: "Second choices", exact: true }).click();
-  const bulk = editor.locator(".native-single-choice-editor .native-bulk-generator");
+  const bulk = editor.locator(".native-single-choice-editor:visible .native-bulk-generator");
   await bulk.locator("summary").click();
   await bulk.getByLabel("Paste numbered Multiple Choice content", { exact: true }).fill("1. Rebuilt second section\n*Yes\n*No");
   await bulk.getByRole("checkbox", { name: /Replace existing semantic content/ }).check();
@@ -68,7 +68,7 @@ export async function exerciseHostedComposition(page, { nativeDocuments, imageId
   page.off("request", capture);
   await reviewHostedComposition(page, id);
   await page.getByRole("button", { name: new RegExp(imageId) }).click();
-  const image = page.locator(".native-image-editor");
+  const image = page.locator(".native-image-editor:visible");
   await image.getByRole("tab", { name: "Content", exact: true }).click();
   await image.getByLabel("Enable Sample answer", { exact: true }).check();
   await image.getByLabel("Sample answer image", { exact: true }).setInputFiles({ name: "choice-private-answer.png", mimeType: "image/png", buffer: answerBytes });

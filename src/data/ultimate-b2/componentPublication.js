@@ -12,7 +12,7 @@ const SHA256 = /^[a-f0-9]{64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SAFE_ACTIVITY_ID = /^[a-z0-9][a-z0-9-]{0,127}$/;
 const forbiddenPublicKeys = new Set([
-  "correctwordids", "iscorrect", "answercount", "markedsource",
+  "correctwordids", "correcttargetids", "iscorrect", "answercount", "markedsource",
   "acceptedanswers", "correctanswers", "correctoption", "correctoptionid", "teacherprojection",
   "teachersolutions", "modelanswer", "teacheranswer", "answerkey", "sourceprovenance", "rawxml",
   "archivemanifest", "privateobjectkey", "signedurl",

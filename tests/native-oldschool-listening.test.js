@@ -224,7 +224,7 @@ test("partially enriched mappings safely fall back to the complete cue wording",
   assert.equal(fragments.map((fragment) => fragment.text).filter(Boolean).join(" "), interaction.cues[0].text);
 });
 
-test("exact fragments always use uniform 21px source typography while fallback fitting remains safe", () => {
+test("legacy exact fragments without authored styles retain uniform 21px while fallback fitting remains safe", () => {
   const exactFragments = [
     { exact: true, text: "What", width: 36, height: 20 },
     { exact: true, text: "A deliberately long exact source fragment that must never auto-shrink", width: 900, height: 31 },

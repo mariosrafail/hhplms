@@ -1,3 +1,4 @@
+import { normalizeOldschoolTypography, normalizeOldschoolRuns, oldschoolTranscriptFontSlots, oldschoolQuestionAssets, validateOldschoolTranscriptBudget } from "./nativeOldschoolListeningTypography.js";
 import { normalizeOldschoolQuestionSurface, oldschoolQuestionPanel } from "./nativeOldschoolQuestionSurface.js";
 import { isNativeChildId } from "./nativeChildIdentity.js";
 import {
@@ -75,15 +76,20 @@ function normalizeLegacyQuestion(input, index) {
   return { ...createNativeOpenResponseQuestion(input.id, index), prompt: normalizeNativePedagogicalText(input.prompt, `${label}.prompt`, NATIVE_OLDSCHOOL_LISTENING_LIMITS.promptLength, { forbidMarkup: false }) };
 }
 
-function normalizeRegion(input, cueIndex, regionIndex, surface) {
+function normalizeRegion(input, cueIndex, regionIndex, surface, assets) {
   const label = `Oldschool Listening cues[${cueIndex}].highlightRegions[${regionIndex}]`;
   const hasText = Object.hasOwn(input, "text");
-  exactKeys(input, ["id", "x", "y", "width", "height", ...(hasText ? ["text"] : [])], label);
+  exactKeys(input, ["id", "x", "y", "width", "height", ...(hasText ? ["text"] : []), ...["typography", "runs"].filter((key) => Object.hasOwn(input, key))], label);
   if (!isNativeChildId(input.id, "region")) throw new Error(`${label}.id is invalid.`);
-  return { id: input.id, ...area({ x: input.x, y: input.y, width: input.width, height: input.height }, label, surface), ...(hasText ? { text: normalizeNativePedagogicalText(input.text, `${label}.text`, NATIVE_OLDSCHOOL_LISTENING_LIMITS.cueTextLength, { required: true, forbidMarkup: false }) } : {}) };
+  const text = hasText ? normalizeNativePedagogicalText(input.text, `${label}.text`, NATIVE_OLDSCHOOL_LISTENING_LIMITS.cueTextLength, { required: true, forbidMarkup: false }) : null;
+  if (!hasText && (Object.hasOwn(input, "typography") || Object.hasOwn(input, "runs"))) throw new Error(`${label} typography requires exact region text.`);
+  return { id: input.id, ...area({ x: input.x, y: input.y, width: input.width, height: input.height }, label, surface), ...(hasText ? { text } : {}),
+    ...(Object.hasOwn(input, "typography") ? { typography: normalizeOldschoolTypography(input.typography, { assets, label }) } : {}),
+    ...(Object.hasOwn(input, "runs") ? { runs: normalizeOldschoolRuns(input.runs, text, assets, label) } : {}),
+  };
 }
 
-function normalizeCue(input, index, surface) {
+function normalizeCue(input, index, surface, assets) {
   const label = `Oldschool Listening cues[${index}]`;
   exactKeys(input, ["id", "startMs", "endMs", "text", "highlightRegions", "scrollY"], label);
   if (!isNativeChildId(input.id, "cue")) throw new Error(`${label}.id is invalid.`);
@@ -91,7 +97,8 @@ function normalizeCue(input, index, surface) {
   const endMs = integer(input.endMs, `${label}.endMs`, 1, NATIVE_OLDSCHOOL_LISTENING_LIMITS.durationMs);
   if (endMs <= startMs) throw new Error(`${label} must end after it starts.`);
   if (!Array.isArray(input.highlightRegions) || input.highlightRegions.length > NATIVE_OLDSCHOOL_LISTENING_LIMITS.regionsPerCue) throw new Error(`${label}.highlightRegions count is invalid.`);
-  const regions = input.highlightRegions.map((region, regionIndex) => normalizeRegion(region, index, regionIndex, surface));
+  const regions = input.highlightRegions.map((region, regionIndex) => normalizeRegion(region, index, regionIndex, surface, assets));
+  if (regions.some((region) => region.typography || region.runs) && !regions.every((region) => typeof region.text === "string")) throw new Error(`${label} typography requires exact text in every region; partial mappings retain the legacy fallback.`);
   if (new Set(regions.map((region) => region.id)).size !== regions.length) throw new Error(`${label}.highlightRegions identities must be unique.`);
   const scrollY = input.scrollY === null ? null : integer(input.scrollY, `${label}.scrollY`, 0, surface.height);
   return { id: input.id, startMs, endMs, text: normalizeNativePedagogicalText(input.text, `${label}.text`, NATIVE_OLDSCHOOL_LISTENING_LIMITS.cueTextLength, { required: true, forbidMarkup: false }), highlightRegions: regions, scrollY };
@@ -108,7 +115,9 @@ function normalizeSnippet(input, index, cueIds, surface, assetSlots) {
 }
 
 export function normalizeNativeOldschoolListeningInteraction(input, { assets = [], commonAssetSlots = new Set() } = {}) {
-  const value = structuredClone(object(input, "Oldschool Listening interaction"));
+  object(input, "Oldschool Listening interaction");
+  if (new TextEncoder().encode(JSON.stringify(input)).length > 1024 * 1024) throw new Error("Oldschool Listening document exceeds 1 MiB.");
+  const value = structuredClone(input);
   const hasQuestionMode = Object.hasOwn(value, "questionMode");
   const questionMode = hasQuestionMode ? value.questionMode : "open-response";
   if (!NATIVE_OLDSCHOOL_LISTENING_QUESTION_MODES.includes(questionMode)) throw new Error("Oldschool Listening question mode is invalid.");
@@ -135,10 +144,12 @@ export function normalizeNativeOldschoolListeningInteraction(input, { assets = [
   const surfaceTwo = normalizeSurface(panelTwo, "Oldschool Listening Panel 2");
   if (panelTwo.pageAssetSlot && !assetSlots.has(panelTwo.pageAssetSlot)) throw new Error("Oldschool Listening page must reference a managed asset.");
   const sharedAssetSlots = new Set([...commonAssetSlots, value.audioAssetSlot, panelTwo.pageAssetSlot, ...value.snippetHotspots.map((hotspot) => hotspot?.audioAssetSlot)].filter(Boolean));
+  const cues = value.cues.map((cue, index) => normalizeCue(cue, index, surfaceTwo, assets));
+  validateOldschoolTranscriptBudget({ cues });
+  const questionAssets = oldschoolQuestionAssets({ ...value, cues }, assets);
   const questionSurface = questionMode === "open-response"
-    ? normalizeNativeOpenResponseInteraction({ kind: "open-response", surface: surfaceOne, artwork: legacyQuestions ? [] : value.artwork, questions: legacyQuestions ? value.questions.map(normalizeLegacyQuestion) : value.questions }, { assets, commonAssetSlots: sharedAssetSlots })
-    : normalizeNativeSingleChoiceInteraction({ kind: "single-choice", questions: value.questions, ...(hasPresentation ? { presentation: value.presentation } : {}) }, { assets, commonAssetSlots: sharedAssetSlots });
-  const cues = value.cues.map((cue, index) => normalizeCue(cue, index, surfaceTwo));
+    ? normalizeNativeOpenResponseInteraction({ kind: "open-response", surface: surfaceOne, artwork: legacyQuestions ? [] : value.artwork, questions: legacyQuestions ? value.questions.map(normalizeLegacyQuestion) : value.questions }, { assets: questionAssets, commonAssetSlots: sharedAssetSlots })
+    : normalizeNativeSingleChoiceInteraction({ kind: "single-choice", questions: value.questions, ...(hasPresentation ? { presentation: value.presentation } : {}) }, { assets: questionAssets, commonAssetSlots: sharedAssetSlots });
   const cueIds = cues.map((cue) => cue.id);
   if (new Set(cueIds).size !== cueIds.length) throw new Error("Oldschool Listening cue identities must be unique.");
   const regionIds = cues.flatMap((cue) => cue.highlightRegions.map((region) => region.id));
@@ -186,6 +197,7 @@ export function nativeOldschoolListeningQuestionPublicDocument(publicDocument) {
   const questionMode = nativeOldschoolListeningQuestionMode(interaction);
   return {
     ...publicDocument,
+    assets: oldschoolQuestionAssets(interaction, publicDocument.assets || []),
     kind: questionMode,
     parts: [{ ...publicDocument.parts[0], interaction: questionMode === "open-response"
       ? interaction.questionSurface
@@ -217,6 +229,7 @@ export function nativeOldschoolListeningAssetRequirements(publicDocument) {
   const panelTwo = interaction.panels[1];
   const questionDocument = nativeOldschoolListeningQuestionPublicDocument(publicDocument);
   return [
+    ...[...oldschoolTranscriptFontSlots(interaction)].map((slot) => ({ slot, mediaType: "font/ttf", label: "Oldschool Listening transcript font" })),
     ...(interaction.audioAssetSlot ? [{ slot: interaction.audioAssetSlot, mediaType: "audio/mpeg", label: "Oldschool Listening MP3" }] : []),
     ...(panelTwo?.pageAssetSlot ? [{ slot: panelTwo.pageAssetSlot, width: panelTwo.sourceWidth, height: panelTwo.sourceHeight, label: "Oldschool Listening page image" }] : []),
     ...interaction.snippetHotspots.filter((hotspot) => hotspot.audioAssetSlot).map((hotspot, index) => ({ slot: hotspot.audioAssetSlot, mediaType: "audio/mpeg", label: `Oldschool Listening hotspot MP3 ${index + 1}` })),

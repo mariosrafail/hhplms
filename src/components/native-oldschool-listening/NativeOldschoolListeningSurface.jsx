@@ -1,3 +1,4 @@
+import { NativeOldschoolExactTranscript, NativeOldschoolTranscriptFontStatus } from "./NativeOldschoolTranscript.jsx";
 import { NATIVE_OPEN_RESPONSE_LEGACY_PANEL_ID } from "../../data/native-activities/nativeOpenResponse.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -29,16 +30,11 @@ function OldschoolPage({ document, interaction, assetUrl, highlightedCueIds, vie
         <svg className="native-oldschool-listening-transcript" viewBox={`0 0 ${panel.sourceWidth} ${panel.sourceHeight}`} preserveAspectRatio="none" aria-hidden="true">
           {transcriptFragments.filter((fragment) => fragment.text && !fragment.exact).map((fragment) => <foreignObject key={fragment.regionId} x={fragment.x} y={fragment.y} width={fragment.width} height={fragment.height} className="native-oldschool-listening-transcript-fragment" data-cue-id={fragment.cueId} data-region-id={fragment.regionId} data-exact="false" data-highlighted="false"><div xmlns="http://www.w3.org/1999/xhtml" style={{ fontSize: `${nativeOldschoolListeningFragmentFontSize(fragment)}px` }}>{fragment.text}</div></foreignObject>)}
         </svg>
-        <div className="native-oldschool-listening-transcript native-oldschool-listening-exact-transcript" aria-hidden="true">
-          {transcriptFragments.filter((fragment) => fragment.text && fragment.exact).map((fragment) => {
-            const isActive = highlighted.has(fragment.cueId);
-            const sourceFontSize = nativeOldschoolListeningFragmentFontSize(fragment);
-            return <div key={fragment.regionId} className="native-oldschool-listening-transcript-fragment" style={nativeOldschoolListeningRegionStyle(fragment, { width: panel.sourceWidth, height: panel.sourceHeight })} data-cue-id={fragment.cueId} data-region-id={fragment.regionId} data-exact="true" data-highlighted={isActive ? "true" : "false"}><div style={{ fontSize: `${sourceFontSize / panel.sourceWidth * 100}cqw`, lineHeight: `${31 / panel.sourceWidth * 100}cqw`, height: `${31 / panel.sourceWidth * 100}cqw` }}><span className={`native-oldschool-listening-exact-text${isActive ? " is-active" : ""}`} style={isActive ? { backgroundColor: "rgba(255, 218, 78, 0.38)", border: 0, boxShadow: "none", outline: 0 } : undefined}>{fragment.text}</span></div></div>;
-          })}
-        </div>
+        <NativeOldschoolExactTranscript document={document} highlightedCueIds={highlightedCueIds} />
         {highlightedCues.flatMap((cue) => cue.highlightRegions.filter((region) => !exactRegionIds.has(region.id)).map((region) => <div key={region.id} className="native-oldschool-listening-highlight" style={nativeOldschoolListeningRegionStyle(region, { width: panel.sourceWidth, height: panel.sourceHeight })} data-cue-id={cue.id} data-region-id={region.id} aria-hidden="true" />))}
       </div>
     </NativeVerticalScrollViewport>
+    <NativeOldschoolTranscriptFontStatus document={document} assetUrl={assetUrl} />
     <p className="native-oldschool-listening-live" aria-live="polite">{highlightedCues.map((cue) => cue.text).join(" ")}</p>
   </section>;
 }

@@ -1,3 +1,4 @@
+import { runOldschoolTypographyRegressions } from "./oldschool-typography-regressions.mjs";
 import { runSharedAuthoringRegressions } from "./native-shared-authoring-regressions.mjs";
 import { runSharedFiveRegressions } from "./native-shared-five-regressions.mjs";
 import { runMultiPartSizingRegressions } from "./native-multi-part-sizing-regressions.mjs";
@@ -92,5 +93,6 @@ try {
   await runSharedFiveRegressions(browser, server.resolvedUrls.local[0], output);
   await runMultiPartSizingRegressions(browser, server.resolvedUrls.local[0], output);
   await runNativeMultiPartRegressions(browser, server.resolvedUrls.local[0], output);
+  await runOldschoolTypographyRegressions(browser, output);
   console.log("Native runtime browser regressions passed.");
 } finally { await browser.close(); await server.close(); }

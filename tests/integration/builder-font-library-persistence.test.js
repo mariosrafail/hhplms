@@ -1,3 +1,4 @@
+import { exerciseOldschoolTypographyPairSave } from "./_oldschool-typography-persistence.mjs";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import test from "node:test";
@@ -77,6 +78,8 @@ test("isolated PostgreSQL scopes, deduplicates, and validates reusable component
   await assert.doesNotReject(validateBuilderNativeAssetReferences(sql, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", activityId: "activity-two", assets: [reference], requirements: [{ slot: reference.slot, mediaType: "font/ttf", label: "Complete the Sentences font" }] }));
   await assert.rejects(validateBuilderNativeAssetReferences(sql, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-workbook", activityId: "activity-two", assets: [reference] }));
   await assert.rejects(validateBuilderNativeAssetReferences(sql, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", activityId: "activity-two", assets: [{ ...reference, slot: "font-forged" }] }));
+
+  await exerciseOldschoolTypographyPairSave({ pool, sql, actor, fontReference: reference });
 
   const row = await loadBuilderFontAsset(sql, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", assetId: firstAssetId });
   assert.equal(row.source_metadata.font_library_scope, "component");

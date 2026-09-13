@@ -586,3 +586,16 @@ mounted authoring and full-height CTS clipping checks;
 These are repository/local regression contracts, not hosted functional
 acceptance. Release validation and deployment status require separate exact-SHA
 receipts. The ChatGPT Project copy is not automatically synchronized.
+
+## Oldschool Listening transcript typography (local candidate)
+
+VerifiedAt: 2026-09-13. Source: fresh remote `dev`
+`17ff2fb4033eedf7309e7034d39faaec18ace78a`. Optional region-local `typography`
+and structured `runs` now have strict normalization, source-pixel rendering,
+atomic XML timing/identity/text matching, and managed component font retention
+across Panel 1 changes. See the [Oldschool typography contract](OLDSCHOOL_LISTENING_TYPOGRAPHY.md)
+for limits, line-height policy, usage, paths and executable regressions.
+Legacy defaults and historical compiler/release/assignment semantics remain.
+No migration or hosted mutation is part of this local candidate. Hosted/staging
+acceptance is NOT RUN; production readiness is not established. The ChatGPT
+Project copy has not been automatically synchronized.

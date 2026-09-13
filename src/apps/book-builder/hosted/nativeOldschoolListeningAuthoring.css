@@ -20,3 +20,7 @@
 .native-oldschool-mapping-properties { margin-top: 1rem; }
 .native-oldschool-region-chips, .studio-inline-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 @media (max-width: 980px) { .native-oldschool-authoring-grid, .native-oldschool-mapping-workspace { grid-template-columns: 1fr; } }
+
+.native-oldschool-typography-preview { position: relative; max-height: 400px; overflow: auto; border: 1px solid #c8bda8; background: white; }
+.native-oldschool-typography-preview .native-oldschool-listening-page-canvas { min-height: 0; }
+.native-oldschool-typography-controls fieldset { display: grid; gap: 8px; margin-top: 16px; }

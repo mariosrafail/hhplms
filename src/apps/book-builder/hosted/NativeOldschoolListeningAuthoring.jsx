@@ -1,3 +1,4 @@
+import { NativeOldschoolTranscriptControls } from "./NativeOldschoolTranscriptControls.jsx";
 import { useRef, useState } from "react";
 import { FileUp, Plus, Trash2, Upload } from "lucide-react";
 
@@ -41,7 +42,7 @@ function sourcePoint(event, root, surface) {
   return { x: Math.max(0, Math.min(surface.width, Math.round((event.clientX - bounds.left) / bounds.width * surface.width))), y: Math.max(0, Math.min(surface.height, Math.round((event.clientY - bounds.top) / bounds.height * surface.height))) };
 }
 
-export function NativeOldschoolListeningPageMappingAuthoring({ interaction, pageReference, assetUrl, selectedCue, selectedCueId, setSelectedCueId, selectedRegionId, setSelectedRegionId, mutatePublic, addRegion, updateRegion, removeRegion, clearCueMappings, clearMappings }) {
+export function NativeOldschoolListeningPageMappingAuthoring({ publicDocument, bookSlug, componentSlug, interaction, pageReference, assetUrl, selectedCue, selectedCueId, setSelectedCueId, selectedRegionId, setSelectedRegionId, mutatePublic, addRegion, updateRegion, removeRegion, clearCueMappings, clearMappings }) {
   const panel = interaction.panels[1]; const surface = { width: panel.sourceWidth, height: panel.sourceHeight };
   const rootRef = useRef(null); const startRef = useRef(null); const draftRef = useRef(null); const [draft, setDraft] = useState(null); const [drawMode, setDrawMode] = useState(false);
   const selectedRegion = selectedCue?.highlightRegions.find((region) => region.id === selectedRegionId) || null;
@@ -57,6 +58,7 @@ export function NativeOldschoolListeningPageMappingAuthoring({ interaction, page
         {draft ? <div className="native-oldschool-mapping-draft" style={nativeOldschoolListeningRegionStyle(draft, surface)} /> : null}
         {selectedRegion ? <StageSelectionFrame geometry={selectedRegion} stage={surface} label="Oldschool Listening highlight region" minWidth={8} minHeight={8} onChange={updateRegion} onClear={() => setSelectedRegionId(null)} onDelete={removeRegion} zIndex={20} /> : null}
       </div></div>
+      <NativeOldschoolTranscriptControls {...{ publicDocument, bookSlug, componentSlug, assetUrl, selectedCue, selectedRegion, mutatePublic }} />
       {selectedCue ? <div className="native-oldschool-mapping-properties"><h4>Selected cue mappings</h4><div className="native-oldschool-region-chips">{selectedCue.highlightRegions.map((region, index) => <button key={region.id} type="button" aria-current={region.id === selectedRegionId ? "true" : undefined} onClick={() => setSelectedRegionId(region.id)}>Region {index + 1}</button>)}</div><StudioField label="Authored scroll target Y (source pixels)"><input type="number" min="0" max={surface.height} value={selectedCue.scrollY ?? ""} placeholder="Automatic from highlight union" onChange={(event) => mutatePublic((next) => { const cue = next.parts[0].interaction.cues.find((entry) => entry.id === selectedCue.id); cue.scrollY = event.target.value === "" ? null : Math.max(0, Math.min(surface.height, Math.round(Number(event.target.value)))); })} /></StudioField><StudioButton variant="danger-ghost" onClick={clearCueMappings} disabled={!selectedCue.highlightRegions.length && selectedCue.scrollY === null}>Clear selected cue mappings</StudioButton>{selectedRegion ? <><StageGeometryControls area={selectedRegion} stage={surface} label="Oldschool Listening highlight region" minWidth={8} minHeight={8} onChange={updateRegion} /><StudioButton variant="danger-ghost" onClick={removeRegion}><Trash2 /> Delete region</StudioButton></> : null}</div> : <p>Add or import a cue, then select it to map the page.</p>}
     </section>
   </div>;

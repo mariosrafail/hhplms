@@ -22,3 +22,6 @@
 .native-oldschool-listening-error { margin: .5rem 0; color: #8d123c; }
 @media (prefers-reduced-motion: reduce) { .native-oldschool-listening-page-viewport { scroll-behavior: auto; } }
 @media (max-width: 640px) { .native-oldschool-listening-player-anchor { right: 8px; bottom: 8px; transform: scale(.82); transform-origin: bottom right; } .native-oldschool-listening-page-panel > .native-readable-text-scroll-control { bottom: 100px; } }
+
+.native-oldschool-listening-transcript-fragment[data-authored="true"] > div { font-synthesis: weight style; }
+.native-oldschool-font-status { position: absolute; z-index: 125; top: 0; left: 0; right: 0; margin: 0; padding: 6px 12px; background: #fff8db; color: #533c00; font: 14px/1.3 Arial, sans-serif; }

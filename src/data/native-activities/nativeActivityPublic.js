@@ -1,3 +1,4 @@
+import { oldschoolTranscriptFontSlots } from "./nativeOldschoolListeningTypography.js";
 import { candidateNativeAudioTextAssetSlots, normalizeNativeAudioTextHotspots } from "./nativeAudioTextHotspots.js";
 import { normalizeTimedTextCues, TIMED_TEXT_LIMITS } from "../timed-media/timedText.js";
 import { normalizeNativePedagogicalText, normalizeNativeSingleLineText } from "./nativePedagogicalText.js";
@@ -167,7 +168,8 @@ export function nativeSupplementalAudioAssetRequirements(publicDocument) {
 export function nativeActivityUsesManagedAssetSlot(publicDocument, slot) {
   const interaction = publicDocument?.parts?.[0]?.interaction;
   if (interaction?.kind === "multi-part" && (interaction.panels.some((panel) => panel.background?.assetSlot === slot) || interaction.sections.some((section) => nativeActivityUsesManagedAssetSlot({ parts: [{ interaction: section.interaction }] }, slot)))) return true;
-  return publicDocument?.readableText?.assetSlot === slot
+  return (interaction?.kind === "oldschool-listening" && oldschoolTranscriptFontSlots(interaction).has(slot))
+    || publicDocument?.readableText?.assetSlot === slot
     || publicDocument?.video?.assetSlot === slot
     || publicDocument?.video?.worksheet?.assetSlot === slot
     || publicDocument?.supplementalAudio?.assetSlot === slot

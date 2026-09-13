@@ -1,3 +1,4 @@
+import { exerciseOldschoolTypographyAssignment } from "./_oldschool-typography-persistence.mjs";
 import { createMarkWordsFixture, markWordsFixtureId } from "../fixtures/native-mark-words.js";
 import { publicDocument as multiPublic, teacherDocument as multiTeacher } from "../fixtures/native-runtime-regressions/multi-part-data.js";
 import assert from "node:assert/strict";
@@ -435,6 +436,7 @@ test("published native assignment remains release-pinned through submit, review,
       await publishRelease(pool, { packageId: scope.package_id, componentId: scope.component_id, releaseId: newer.releaseId, previousReleaseId: releaseB.releaseId, revision: 3, builderId });
     } });
   }
+  await exerciseOldschoolTypographyAssignment({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
   await t.test("historical Unit Extras endpoints verify unchanged hashes and remain pinned after newer releases", async () => {
     const { verifyHistoricalUnitExtrasPersistence } = await import("./_historical-unit-extras.mjs");
     await verifyHistoricalUnitExtrasPersistence({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });

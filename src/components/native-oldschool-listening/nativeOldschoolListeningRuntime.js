@@ -51,12 +51,14 @@ export function nativeOldschoolListeningTranscriptFragments(cues) {
       height: region.height,
       text: exact ? region.text : fallback[index],
       exact,
+      ...(exact && region.typography ? { typography: region.typography } : {}),
+      ...(exact && region.runs ? { runs: region.runs } : {}),
     }));
   });
 }
 
 export function nativeOldschoolListeningFragmentFontSize(fragment) {
-  if (fragment.exact) return 21;
+  if (fragment.exact) return fragment.typography?.fontSize ?? 21;
   const contentLength = Math.max(1, fragment.text.length);
   let size = Math.max(6, Math.min(21, fragment.height * .68));
   while (size > 6) {

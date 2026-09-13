@@ -51,6 +51,10 @@ function ActivityCanvas({ document, target, hotspot, assetUrl, onPlace }) {
   const marker = hotspot ? <span className="native-audio-hotspot-authoring-marker" style={logicalAreaStyle(hotspot.activityArea, target)}><img src={nativeAudioTextHotspotArtwork(hotspot).active} alt="" /></span> : null;
   let content = null;
   if (document.kind === "image") content = <NativeImageSurface document={document} assetUrl={assetUrl} />;
+  else if (document.kind === "drag-drop") {
+    const panel = interaction.panels.find((entry) => entry.id === target.panelId);
+    content = panel ? <NativeImageSurface document={{ ...document, parts: [{ id: "part-1", interaction: { kind: "image", surface: panel.surface, images: panel.images } }] }} assetUrl={assetUrl} /> : null;
+  }
   else if (document.kind === "open-response") {
     const panel = interaction.presentation?.panels?.find((entry) => entry.id === target.panelId) || null;
     content = <NativeOpenResponseFontSurface document={document} panel={panel} assetUrl={assetUrl} />;
@@ -147,7 +151,7 @@ export function NativeAudioTextHotspotEditor({ bookSlug, componentSlug, activity
     if (!publicDraft.audioTextHotspots) return false;
     try { normalizeNativeAudioTextHotspots(publicDraft.audioTextHotspots, publicDraft); return false; } catch { return true; }
   }, [publicDraft]);
-  useEffect(() => { onIncompleteChange(incomplete); }, [incomplete, onIncompleteChange]);
+  useEffect(() => { onIncompleteChange(incomplete || uploading); }, [incomplete, uploading, onIncompleteChange]);
 
   if (!publicDraft.readableText || !readableReference) return <section className="native-audio-hotspot-editor" aria-disabled="true"><h3>Audio / Text Hotspots</h3><p>Enable and upload Readable Text before adding audio hotspots.</p></section>;
 

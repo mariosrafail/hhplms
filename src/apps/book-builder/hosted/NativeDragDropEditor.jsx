@@ -1,6 +1,6 @@
 import { compositeEditorContent, compositeEditorTabs, useCompositeEditorBinding } from "./nativeCompositeEditorBinding.js";
 import { useEffect, useMemo, useState } from "react";
-import { BookOpenText, Eye, Film, ImagePlus, Layers3, Music, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpenText, Eye, Film, ImagePlus, Layers3, Music, Plus, Trash2 } from "lucide-react";
 
 import { StudioButton, StudioCanvasToolbar, StudioField, StudioSaveBar, StudioTabWorkspace } from "../../../components/builder-studio/StudioControls.jsx";
 import { QuickNumber, StageGeometryControls } from "../../../components/builder-studio/StageGeometryControls.jsx";
@@ -24,6 +24,7 @@ import {
   removeNativeDragDropImage,
   removeNativeDragDropPanel,
   removeNativeDragDropWord,
+  resizeNativeDragDropAudioTextHotspots,
   validateNativeDragDropTopology,
 } from "../../../data/native-activities/nativeDragDrop.js";
 import { generateNativeDragDropHotspotImportCandidate } from "../../../data/native-activities/nativeDragDropHotspotBulkAuthoring.js";
@@ -72,6 +73,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
   const getBuilderContent = (request, options) => compositeEditorContent(compositeBinding, getRemoteBuilderContent, request, options);
   const [state, setState] = useState({ kind: "loading", message: "" });
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [mappingIssueWordId, setMappingIssueWordId] = useState(null);
   const [mappingIssue, setMappingIssue] = useState("");
   const [publicDraft, setPublicDraft] = useState(null);
   const [teacherDraft, setTeacherDraft] = useState(null);
@@ -128,7 +130,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
   const mappings = new Map(teacherDraft?.parts[0].solution.mappings.map((mapping) => [mapping.targetId, nativeDragDropMappingWordIds(mapping)]) || []);
   const assetUrl = (assetId) => previewRoot(bookSlug, componentSlug, activityId, assetId);
 
-  const markDirty = () => { setMappingIssue(""); setDirty(true); onDirtyChange(true); };
+  const markDirty = () => { setMappingIssue(""); setMappingIssueWordId(null); setDirty(true); onDirtyChange(true); };
   const mutatePublic = (mutator) => { setPublicDraft((current) => { const next = clone(current); mutator(next); return next; }); markDirty(); };
   const mutatePair = (mutator) => {
     const nextPublic = clone(publicDraft); const nextTeacher = clone(teacherDraft); mutator(nextPublic, nextTeacher);
@@ -151,7 +153,9 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
 
   const addWord = () => mutatePublic((next) => {
     const words = next.parts[0].interaction.words;
-    words.push({ id: createNativeChildId("word"), text: `Word ${words.length + 1}`, reusable: false, shortLabel: nativeDragDropShortLabel(words.length) });
+    let labelIndex = words.length;
+    while (words.some((word) => word.shortLabel === nativeDragDropShortLabel(labelIndex))) labelIndex += 1;
+    words.push({ id: createNativeChildId("word"), text: `Word ${words.length + 1}`, reusable: false, shortLabel: nativeDragDropShortLabel(labelIndex) });
   });
   const deleteWord = (wordId) => {
     const isMapped = teacherDraft.parts[0].solution.mappings.some((mapping) => nativeDragDropMappingWordIds(mapping).includes(wordId));
@@ -193,7 +197,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
 
   const setReusable = (wordId, reusable) => {
     const mappedCount = teacherDraft.parts[0].solution.mappings.filter((mapping) => nativeDragDropMappingWordIds(mapping).includes(wordId)).length;
-    if (!reusable && mappedCount > 1) { setMappingIssue("Remove this item's repeated correct mappings before turning reuse off."); return; }
+    if (!reusable && mappedCount > 1) { setMappingIssueWordId(wordId); setMappingIssue("Remove this item's repeated correct mappings before turning reuse off."); return; }
     mutatePublic((next) => { next.parts[0].interaction.words.find((word) => word.id === wordId).reusable = reusable; });
   };
 
@@ -236,6 +240,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
             const previous = { ...nextPanel.surface }; const dimensions = { width: uploaded.metadata.width, height: uploaded.metadata.height };
             nextPanel.images.forEach((entry) => { entry.area = scaleArea(entry.area, previous, dimensions); });
             nextPanel.dropTargets.forEach((entry) => { entry.area = scaleArea(entry.area, previous, dimensions); });
+            resizeNativeDragDropAudioTextHotspots(next, nextPanel.id, previous, dimensions);
             nextPanel.surface = dimensions; nextImage.area = { x: 0, y: 0, ...dimensions };
           }
           removeNativeManagedAssetReferenceIfUnused(next, oldSlot);
@@ -249,6 +254,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
             const previous = { ...nextPanel.surface }; const dimensions = { width: uploaded.metadata.width, height: uploaded.metadata.height };
             nextPanel.images.forEach((entry) => { entry.area = scaleArea(entry.area, previous, dimensions); });
             nextPanel.dropTargets.forEach((entry) => { entry.area = scaleArea(entry.area, previous, dimensions); });
+            resizeNativeDragDropAudioTextHotspots(next, nextPanel.id, previous, dimensions);
             nextPanel.surface = dimensions;
           }
           const image = { id: imageId, assetSlot: uploaded.reference.slot, area: background ? { x: 0, y: 0, ...nextPanel.surface } : { x: 160, y: 110, width: 360, height: 240 }, order: background ? 0 : nextPanel.images.length, altText: "", decorative: false, fit: "contain", locked: background };
@@ -287,7 +293,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
   if (state.kind === "error" || !publicDraft || !teacherDraft) return <section className="native-activity-foundation studio-error" role="alert"><p>{state.message || "Native draft is unavailable."}</p><p>The saved activity is preserved. Reload after correcting the reported problem.</p><StudioButton onClick={() => setLoadAttempt((value) => value + 1)}>Reload draft</StudioButton></section>;
 
   return <section className="native-activity-foundation native-drag-drop-editor studio-editor">
-    {mappingIssue ? <p className="builder-inline-error" role="alert">{mappingIssue}</p> : null}
+    {mappingIssue && tab !== "content" ? <p className="builder-inline-error" role="alert">{mappingIssue}</p> : null}
     <header className="studio-editor-header"><div><span className="studio-eyebrow">{placementLabel} · Drag &amp; Drop</span><h2>{publicDraft.metadata.title}</h2><p>{readiness.ready ? "Content complete" : `${readiness.issues.length} item${readiness.issues.length === 1 ? "" : "s"} need attention`}</p></div><details className="builder-technical-details"><summary>Technical details</summary><code>{activityId}</code></details></header>
     <StudioTabWorkspace id="native-drag-drop-tabs" value={tab} onChange={(value) => { setTab(value); setDrawingTarget(false); }} tabs={compositeEditorTabs(compositeBinding, tabs)} label="Drag and Drop authoring modes">
 
@@ -302,7 +308,18 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
         <QuickNumber label="Answer bank height (px)" value={interaction.answerBankHeightPx ?? NATIVE_DRAG_DROP_DEFAULT_LAYOUT.answerBankHeightPx} minimum={NATIVE_DRAG_DROP_LIMITS.answerBankHeightMinimum} maximum={NATIVE_DRAG_DROP_LIMITS.answerBankHeightMaximum} onChange={(value) => mutatePublic((next) => { next.parts[0].interaction.answerBankHeightPx = Math.round(Number(value)); })} />
         {interaction.layoutMode === "text" ? <QuickNumber label="Upper text-image panel height (px)" value={interaction.textPanelHeightPx ?? NATIVE_DRAG_DROP_DEFAULT_LAYOUT.textPanelHeightPx} minimum={NATIVE_DRAG_DROP_LIMITS.textPanelHeightMinimum} maximum={NATIVE_DRAG_DROP_LIMITS.textPanelHeightMaximum} onChange={(value) => mutatePublic((next) => { next.parts[0].interaction.textPanelHeightPx = Math.round(Number(value)); })} /> : null}
       </fieldset>
-      <section className="native-drag-drop-editor-list"><h3>{interaction.layoutMode === "text" ? "Labelled phrase bank" : "Shared word bank"}</h3><StudioButton onClick={addWord} disabled={interaction.words.length >= NATIVE_DRAG_DROP_LIMITS.words}><Plus aria-hidden="true" />Add word</StudioButton>{interaction.words.map((word, index) => <div className="native-drag-drop-word-row" key={word.id}><span className="native-drag-drop-editor-label" aria-label={`Stable label ${word.shortLabel}`}>{word.shortLabel}</span><textarea rows={2} aria-label={`Word ${index + 1}`} value={word.text} maxLength={NATIVE_DRAG_DROP_LIMITS.wordTextLength} onChange={(event) => mutatePublic((next) => { next.parts[0].interaction.words[index].text = event.target.value; })} /><NativeDragDropItemImageControls word={word} document={publicDraft} bookSlug={bookSlug} componentSlug={componentSlug} activityId={activityId} assetUrl={assetUrl} mutatePublic={mutatePublic} onPendingChange={(value) => setPendingItemUploads((current) => Math.max(0, current + (value ? 1 : -1)))} /><label className="native-drag-drop-reusable"><input type="checkbox" checked={word.reusable} onChange={(event) => setReusable(word.id, event.target.checked)} /> Reusable item</label><button type="button" aria-label={`Move word ${index + 1} up`} disabled={!index} onClick={() => mutatePublic((next) => moveInArray(next.parts[0].interaction.words, index, -1))}>↑</button><button type="button" aria-label={`Move word ${index + 1} down`} disabled={index === interaction.words.length - 1} onClick={() => mutatePublic((next) => moveInArray(next.parts[0].interaction.words, index, 1))}>↓</button><button type="button" aria-label={`Remove word ${index + 1}`} disabled={pendingItemUploads > 0} onClick={() => deleteWord(word.id)}><Trash2 aria-hidden="true" /></button></div>)}</section>
+      <fieldset className="native-drag-drop-layout-settings"><legend>Options</legend><label className="studio-quick-check"><input type="checkbox" checked={interaction.randomize !== false} onChange={(event) => mutatePublic((next) => { next.parts[0].interaction.randomize = event.target.checked; })} /> Randomize</label><p>Shuffle the bank once per session. Turn off to use the item order below.</p></fieldset>
+      <section className="native-drag-drop-editor-list"><h3>{interaction.layoutMode === "text" ? "Labelled phrase bank" : "Shared word bank"}</h3><StudioButton onClick={addWord} disabled={interaction.words.length >= NATIVE_DRAG_DROP_LIMITS.words}><Plus aria-hidden="true" />Add word</StudioButton>{interaction.words.map((word, index) => <div className="native-drag-drop-word-row" key={word.id} data-item-id={word.id}>
+        <div className="native-drag-drop-item-heading"><span className="native-drag-drop-editor-label" aria-label={`Stable label ${word.shortLabel}`}>{word.shortLabel}</span><strong>Item {index + 1}</strong><div className="native-drag-drop-item-actions">
+          <StudioButton aria-label={`Move word ${index + 1} up`} disabled={!index} onClick={() => mutatePublic((next) => moveInArray(next.parts[0].interaction.words, index, -1))}><ArrowUp aria-hidden="true" /></StudioButton>
+          <StudioButton aria-label={`Move word ${index + 1} down`} disabled={index === interaction.words.length - 1} onClick={() => mutatePublic((next) => moveInArray(next.parts[0].interaction.words, index, 1))}><ArrowDown aria-hidden="true" /></StudioButton>
+          <StudioButton variant="danger-ghost" aria-label={`Remove word ${index + 1}`} disabled={pendingItemUploads > 0} onClick={() => deleteWord(word.id)}><Trash2 aria-hidden="true" /></StudioButton>
+        </div></div>
+        <StudioField label={word.image ? "Descriptive text (required)" : "Item text"}><textarea rows={2} aria-label={`Word ${index + 1}`} value={word.text} maxLength={NATIVE_DRAG_DROP_LIMITS.wordTextLength} onChange={(event) => mutatePublic((next) => { next.parts[0].interaction.words.find((item) => item.id === word.id).text = event.target.value; })} /></StudioField>
+        <NativeDragDropItemImageControls word={word} document={publicDraft} bookSlug={bookSlug} componentSlug={componentSlug} activityId={activityId} assetUrl={assetUrl} mutatePublic={mutatePublic} onPendingChange={(value) => setPendingItemUploads((current) => Math.max(0, current + (value ? 1 : -1)))} />
+        <label className="native-drag-drop-reusable"><input type="checkbox" checked={word.reusable} onChange={(event) => setReusable(word.id, event.target.checked)} /> Reusable item</label>
+        {mappingIssue && mappingIssueWordId === word.id ? <p className="builder-inline-error" role="alert">{mappingIssue}</p> : null}
+      </div>)}</section>
       <p className="studio-field-help">Reusable items remain in the standard bank and may be placed in multiple different targets, but never twice in one target.</p>
       <section className="native-drag-drop-typography-grid" aria-label="Drag and Drop typography"><h3>Shared typography</h3><DragDropTextStyleControls heading="Bank words" style={interaction.presentation.bankWordStyle} fonts={fonts} bookSlug={bookSlug} componentSlug={componentSlug} onStyleChange={(key, value) => changeTextStyle("bankWordStyle", key, value)} onFontSelect={(font) => setTextFont("bankWordStyle", font)} onFontUploaded={recordUploadedFont} onMessage={(message) => setState((current) => ({ ...current, message }))} /><DragDropTextStyleControls heading="Placed answers" style={interaction.presentation.placedAnswerStyle} fonts={fonts} bookSlug={bookSlug} componentSlug={componentSlug} onStyleChange={(key, value) => changeTextStyle("placedAnswerStyle", key, value)} onFontSelect={(font) => setTextFont("placedAnswerStyle", font)} onFontUploaded={recordUploadedFont} onMessage={(message) => setState((current) => ({ ...current, message }))} /></section>
     </div> : null}
@@ -338,11 +355,11 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
     </div></> : null}
 
     {tab === "answer-key" ? <div className="native-drag-drop-mapping"><h3>Teacher-only correct mappings</h3><p>Select every item required by each target. Capacity is derived from the selected count; correct identities stay in the private Teacher document.</p>{interaction.panels.map((entry, panelIndex) => <section key={entry.id}><h4>Panel {panelIndex + 1}</h4>{entry.dropTargets.map((target, targetIndex) => { const currentWordIds = mappings.get(target.id) || []; return <StudioField key={target.id} label={`${targetIndex + 1}. ${target.accessibleLabel} · ${currentWordIds.length} expected`}><select multiple size={Math.min(8, Math.max(3, interaction.words.length + 1))} value={currentWordIds} onChange={(event) => setMappingWords(target.id, [...event.currentTarget.selectedOptions].map((option) => option.value))}><option value="" disabled>Select one or more items</option>{interaction.words.map((word, wordIndex) => <option key={word.id} value={word.id}>{word.text} · word {wordIndex + 1}{interaction.layoutMode === "text" ? ` · label ${word.shortLabel}` : ""}{word.reusable ? " · reusable" : ""}</option>)}</select></StudioField>; })}</section>)}</div> : null}
-    {tab === "preview" ? <div className="studio-preview-panel"><div className="native-drag-drop-editor-actions"><button type="button" aria-pressed={previewMode === "student"} onClick={() => setPreviewMode("student")}>Student Preview</button><button type="button" aria-pressed={previewMode === "teacher"} onClick={() => setPreviewMode("teacher")}>Teacher Preview</button></div><NativeReadableTextPresentation document={publicDraft} assetUrl={assetUrl}>{(presentation) => previewMode === "student" ? <NativeDragDropStudentSurface document={publicDraft} assetUrl={assetUrl} evaluatePlacement={(targetId, wordId) => (mappings.get(targetId) || []).includes(wordId)} resolveWordsForTarget={(targetId) => mappings.get(targetId) || []} presentation={presentation} /> : <NativeDragDropTeacherSurface publicDocument={publicDraft} teacherDocument={teacherDraft} assetUrl={assetUrl} presentation={presentation} />}</NativeReadableTextPresentation></div> : null}
-    {tab === "readable-text" ? <NativeReadableTextEditor bookSlug={bookSlug} componentSlug={componentSlug} activityId={activityId} publicDraft={publicDraft} mutatePublic={mutatePublic} previewUrl={assetUrl} onIncompleteChange={setReadableTextIncomplete} onIntentChange={markDirty} onStatusChange={(message) => setState((current) => ({ ...current, message }))} /> : null}
+    {tab === "preview" ? <div className="studio-preview-panel"><div className="native-drag-drop-editor-actions"><button type="button" aria-pressed={previewMode === "student"} onClick={() => setPreviewMode("student")}>Student Preview</button><button type="button" aria-pressed={previewMode === "teacher"} onClick={() => setPreviewMode("teacher")}>Teacher Preview</button></div><NativeReadableTextPresentation document={publicDraft} assetUrl={assetUrl}>{(presentation, audioHotspotPresentation) => previewMode === "student" ? <NativeDragDropStudentSurface document={publicDraft} audioHotspotPresentation={audioHotspotPresentation} assetUrl={assetUrl} evaluatePlacement={(targetId, wordId) => (mappings.get(targetId) || []).includes(wordId)} resolveWordsForTarget={(targetId) => mappings.get(targetId) || []} presentation={presentation} /> : <NativeDragDropTeacherSurface publicDocument={publicDraft} audioHotspotPresentation={audioHotspotPresentation} teacherDocument={teacherDraft} assetUrl={assetUrl} presentation={presentation} />}</NativeReadableTextPresentation></div> : null}
+    {tab === "readable-text" ? <NativeReadableTextEditor bookSlug={bookSlug} componentSlug={componentSlug} activityId={activityId} publicDraft={publicDraft} mutatePublic={mutatePublic} previewUrl={assetUrl} onIncompleteChange={setReadableTextIncomplete} onUploadStateChange={setUploading} onIntentChange={markDirty} onStatusChange={(message) => setState((current) => ({ ...current, message }))} /> : null}
     {tab === "video" ? <NativeVideoEditor bookSlug={bookSlug} componentSlug={componentSlug} activityId={activityId} publicDraft={publicDraft} mutatePublic={mutatePublic} onIncompleteChange={setVideoIncomplete} onIntentChange={markDirty} onStatusChange={(message) => setState((current) => ({ ...current, message }))} /> : null}
     {tab === "supplemental-audio" ? <NativeSupplementalAudioEditor bookSlug={bookSlug} componentSlug={componentSlug} activityId={activityId} publicDraft={publicDraft} mutatePublic={mutatePublic} previewUrl={assetUrl} onIncompleteChange={setSupplementalAudioIncomplete} onIntentChange={markDirty} onStatusChange={(message) => setState((current) => ({ ...current, message }))} /> : null}
     </StudioTabWorkspace>
-    <StudioSaveBar hidden={Boolean(compositeBinding)} dirty={dirty} saving={state.saving} message={state.message} ready={readiness.ready} issues={readiness.issues} disabled={!dirty || state.saving || !readiness.ready || !publicDraft.metadata.title.trim()} reason={!readiness.ready ? "Complete every panel, target, and private mapping before saving" : !dirty ? "No unsaved changes" : ""} onSave={save} />
+    <StudioSaveBar hidden={Boolean(compositeBinding)} dirty={dirty} saving={state.saving} message={state.message} ready={readiness.ready} issues={readiness.issues} disabled={!dirty || state.saving || uploading || pendingItemUploads > 0 || !readiness.ready || !publicDraft.metadata.title.trim()} reason={!readiness.ready ? "Complete every panel, target, and private mapping before saving" : !dirty ? "No unsaved changes" : ""} onSave={save} />
   </section>;
 }

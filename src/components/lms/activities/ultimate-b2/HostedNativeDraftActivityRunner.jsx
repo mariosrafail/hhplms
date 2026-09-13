@@ -56,9 +56,9 @@ export function HostedNativeDraftActivityRunner({ activityId, state, teacherMode
     {kind === "oldschool-listening" && teacherMode && state.teacher.kind === "loading" ? <p role="status">Loading Teacher model answers…</p> : null}
     {kind === "oldschool-listening" && teacherMode && state.teacher.kind === "error" ? <p role="alert">Teacher model answers are unavailable.</p> : null}
     {kind === "oldschool-listening" && teacherMode && state.teacher.entry ? <NativeOldschoolListeningTeacherSurface publicDocument={document} teacherDocument={state.teacher.entry.document} assetUrl={assetUrl} presentation={activityPresentation} /> : null}
-    {kind === "drag-drop" && !teacherMode ? <NativeDragDropStudentSurface document={document} assetUrl={assetUrl} /> : null}
+    {kind === "drag-drop" && !teacherMode ? <NativeDragDropStudentSurface audioHotspotPresentation={audioHotspotPresentation} document={document} assetUrl={assetUrl} /> : null}
     {kind === "drag-drop" && teacherMode && state.teacher.kind === "loading" ? <p role="status">Loading Teacher answers…</p> : null}
     {kind === "drag-drop" && teacherMode && state.teacher.kind === "error" ? <p role="alert">Teacher answers are unavailable.</p> : null}
-    {kind === "drag-drop" && teacherMode && state.teacher.entry ? <NativeDragDropTeacherSurface publicDocument={document} teacherDocument={state.teacher.entry.document} assetUrl={assetUrl} presentation={activityPresentation} /> : null}
+    {kind === "drag-drop" && teacherMode && state.teacher.entry ? <NativeDragDropTeacherSurface audioHotspotPresentation={audioHotspotPresentation} publicDocument={document} teacherDocument={state.teacher.entry.document} assetUrl={assetUrl} presentation={activityPresentation} /> : null}
   </article>}</NativeReadableTextPresentation>;
 }

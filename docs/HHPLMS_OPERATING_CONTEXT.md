@@ -599,3 +599,14 @@ Legacy defaults and historical compiler/release/assignment semantics remain.
 No migration or hosted mutation is part of this local candidate. Hosted/staging
 acceptance is NOT RUN; production readiness is not established. The ChatGPT
 Project copy has not been automatically synchronized.
+
+## Native Drag & Drop options and hotspots (local candidate)
+
+VerifiedAt: 2026-09-13; fresh remote baseline `23fae367b29e9bd4ce0d6ee8f69928e97345385b`.
+The additive optional `interaction.randomize` preserves legacy absence and explicit
+false through standalone and multipart normalization. Standalone Drag & Drop now
+uses common Readable Text hotspots on stable panel surfaces, with panel deletion
+and resize cleanup. Multipart common media ownership is unchanged; child hotspots
+are not part of its current projection. See [contract and regression scope](NATIVE_DRAG_DROP_OPTIONS_AND_HOTSPOTS.md).
+Historical compiler/release/assignment semantics remain unchanged. No migration or
+hosted mutation is part of this local candidate; the Project copy is not updated.

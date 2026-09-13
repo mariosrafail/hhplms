@@ -33,6 +33,10 @@ export async function runSharedAuthoringRegressions(browser, baseUrl, output) {
    await page.goto(`${baseUrl}tests/fixtures/native-runtime-regressions/shared-five.html?parent-editor`);
    const editor = page.locator(".native-multi-part-editor");
    const select = (kind) => editor.getByRole("button", { name: kind, exact: true }).click();
+   await select("drag-drop");
+   const randomize = editor.locator(".native-drag-drop-editor:visible").getByRole("checkbox", { name: "Randomize", exact: true });
+   await expect(randomize).toBeChecked();
+   await randomize.uncheck();
    await select("single-choice");
    const choice = editor.locator(".native-single-choice-editor:visible");
    const bulk = choice.locator(".native-bulk-generator"); await bulk.locator("summary").click();
@@ -56,6 +60,7 @@ export async function runSharedAuthoringRegressions(browser, baseUrl, output) {
    await editor.getByRole("button", { name: "Save Draft", exact: true }).click();
    await expect.poll(() => saved).toBe(true);
    const sections = pair.publicDocument.parts[0].interaction.sections;
+   assert.equal(sections.find((entry) => entry.kind === "drag-drop").interaction.randomize, false);
    assert.equal(sections.find((entry) => entry.kind === "open-response").interaction.questions[0].prompt, "Unsaved explanation");
    assert.equal(sections.find((entry) => entry.kind === "mark-the-words").interaction.targets[0].label, "Unsaved target label");
    assert.deepEqual(pair.publicDocument.parts[0].interaction.panels[0].surface, { width: 1100, height: 650 });
@@ -65,6 +70,7 @@ export async function runSharedAuthoringRegressions(browser, baseUrl, output) {
    await page.screenshot({ path: `${output}/shared-five-authoring.png`, fullPage: true });
    await page.reload(); await select("mark-the-words"); await editor.getByRole("button", { name: "Word hotspot 1", exact: true }).click();
    await expect(editor.getByLabel("Target label", { exact: true })).toHaveValue("Unsaved target label");
+   await select("drag-drop"); await expect(randomize).not.toBeChecked();
    assert.deepEqual(errors, []);
  } catch (error) { await writeFile(`${output}/shared-authoring-failure.txt`, JSON.stringify({ errors, text: await page.locator("body").innerText() }, null, 2)); throw error; } finally { await page.close(); }
 }

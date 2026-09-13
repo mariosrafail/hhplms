@@ -296,6 +296,9 @@ function source(payload, revision = 1) { return { payload, revision, sha256: bui
 for (const layoutMode of ["standard", "text"]) test(`publication v2 separates ${layoutMode} reusable mappings and closes every Drag & Drop image asset`, () => {
   const current = pair(); const sources = createPublicationV2FixtureSources();
   current.publicDocument.parts[0].interaction.layoutMode = layoutMode;
+  current.publicDocument.parts[0].interaction.randomize = false;
+  current.publicDocument.readableText = { kind: "image", assetSlot: assets[0].slot, sourceWidth: 1000, sourceHeight: 600, altText: "Readable passage" };
+  current.publicDocument.audioTextHotspots = { hotspots: [{ id: id("aud", 90), panelId: panelIds[0], activityArea: { x: 20, y: 30, width: 48, height: 48 }, readableFocusArea: { x: 0, y: 0, width: 1000, height: 291 }, audioAssetSlot: "", label: "Read the excerpt" }] };
   current.publicDocument.parts[0].interaction.words[0].reusable = true;
   current.publicDocument.parts[0].interaction.panels[0].dropTargets[0].capacity = 2;
   current.teacherDocument.parts[0].solution.mappings = [{ targetId: targetIds[0], wordIds: [wordIds[0], wordIds[1]] }, { targetId: targetIds[1], wordIds: [wordIds[0]] }];
@@ -310,6 +313,8 @@ for (const layoutMode of ["standard", "text"]) test(`publication v2 separates ${
   sources.documents.hotspots = source(sources.documents.hotspots.payload, sources.documents.hotspots.revision);
   const compiled = compileUltimateB2ComponentReleaseV2(sources);
   const published = compiled.publicProjection.nativeActivities[activityId].document;
+  assert.equal(published.parts[0].interaction.randomize, false);
+  assert.deepEqual(published.audioTextHotspots, current.publicDocument.audioTextHotspots);
   assert.deepEqual(published.parts[0].interaction.panels.map((panel) => panel.images.length), [2, 1]);
   assert.doesNotMatch(JSON.stringify(published), /mappings|solution/);
   assert.match(JSON.stringify(compiled.teacherProjection.nativeActivities[activityId]), /mappings/);

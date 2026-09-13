@@ -23,20 +23,20 @@
 .native-drag-drop-artwork { position: absolute; pointer-events: none; }
 .native-drag-drop-artwork img { display: block; width: 100%; height: 100%; }
 .native-drag-drop-image-content { display: inline-flex; flex-direction: column; align-items: center; max-width: 100%; max-height: 100%; min-width: 0; min-height: 0; vertical-align: middle; }
-.native-drag-drop-image-content img { display: block; flex: 1 1 auto; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.native-drag-drop-image-content img { display: block; flex: 1 1 0; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; }
 .native-drag-drop-image-caption { flex: 0 0 auto; max-width: 100%; font: 12px/1.2 system-ui, sans-serif; color: #172033; white-space: normal; }
-.native-drag-drop-word[data-image-item] { border-radius: 8px; }
+.native-drag-drop-word[data-image-item] { display: inline-flex; align-items: center; justify-content: center; min-width: 0; max-width: 100%; padding: 2px; border-radius: 8px; overflow: visible; }
 .native-drag-drop[data-image-items] .native-drag-drop-bank-items { overflow: auto; }
 .native-drag-drop-target { position: absolute; box-sizing: border-box; display: grid; place-items: center; min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: transparent; box-shadow: none; overflow: hidden; cursor: pointer; }
 .native-drag-drop-target[data-occupied], .native-drag-drop-target[data-revealed] { border: 0; background: transparent; }
-.native-drag-drop-target-items { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 3px; box-sizing: border-box; max-width: 100%; max-height: 100%; padding: 2px; overflow: auto; overscroll-behavior: contain; }
-.native-drag-drop-target-text { display: block; box-sizing: border-box; max-width: 100%; max-height: 100%; margin: 0; padding: 2px 4px; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; line-height: 1.15; overflow: visible; overflow-wrap: anywhere; white-space: pre-wrap; text-align: center; }
+.native-drag-drop-target-items { display: flex; flex-wrap: wrap; align-items: center; align-content: center; justify-content: center; gap: 1px; box-sizing: border-box; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 0; overflow: visible; }
+.native-drag-drop-target-text { display: block; box-sizing: border-box; min-width: 0; min-height: 0; max-width: 100%; margin: 0; padding: 0 1px; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; line-height: 1.15; overflow: visible; overflow-wrap: anywhere; white-space: pre-wrap; text-align: center; }
 button.native-drag-drop-target-text { cursor: pointer; }
 .native-drag-drop-target[data-drag-over]:not([data-full]):not([data-revealed]) { outline: 2px solid rgb(37 99 235 / 72%); outline-offset: -2px; background: rgb(219 234 254 / 18%); }
 .native-drag-drop-target[data-incorrect] { border: 2px solid #b91c1c; background: rgb(254 226 226 / 94%); color: #7f1d1d; box-shadow: 0 0 0 3px rgb(248 113 113 / 52%); }
 .native-drag-drop-target:focus-visible, .native-drag-drop-target-text:focus-visible, .native-drag-drop-word:focus-visible, .native-drag-drop-panel-navigation button:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
 .native-drag-drop-bank { position: absolute; inset: auto 0 0; box-sizing: border-box; display: grid; grid-template-rows: minmax(0, 1fr); width: 100%; height: var(--native-drag-drop-bank-height, 20%); min-width: 0; min-height: 0; padding: clamp(4px, .8cqw, 8px); border: 0; border-top: 1px solid rgb(100 116 139 / 55%); background: rgb(248 250 252 / 88%); backdrop-filter: blur(2px); overflow: hidden; }
-.native-drag-drop-bank-items { display: flex; flex-wrap: wrap; gap: clamp(3px, .65cqw, 7px); align-content: flex-start; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.native-drag-drop-bank-items { display: flex; flex-wrap: wrap; gap: clamp(3px, .65cqw, 7px); align-content: flex-start; align-items: flex-start; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .native-drag-drop-word { box-sizing: border-box; padding: clamp(4px, .75cqw, 8px) clamp(7px, 1.1cqw, 12px); border: 1px solid #64748b; border-radius: 999px; background: #fff; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; white-space: pre-wrap; }
 .native-drag-drop-word { cursor: grab; touch-action: none; }
 .native-drag-drop-word[aria-pressed="true"] { border-color: #1d4ed8; background: #dbeafe; box-shadow: 0 0 0 2px #60a5fa; }
@@ -68,3 +68,9 @@ button.native-drag-drop-target-text { cursor: pointer; }
 .native-drag-drop[data-layout-mode="text"] .native-drag-drop-workspace::-webkit-scrollbar { width: 0; height: 0; }
 .native-drag-drop[data-layout-mode="text"] .native-drag-drop-stage { touch-action: pan-y; }
 .native-drag-drop[data-layout-mode="text"] .native-drag-drop-target-items { overscroll-behavior: auto; }
+
+.native-drag-drop-target-items:has([data-image-item]) { flex-wrap: nowrap; }
+.native-drag-drop .native-drag-drop-target-text[data-image-item] { display: flex; flex: 0 1 auto; align-items: center; justify-content: center; height: 100%; min-width: 0; padding: 1px; border: 0; background: transparent; white-space: normal; }
+.native-drag-drop .native-drag-drop-target-text[data-image-item] .native-drag-drop-image-content { flex-shrink: 1; }
+.native-drag-drop .native-audio-text-hotspot { z-index: 100; touch-action: manipulation; }
+.native-drag-drop[data-layout-mode="text"][data-image-items] .native-drag-drop-bank-items { overflow: auto; }

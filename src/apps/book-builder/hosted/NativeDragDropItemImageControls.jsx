@@ -4,6 +4,7 @@ import { mergeNativeManagedAssetReference, removeNativeManagedAssetReferenceIfUn
 import { NATIVE_DRAG_DROP_LIMITS } from "../../../data/native-activities/nativeDragDrop.js";
 import { NativeDragDropItemContent } from "../../../components/native-drag-drop/NativeDragDropItemContent.jsx";
 import { uploadNativeActivityAsset } from "./builderNativeActivityApi.js";
+import { StudioButton } from "../../../components/builder-studio/StudioControls.jsx";
 
 export function NativeDragDropItemImageControls({ word, document, bookSlug, componentSlug, activityId, assetUrl, mutatePublic, onPendingChange }) {
   const [message, setMessage] = useState("");
@@ -49,13 +50,15 @@ export function NativeDragDropItemImageControls({ word, document, bookSlug, comp
   return <fieldset className="native-drag-drop-item-image-controls" disabled={pending}>
     <legend>Item image · {word.shortLabel}</legend>
     <p>The item text is its accessible description. Add a visible caption only if needed.</p>
-    <label>{word.image ? "Replace item image" : "Upload item image"}<input aria-label={`Upload image for ${word.shortLabel}`} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { upload(event.target.files?.[0]); event.target.value = ""; }} /></label>
+    <label className="native-drag-drop-item-upload">{word.image ? "Replace item image" : "Upload item image"}<input aria-label={`Upload image for ${word.shortLabel}`} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { upload(event.target.files?.[0]); event.target.value = ""; }} /></label>
     {word.image ? <>
-      <NativeDragDropItemContent word={word} document={document} assetUrl={assetUrl} />
+      <div className="native-drag-drop-item-thumbnail"><NativeDragDropItemContent word={word} document={document} assetUrl={assetUrl} /></div>
+      <div className="native-drag-drop-item-dimensions">
       <label>Display width<input aria-label={`Image width for ${word.shortLabel}`} type="number" min={16} max={256} value={word.image.displayWidth} onChange={(event) => { const value = Number(event.target.value); if (Number.isInteger(value) && value >= 16 && value <= 256) changeImage((item) => { item.image.displayWidth = value; }); }} /></label>
       <label>Display height<input aria-label={`Image height for ${word.shortLabel}`} type="number" min={16} max={256} value={word.image.displayHeight} onChange={(event) => { const value = Number(event.target.value); if (Number.isInteger(value) && value >= 16 && value <= 256) changeImage((item) => { item.image.displayHeight = value; }); }} /></label>
+      </div>
       <label>Visible caption (optional)<input aria-label={`Image caption for ${word.shortLabel}`} maxLength={300} value={word.image.caption || ""} onChange={(event) => changeImage((item) => { if (event.target.value) item.image.caption = event.target.value; else delete item.image.caption; })} /></label>
-      <button type="button" onClick={() => changeImage((item, next) => { const slot = item.image.assetSlot; delete item.image; removeNativeManagedAssetReferenceIfUnused(next, slot); })}>Remove item image</button>
+      <StudioButton variant="danger-ghost" onClick={() => changeImage((item, next) => { const slot = item.image.assetSlot; delete item.image; removeNativeManagedAssetReferenceIfUnused(next, slot); })}>Remove item image</StudioButton>
     </> : null}
     {message ? <p role="status">{message}</p> : null}
   </fieldset>;

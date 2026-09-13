@@ -28,7 +28,7 @@ export function PublishedNativeStudentActivityRunner({ entry, publication, respo
     {entry.kind === "complete-sentences" ? <NativeCompleteSentencesStudentSurface document={document} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} audioHotspotPresentation={audioHotspotPresentation} /> : null}
     {entry.kind === "listening" ? <NativeListeningStudentSurface document={document} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} presentation={activityPresentation} /> : null}
     {entry.kind === "oldschool-listening" ? <NativeOldschoolListeningStudentSurface document={document} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} presentation={activityPresentation} /> : null}
-    {entry.kind === "drag-drop" ? <NativeDragDropStudentSurface document={document} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} /> : null}
+    {entry.kind === "drag-drop" ? <NativeDragDropStudentSurface audioHotspotPresentation={audioHotspotPresentation} document={document} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} /> : null}
   </article>}</NativeReadableTextPresentation>;
 }
 

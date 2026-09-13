@@ -4,6 +4,7 @@ import { nativeActivityFontFamily } from "./nativeActivityFont.js";
 import { NATIVE_IMAGE_DEFAULT_SURFACE, NATIVE_IMAGE_LIMITS, normalizeNativeImageInteraction } from "./nativeImage.js";
 import { removeNativeManagedAssetReferenceIfUnused } from "./nativeActivityPublic.js";
 import { normalizeNativePedagogicalText, normalizeNativeSingleLineText } from "./nativePedagogicalText.js";
+import { NATIVE_AUDIO_TEXT_HOTSPOT_LIMITS } from "./nativeAudioTextHotspots.js";
 
 export const NATIVE_DRAG_DROP_LIMITS = Object.freeze({
   words: 100,
@@ -123,7 +124,7 @@ function normalizeItemImage(input, label, assets) {
 }
 
 export function createEmptyNativeDragDropInteraction() {
-  return { kind: "drag-drop", words: [], presentation: structuredClone(NATIVE_DRAG_DROP_DEFAULT_PRESENTATION), panels: [] };
+  return { kind: "drag-drop", randomize: true, words: [], presentation: structuredClone(NATIVE_DRAG_DROP_DEFAULT_PRESENTATION), panels: [] };
 }
 
 export function normalizeNativeDragDropInteraction(input, { assets = [], commonAssetSlots = new Set() } = {}) {
@@ -132,7 +133,9 @@ export function normalizeNativeDragDropInteraction(input, { assets = [], commonA
   const hasLayoutMode = Object.hasOwn(value, "layoutMode");
   const hasAnswerBankHeight = Object.hasOwn(value, "answerBankHeightPx");
   const hasTextPanelHeight = Object.hasOwn(value, "textPanelHeightPx");
-  exactKeys(value, ["kind", "words", ...(hasPresentation ? ["presentation"] : []), ...(hasLayoutMode ? ["layoutMode"] : []), ...(hasAnswerBankHeight ? ["answerBankHeightPx"] : []), ...(hasTextPanelHeight ? ["textPanelHeightPx"] : []), "panels"], "Native Drag & Drop interaction");
+  const hasRandomize = Object.hasOwn(value, "randomize");
+  exactKeys(value, ["kind", "words", ...(hasRandomize ? ["randomize"] : []), ...(hasPresentation ? ["presentation"] : []), ...(hasLayoutMode ? ["layoutMode"] : []), ...(hasAnswerBankHeight ? ["answerBankHeightPx"] : []), ...(hasTextPanelHeight ? ["textPanelHeightPx"] : []), "panels"], "Native Drag & Drop interaction");
+  if (hasRandomize && typeof value.randomize !== "boolean") throw new Error("Native Drag & Drop randomize must be a boolean.");
   if (value.kind !== "drag-drop") throw new Error("Native Drag & Drop interaction kind is invalid.");
   if (!Array.isArray(value.words) || value.words.length > NATIVE_DRAG_DROP_LIMITS.words) throw new Error("Native Drag & Drop word count is invalid.");
   if (!Array.isArray(value.panels) || value.panels.length > NATIVE_DRAG_DROP_LIMITS.panels) throw new Error("Native Drag & Drop panel count is invalid.");
@@ -206,7 +209,7 @@ export function normalizeNativeDragDropInteraction(input, { assets = [], commonA
 
   [presentation.bankWordStyle.fontAssetSlot, presentation.placedAnswerStyle.fontAssetSlot].filter(Boolean).forEach((slot) => usedAssetSlots.add(slot));
   if (assets.some((asset) => !usedAssetSlots.has(asset.slot) && !commonAssetSlots.has(asset.slot))) throw new Error("Every Native Drag & Drop managed asset must be used by an image layer, text style, or common supporting content.");
-  return { kind: "drag-drop", words, presentation, layoutMode, answerBankHeightPx, textPanelHeightPx, panels };
+  return { kind: "drag-drop", ...(hasRandomize ? { randomize: value.randomize } : {}), words, presentation, layoutMode, answerBankHeightPx, textPanelHeightPx, panels };
 }
 
 export function normalizeNativeDragDropSolution(input) {
@@ -279,11 +282,11 @@ export function nativeDragDropAssetRequirements(publicDocument) {
   const requirements = panels.flatMap((panel, panelIndex) => panel.images.flatMap((image, imageIndex) => {
     if (seen.has(image.assetSlot)) return [];
     seen.add(image.assetSlot);
-    return [{ slot: image.assetSlot, label: `Drag & Drop panel ${panelIndex + 1} image ${imageIndex + 1}` }];
+    return [{ slot: image.assetSlot, mediaTypes: ["image/png", "image/jpeg", "image/webp"], label: `Drag & Drop panel ${panelIndex + 1} image ${imageIndex + 1}` }];
   }));
   for (const word of interaction?.words || []) {
     if (!word.image) continue;
-    requirements.push({ slot: word.image.assetSlot, width: word.image.sourceWidth, height: word.image.sourceHeight, label: `Drag & Drop image item: ${word.text}` });
+    requirements.push({ slot: word.image.assetSlot, width: word.image.sourceWidth, height: word.image.sourceHeight, mediaTypes: ["image/png", "image/jpeg", "image/webp"], label: `Drag & Drop image item: ${word.text}` });
     seen.add(word.image.assetSlot);
   }
   for (const [style, label] of [[interaction?.presentation?.bankWordStyle, "Drag & Drop bank word font"], [interaction?.presentation?.placedAnswerStyle, "Drag & Drop placed answer font"]]) {
@@ -313,9 +316,31 @@ export function removeNativeDragDropPanel(publicDocument, teacherDocument, panel
   const targetIds = new Set(panel.dropTargets.map((target) => target.id));
   const assetSlots = new Set(panel.images.map((image) => image.assetSlot));
   interaction.panels = interaction.panels.filter((entry) => entry.id !== panelId);
+  if (publicDocument.audioTextHotspots) {
+    publicDocument.audioTextHotspots.hotspots.filter((hotspot) => hotspot.panelId === panelId).forEach((hotspot) => { if (hotspot.audioAssetSlot) assetSlots.add(hotspot.audioAssetSlot); });
+    publicDocument.audioTextHotspots.hotspots = publicDocument.audioTextHotspots.hotspots.filter((hotspot) => hotspot.panelId !== panelId);
+    if (!publicDocument.audioTextHotspots.hotspots.length) delete publicDocument.audioTextHotspots;
+  }
   teacherDocument.parts[0].solution.mappings = teacherDocument.parts[0].solution.mappings.filter((mapping) => !targetIds.has(mapping.targetId));
   assetSlots.forEach((slot) => removeNativeManagedAssetReferenceIfUnused(publicDocument, slot));
   return panel;
+}
+
+// Only the activity marker follows the panel resize. Readable focus/highlight
+// rectangles belong to the independent Readable Text source image.
+export function resizeNativeDragDropAudioTextHotspots(document, panelId, from, to) {
+  for (const hotspot of document.audioTextHotspots?.hotspots || []) {
+    if (hotspot.panelId !== panelId) continue;
+    const area = hotspot.activityArea;
+    const { minimumSize, maximumSize } = NATIVE_AUDIO_TEXT_HOTSPOT_LIMITS;
+    const size = Math.min(maximumSize, to.width, to.height, Math.max(minimumSize, Math.round(area.width * Math.min(to.width / from.width, to.height / from.height))));
+    if (size < minimumSize) throw new Error("The panel is too small for its readable-text hotspots.");
+    hotspot.activityArea = {
+      x: Math.min(to.width - size, Math.max(0, Math.round((area.x + area.width / 2) * to.width / from.width - size / 2))),
+      y: Math.min(to.height - size, Math.max(0, Math.round((area.y + area.height / 2) * to.height / from.height - size / 2))),
+      width: size, height: size,
+    };
+  }
 }
 
 export function removeNativeDragDropWord(publicDocument, teacherDocument, wordId) {

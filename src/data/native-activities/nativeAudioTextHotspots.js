@@ -70,6 +70,9 @@ function area(input, label, bounds, { circular = false } = {}) {
 
 export function nativeAudioTextHotspotTargets(publicDocument) {
   const interaction = publicDocument?.parts?.[0]?.interaction;
+  if (publicDocument?.kind === "drag-drop") {
+    return (interaction?.panels || []).map((panel) => ({ panelId: panel.id, width: panel.surface.width, height: panel.surface.height }));
+  }
   if (publicDocument?.kind === "open-response" && interaction?.presentation?.kind === "panels") {
     return nativeOpenResponsePanels(interaction).map((panel) => ({ panelId: panel.id, width: panel.surface.width, height: panel.surface.height }));
   }

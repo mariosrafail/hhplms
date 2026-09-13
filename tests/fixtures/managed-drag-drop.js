@@ -56,6 +56,9 @@ export function managedDragDropSources(component = componentSlug, { font = false
   const teacher = kind.createBlankTeacher({ activityId });
   pub.assets = [{ assetId: "20000000-0000-4000-8000-000000000041", checksumSha256: "b".repeat(64), role: "activity_artwork", slot: "synthetic-panel" }];
   const interaction = pub.parts[0].interaction;
+  // This fixture reconstructs the pinned pre-options authoring input, not a new
+  // activity. New activity defaults must not alter the historical byte proof.
+  delete interaction.randomize;
   interaction.words = [{ id: child("word", 1), text: multiline ? "Synthetic first line\nSynthetic second line" : "Synthetic word" }, { id: child("word", 2), text: "Synthetic distractor" }];
   interaction.panels = [{ id: child("panel", 11), surface: { width: 1000, height: 600 }, images: [{ id: child("img", 21), assetSlot: "synthetic-panel", area: { x: 0, y: 0, width: 1000, height: 600 }, order: 0, altText: "Synthetic illustration", decorative: false, fit: "contain", locked: false }], dropTargets: [{ id: child("target", 31), area: { x: 80, y: 420, width: 220, height: 80 }, accessibleLabel: "Synthetic blank" }] }];
   if (font) {

@@ -4,11 +4,20 @@
 .native-drag-drop-panel-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px; }
 .native-drag-drop-panel-row > button:first-child { min-width: 0; text-align: left; }
 .native-drag-drop-panel-row > button[aria-current="true"] { border-color: #2563eb; background: #dbeafe; }
-.native-drag-drop-word-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto auto; gap: 6px; align-items: center; }
-.native-drag-drop-word-row textarea { min-height: 44px; resize: vertical; }
+.native-drag-drop-word-row { display: grid; gap: 12px; min-width: 0; padding: 14px; border: 1px solid #d6dde8; border-radius: 10px; background: #f8fafc; }
+.native-drag-drop-word-row textarea { box-sizing: border-box; width: 100%; min-height: 72px; resize: vertical; }
+.native-drag-drop-item-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.native-drag-drop-item-actions { display: flex; gap: 4px; margin-left: auto; }
+.native-drag-drop-item-image-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 16px; min-width: 0; margin: 0; padding: 12px; border: 1px solid #d6dde8; border-radius: 8px; background: #fff; }
+.native-drag-drop-item-image-controls > p, .native-drag-drop-item-upload { grid-column: 1 / -1; margin: 0; }
+.native-drag-drop-item-image-controls label { display: grid; align-content: start; gap: 5px; min-width: 0; }
+.native-drag-drop-item-image-controls input { box-sizing: border-box; width: 100%; min-width: 0; }
+.native-drag-drop-item-image-controls > button { justify-self: start; align-self: end; }
+.native-drag-drop-item-dimensions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.native-drag-drop-item-thumbnail { display: flex; align-items: center; justify-content: center; min-width: 0; padding: 4px; border: 1px solid #e2e8f0; border-radius: 6px; }
 .native-drag-drop-word-row svg { width: 16px; }
 .native-drag-drop-editor-label { display: inline-grid; place-items: center; min-width: 2rem; min-height: 2rem; border-radius: 999px; background: #e0e7ff; color: #3730a3; font-weight: 800; }
-.native-drag-drop-reusable { display: inline-flex; align-items: center; gap: 5px; max-width: 130px; font-size: .82rem; }
+.native-drag-drop-reusable { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 600; }
 .native-drag-drop-layout-settings { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 18px; padding: 14px; border: 1px solid #d6dde8; border-radius: 12px; }
 .native-drag-drop-layout-settings > p { flex-basis: 100%; margin: 0; color: #475569; }
 .native-drag-drop-mapping select[multiple], .native-drag-drop-editor-inspector select[multiple] { min-height: 7.5rem; }
@@ -31,4 +40,4 @@
 .native-drag-drop-authoring-empty { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .native-drag-drop-mapping { max-width: 800px; margin: 18px auto; }
 @media (max-width: 1100px) { .native-drag-drop-editor-grid { grid-template-columns: 210px minmax(0, 1fr); } .native-drag-drop-editor-inspector { grid-column: 1 / -1; } }
-@media (max-width: 720px) { .native-drag-drop-editor-grid, .native-drag-drop-typography-grid { grid-template-columns: 1fr; } .native-drag-drop-word-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; } .native-drag-drop-reusable { grid-column: 2 / -1; } }
+@media (max-width: 720px) { .native-drag-drop-editor-grid, .native-drag-drop-typography-grid, .native-drag-drop-item-image-controls { grid-template-columns: minmax(0, 1fr); } }

@@ -49,7 +49,7 @@ export function PublishedNativeTeacherActivityRunner({ entry, publication, showM
     {entry.kind === "complete-sentences" && currentTeacher ? <NativeCompleteSentencesTeacherSurface publicDocument={document} teacherDocument={currentTeacher} assetUrl={assetUrl} presentation={activityPresentation} audioHotspotPresentation={audioHotspotPresentation} /> : null}
     {entry.kind === "listening" && currentTeacher ? <NativeListeningTeacherSurface publicDocument={document} teacherDocument={currentTeacher} assetUrl={assetUrl} presentation={activityPresentation} /> : null}
     {entry.kind === "oldschool-listening" && currentTeacher ? <NativeOldschoolListeningTeacherSurface publicDocument={document} teacherDocument={currentTeacher} assetUrl={assetUrl} presentation={activityPresentation} /> : null}
-    {entry.kind === "drag-drop" && currentTeacher ? <NativeDragDropTeacherSurface publicDocument={document} teacherDocument={currentTeacher} assetUrl={assetUrl} presentation={activityPresentation} /> : null}
+    {entry.kind === "drag-drop" && currentTeacher ? <NativeDragDropTeacherSurface audioHotspotPresentation={audioHotspotPresentation} publicDocument={document} teacherDocument={currentTeacher} assetUrl={assetUrl} presentation={activityPresentation} /> : null}
   </article>}</NativeReadableTextPresentation>;
 }
 

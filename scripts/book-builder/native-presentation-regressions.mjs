@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 import sharp from "sharp";
 import { expect } from "@playwright/test";
 import { childId, presentationPair } from "../../tests/fixtures/native-runtime-regressions/presentation-documents.js";
+import { runSingleChoiceFocusRegressions } from "./native-single-choice-focus-regressions.mjs";
 
 // Only the data providers and unused legacy branches are substituted. The embedded
 // fitter, hosted native runner, Teacher surface and shared presentation are real.
@@ -81,6 +82,7 @@ export async function runNativePresentationRegressions(browser, output) {
     return route.fulfill({ json: { document: teacher ? stored.teacherDocument : stored.publicDocument, revision: teacher ? revisions.teacherRevision : revisions.publicRevision } });
   });
   try {
+    await runSingleChoiceFocusRegressions(browser, server.resolvedUrls.local[0], output);
     await page.goto(`${server.resolvedUrls.local[0]}tests/fixtures/native-runtime-regressions/presentation.html`);
     await page.locator(".native-drag-drop-phrase").first().waitFor();
     const word = (number) => page.locator(`[data-drag-drop-word-id="${childId("word", number)}"]`);

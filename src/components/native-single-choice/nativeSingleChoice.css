@@ -157,19 +157,17 @@
 
 .native-single-choice-stage-slot {
   align-self: stretch;
-  container-type: size;
   display: grid;
   height: 100%;
   justify-self: stretch;
   min-height: 0;
   min-width: 0;
   place-items: center;
+  position: relative;
   width: 100%;
 }
 
 .native-single-choice-visual[data-navigation-mode="inline"] .native-single-choice-stage-slot {
-  container-type: inline-size;
-  display: block;
   height: auto;
 }
 
@@ -178,7 +176,10 @@
 }
 
 .native-single-choice-visual[data-navigation-mode="inline"] .native-single-choice-visual-stage {
+  inset: auto;
+  margin: 0;
   max-height: none;
+  position: relative;
   width: 100%;
 }
 
@@ -192,9 +193,47 @@
 .native-single-choice-visual-stage {
   background: transparent;
   height: auto;
+  inset: 0;
+  margin: auto;
   max-height: 100%;
   max-width: 100%;
-  width: min(100cqw, calc(100cqh * var(--native-single-choice-stage-aspect)));
+  /* Both axes stay auto so aspect-ratio transfers the slot's constraints.
+     Out-of-flow sizing cannot change the slot or query its size recursively. */
+  position: absolute;
+  width: auto;
+}
+
+/* Runtime articles provide the bounded Reader slot. Editor previews mount the
+   surface directly and, like Show All, keep their content-driven height. */
+.native-readable-text-activity-view > article:is(.hosted-native-draft-activity, .published-native-activity) .native-single-choice-visual[data-navigation-mode="inline"]:has(> .native-single-choice-visual-panels:not(.is-show-all)),
+.native-readable-text-activity-view > article:is(.hosted-native-draft-activity, .published-native-activity) .native-single-choice-visual[data-navigation-mode="inline"] > .native-single-choice-visual-panels:not(.is-show-all) > .native-single-choice-visual-panel.has-heading {
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.native-readable-text-activity-view > article:is(.hosted-native-draft-activity, .published-native-activity) .native-single-choice-visual[data-navigation-mode="inline"] > .native-single-choice-visual-panels:not(.is-show-all) {
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+}
+
+.native-readable-text-activity-view > article:is(.hosted-native-draft-activity, .published-native-activity) .native-single-choice-visual[data-navigation-mode="inline"] > .native-single-choice-visual-panels:not(.is-show-all) .native-single-choice-stage-slot {
+  height: 100%;
+}
+
+.native-readable-text-activity-view > article:is(.hosted-native-draft-activity, .published-native-activity) .native-single-choice-visual[data-navigation-mode="inline"] > .native-single-choice-visual-panels:not(.is-show-all) .native-single-choice-visual-stage {
+  inset: 0;
+  margin: auto;
+  max-height: 100%;
+  position: absolute;
+  width: auto;
+}
+
+.native-readable-text-activity-view .native-single-choice-visual[data-navigation-mode="inline"]:has(> .native-single-choice-visual-panels.is-show-all),
+.native-readable-text-activity-view .native-single-choice-visual[data-navigation-mode="inline"] > .native-single-choice-visual-panels.is-show-all,
+.native-readable-text-activity-view .native-single-choice-visual[data-navigation-mode="inline"] > .native-single-choice-visual-panels.is-show-all > .native-single-choice-visual-panel {
+  align-self: start;
+  height: auto;
 }
 
 .native-single-choice-visual-stage.is-missing-background,

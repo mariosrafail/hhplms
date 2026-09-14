@@ -7,6 +7,33 @@ const canvasSelector = ".native-single-choice-hotspot-canvas";
 const hotspotSelector = ".native-single-choice-authoring-hotspot";
 const selectedName = "Hotspot selected";
 
+export async function assertSingleChoicePreviewNextActionable(preview) {
+  await preview.getByRole("button", { name: "Next", exact: true }).scrollIntoViewIfNeeded();
+  const geometry = await preview.evaluate((root) => {
+    const rect = (element) => { const r = element.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; };
+    const describe = (element) => element ? { tag: element.tagName, className: element.className, ariaLabel: element.getAttribute("aria-label") } : null;
+    const inspect = (element) => {
+      if (!element) return null;
+      const css = getComputedStyle(element);
+      return { ...describe(element), rect: rect(element), css: Object.fromEntries(["width", "height", "min-height", "max-height", "overflow", "position", "display", "grid-template-rows", "aspect-ratio"].map((key) => [key, css.getPropertyValue(key)])) };
+    };
+    const next = [...root.querySelectorAll(".native-single-choice-visual-navigation button")].find((button) => button.textContent.trim() === "Next");
+    const supplementary = root.querySelector(".native-supplementary-navigation");
+    const bounds = rect(next); const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+    const hit = document.elementFromPoint(center.x, center.y);
+    const navigation = supplementary ? rect(supplementary) : null;
+    const selectors = [".native-readable-text-presentation", ".native-readable-text-activity-view", ".native-single-choice-student", ".native-single-choice-visual", ".native-single-choice-visual-navigation", ".native-single-choice-visual-panels", ".native-single-choice-visual-panel", ".native-single-choice-stage-slot", ".native-single-choice-visual-stage", ".native-supplementary-navigation"];
+    return {
+      nodes: { ".native-or-preview": inspect(root), ...Object.fromEntries(selectors.map((selector) => [selector, inspect(root.querySelector(selector))])), Next: inspect(next) },
+      center, elementFromPoint: describe(hit), nextOwnsCenter: hit === next || next.contains(hit),
+      supplementaryOverlapsCenter: Boolean(navigation && center.x >= navigation.x && center.x <= navigation.x + navigation.width && center.y >= navigation.y && center.y <= navigation.y + navigation.height),
+    };
+  });
+  console.log(`SINGLE_CHOICE_LOCAL_PREVIEW_ACTIONABILITY ${JSON.stringify(geometry)}`);
+  assert.equal(geometry.nextOwnsCenter, true, "Local Preview Next must own its real pointer target");
+  assert.equal(geometry.supplementaryOverlapsCenter, false, "Activity presentation must not cover the center of Next");
+}
+
 const sourceGeometry = async (page) => {
   const canvas = page.locator(canvasSelector);
   const values = await Promise.all([

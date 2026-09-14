@@ -498,8 +498,18 @@ test("visual Viewer uses maximal contain sizing, transparent loaded chrome, and 
     readFile(new URL("../src/components/native-readable-text/nativeReadableText.css", import.meta.url), "utf8"),
     readFile(new URL("../src/components/native-single-choice/NativeSingleChoicePresentation.jsx", import.meta.url), "utf8"),
   ]);
-  assert.match(css, /\.native-single-choice-stage-slot\s*\{[^}]*container-type:\s*size/s);
-  assert.match(css, /\.native-single-choice-visual-stage\s*\{[^}]*background:\s*transparent[^}]*width:\s*min\(100cqw, calc\(100cqh \* var\(--native-single-choice-stage-aspect\)\)\)/s);
+  const declarations = (selector) => {
+    const rule = css.match(new RegExp(`(?:^|\\})\\s*\\.${selector}\\s*\\{([^}]*)\\}`));
+    assert.ok(rule, `Missing ${selector} sizing rule`);
+    return rule[1].replace(/\/\*[\s\S]*?\*\//g, "");
+  };
+  assert.match(declarations("native-single-choice-stage-slot"), /(?:^|;)\s*position\s*:\s*relative\s*(?:;|$)/);
+  const stage = declarations("native-single-choice-visual-stage");
+  for (const [property, value] of Object.entries({ background: "transparent", position: "absolute", inset: "0", margin: "auto", width: "auto", height: "auto", "max-width": "100%", "max-height": "100%" })) {
+    assert.match(stage, new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*${value}\\s*(?:;|$)`), `Contained stage requires ${property}: ${value}`);
+  }
+  assert.doesNotMatch(css, /container-type\s*:\s*size\b/i);
+  assert.doesNotMatch(css, /cq[wh]\b/i);
   assert.match(css, /\.native-single-choice-visual-stage > img,[\s\S]*object-fit:\s*contain/);
   assert.doesNotMatch(css, /object-fit:\s*fill/);
   assert.match(readableCss, /:has\(\.native-single-choice-visual-stage\):not\(\.is-audio-focus\)[^{]*\{[^}]*overflow:\s*hidden/s);

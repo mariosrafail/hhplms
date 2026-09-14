@@ -22,3 +22,27 @@ export function presentationPair(kind = "drag-drop", reusable = true) {
   const normalized = normalizeNativeRuntimePublicDocument(publicDocument, { activityId: publicDocument.activityId, kind });
   return { publicDocument: normalized, teacherDocument: normalizeNativeRuntimeTeacherDocument(teacherDocument, { activityId: publicDocument.activityId, kind, publicDocument: normalized }) };
 }
+
+export function fixedAspectSingleChoicePair() {
+  const { publicDocument, teacherDocument } = presentationPair("single-choice");
+  publicDocument.activityId = teacherDocument.activityId = "regression-single-choice-fixed-aspect";
+  publicDocument.assets = [asset("artwork", 11), asset("readable", 12), asset("portrait", 13), asset("wide", 14)];
+  delete publicDocument.supplementalAudio;
+  publicDocument.readableText = { kind: "image", assetSlot: "readable", sourceWidth: 1000, sourceHeight: 560, altText: "Synthetic fixed-aspect passage" };
+  const interaction = publicDocument.parts[0].interaction;
+  for (const [index, width, height, slot] of [[2, 480, 960, "portrait"], [3, 1440, 360, "wide"]]) {
+    const questionId = childId("q", index);
+    const optionId = childId("opt", index + 1);
+    interaction.questions.push({ id: questionId, prompt: `Panel ${index} choice`, options: [{ id: optionId, text: "First" }, { id: childId("opt", index + 3), text: "Second" }] });
+    interaction.presentation.panels.push({ id: childId("panel", index), backgroundAssetSlot: slot, sourceWidth: width, sourceHeight: height, hotspots: [optionId, childId("opt", index + 3)].map((id, optionIndex) => ({ id: childId("hot", index * 2 - 1 + optionIndex), questionId, optionId: id, area: { x: 40 + optionIndex * 200, y: 180, width: 160, height: 80 } })) });
+    teacherDocument.parts[0].solution.correctAnswers.push({ questionId, correctOptionId: optionId });
+  }
+  const crops = [{ x: 21, y: 25, width: 698, height: 198 }, { x: 24, y: 107, width: 721, height: 205 }];
+  publicDocument.audioTextHotspots.hotspots = [1, 2, 3, 4].map((number) => ({
+    id: childId("aud", number), panelId: childId("panel", Math.max(1, number - 1)),
+    activityArea: { x: number === 2 ? 320 : 160, y: 80, width: 64, height: 64 },
+    readableFocusArea: crops[(number - 1) % 2], focusLayout: "fixed-aspect", audioAssetSlot: "", label: `Open readable excerpt ${number}`,
+  }));
+  const normalized = normalizeNativeRuntimePublicDocument(publicDocument, { activityId: publicDocument.activityId, kind: "single-choice" });
+  return { publicDocument: normalized, teacherDocument: normalizeNativeRuntimeTeacherDocument(teacherDocument, { activityId: normalized.activityId, kind: normalized.kind, publicDocument: normalized }) };
+}

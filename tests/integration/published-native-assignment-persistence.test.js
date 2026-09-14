@@ -1,3 +1,5 @@
+import { exerciseMultiPartReadableAssignment } from "./_multi-part-readable-assignment.mjs";
+import { exerciseOldschoolModesAssignment } from "./_oldschool-modes-assignment.mjs";
 import { exerciseOldschoolTypographyAssignment } from "./_oldschool-typography-persistence.mjs";
 import { createMarkWordsFixture, markWordsFixtureId } from "../fixtures/native-mark-words.js";
 import { publicDocument as multiPublic, teacherDocument as multiTeacher } from "../fixtures/native-runtime-regressions/multi-part-data.js";
@@ -437,6 +439,8 @@ test("published native assignment remains release-pinned through submit, review,
     } });
   }
   await exerciseOldschoolTypographyAssignment({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
+  await exerciseMultiPartReadableAssignment({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
+  await exerciseOldschoolModesAssignment({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
   await t.test("historical Unit Extras endpoints verify unchanged hashes and remain pinned after newer releases", async () => {
     const { verifyHistoricalUnitExtrasPersistence } = await import("./_historical-unit-extras.mjs");
     await verifyHistoricalUnitExtrasPersistence({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });

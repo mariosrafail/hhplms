@@ -1,8 +1,19 @@
+import { useEffect, useRef } from "react";
+import { NativeAudioTextHotspotButtons } from "../native-readable-text/NativeAudioTextHotspots.jsx";
+import { nativeAudioTextHotspotTargets } from "../../data/native-activities/nativeAudioTextHotspots.js";
 import { projectNativeMultiPartChild } from "../../data/native-activities/nativeMultiPart.js";
 import "./nativeMultiPart.css";
 
-export function NativeMultiPartLayout({ document, teacherDocument = null, assetUrl, panelIndex, setPanelIndex, renderSection, externalNavigation = false, controls = null }) {
+export function NativeMultiPartLayout({ document, teacherDocument = null, assetUrl, panelIndex, setPanelIndex, renderSection, externalNavigation = false, controls = null, audioHotspotPresentation = null }) {
   const interaction = document.parts[0].interaction;
+  const currentPanelId = interaction.panels[panelIndex]?.id;
+  const hotspotRef = useRef(audioHotspotPresentation); hotspotRef.current = audioHotspotPresentation;
+  useEffect(() => {
+    const presentation = hotspotRef.current;
+    const active = presentation?.hotspots.find((hotspot) => hotspot.id === presentation.activeHotspotId);
+    const target = nativeAudioTextHotspotTargets(document).find((entry) => entry.panelId === active?.panelId);
+    if (active && target?.parentPanelId !== currentPanelId) presentation.onPanelChange(currentPanelId);
+  }, [currentPanelId, document]);
   return <section className="native-multi-part" aria-label={document.metadata.title}>
     {controls || (!externalNavigation && interaction.panels.length > 1) ? <div className="native-multi-part-toolbar">{controls}
     {!externalNavigation && interaction.panels.length > 1 ? <nav aria-label="Multi-Part panels"><button type="button" disabled={panelIndex === 0} onClick={() => setPanelIndex(panelIndex - 1)}>Previous panel</button><span>Panel {panelIndex + 1} of {interaction.panels.length}</span><button type="button" disabled={panelIndex >= interaction.panels.length - 1} onClick={() => setPanelIndex(panelIndex + 1)}>Next panel</button></nav> : null}
@@ -15,6 +26,7 @@ export function NativeMultiPartLayout({ document, teacherDocument = null, assetU
           {panel.layout === "flow" && section.title ? <h3>{section.title}</h3> : null}
           {renderSection(section, projectNativeMultiPartChild(document, section, teacherDocument), panel.layout === "canvas" ? { bankRegion: section.bankRegion } : null, index === panelIndex)}
         </section>)}
+        {panel.layout === "canvas" ? <NativeAudioTextHotspotButtons panelId={panel.id} surface={panel.surface} presentation={audioHotspotPresentation} /> : null}
       </section>;
     })}</div>
   </section>;

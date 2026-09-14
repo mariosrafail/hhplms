@@ -13,6 +13,8 @@ import { normalizePublishedBookLocator, publishedBookReadModel, resolvePublished
 import { loadVerifiedPublishedBookFamily } from "./published-book-releases.js";
 import { isPhaseOneComponentVisible } from "../../../src/config/bookCatalogVisibility.js";
 
+import { nativeOldschoolListeningQuestionPublicDocument, nativeOldschoolListeningQuestionTeacherDocument } from "../../../src/data/native-activities/nativeOldschoolListening.js";
+
 export const NATIVE_ASSIGNMENT_TARGET_KIND = "published_native";
 export const NATIVE_RESPONSE_SCHEMA_VERSION = "native-response.v1";
 
@@ -346,6 +348,15 @@ export function nativeAssignmentCapability(kind, publicDocument = null) {
   const capability = capabilities[String(kind || "")] || null;
   if (kind === "complete-sentences" && publicDocument?.parts?.[0]?.interaction?.evaluationMode === NATIVE_COMPLETE_SENTENCES_EXACT_EVALUATION_MODE) {
     return Object.freeze({ ...capability, reviewMode: "auto-scored", evaluateResponse: scoreCompleteSentences });
+  }
+  if (kind === "oldschool-listening" && publicDocument?.parts?.[0]?.interaction?.questionMode === "drag-drop") {
+    const project = nativeOldschoolListeningQuestionPublicDocument;
+    const teacher = nativeOldschoolListeningQuestionTeacherDocument;
+    return Object.freeze({ ...capability, reviewMode: "auto-scored",
+      normalizeResponse(document, envelope) { const result = normalizeDragDrop(project(document), envelope); return result.error ? result : { ...result, payload: { ...result.payload, kind: "oldschool-listening" } }; },
+      evaluateResponse: (document, solution, payload) => scoreDragDrop(project(document), teacher(solution), payload),
+      teacherReviewProjection: (document, solution, payload) => dragDropReview(project(document), teacher(solution), payload),
+    });
   }
   if (kind === "oldschool-listening" && publicDocument?.parts?.[0]?.interaction?.questionMode === "single-choice") {
     return Object.freeze({ ...capability, reviewMode: "auto-scored", normalizeResponse: normalizeOldschoolSingleChoice, evaluateResponse: scoreSingleChoice, teacherReviewProjection: singleChoiceReview });

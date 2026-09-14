@@ -39,7 +39,7 @@ function OldschoolPage({ document, interaction, assetUrl, highlightedCueIds, vie
   </section>;
 }
 
-export function NativeOldschoolListeningSurface({ publicDocument, assetUrl = () => "", presentation = null, teacherMode = false, renderQuestions }) {
+export function NativeOldschoolListeningSurface({ publicDocument, assetUrl = () => "", presentation = null, teacherMode = false, audioHotspotPresentation = null, renderQuestions }) {
   const interaction = publicDocument.parts[0].interaction;
   const [view, setView] = useState("questions");
   const [currentMs, setCurrentMs] = useState(0);
@@ -48,7 +48,8 @@ export function NativeOldschoolListeningSurface({ publicDocument, assetUrl = () 
   const [audioError, setAudioError] = useState(false);
   const [focusedCueIds, setFocusedCueIds] = useState([]);
   const [seekVersion, setSeekVersion] = useState(0);
-  const [revealState, setRevealState] = useState({ supported: teacherMode, total: interaction.questions.length, revealed: 0, pristine: true });
+  const [questionResetToken, setQuestionResetToken] = useState(null);
+  const [revealState, setRevealState] = useState({ supported: teacherMode, total: interaction.questions?.length || interaction.questionInteraction?.panels.flatMap((panel) => panel.dropTargets).length || 0, revealed: 0, pristine: true });
   const audioRef = useRef(null); const viewportApiRef = useRef(null); const pageCanvasRef = useRef(null); const lastCommand = useRef(null); const raf = useRef(0); const lastSample = useRef(0); const manualScroll = useRef(false);
   const audioReference = referenceForSlot(publicDocument, interaction.audioAssetSlot);
   const audioUrl = audioReference ? assetUrl(audioReference.assetId) : "";
@@ -75,9 +76,18 @@ export function NativeOldschoolListeningSurface({ publicDocument, assetUrl = () 
     const first = interaction.cues.find((cue) => cue.id === hotspot.cueIds[0]);
     if (first && audioRef.current) { audioRef.current.currentTime = first.startMs / 1_000; setCurrentMs(first.startMs); }
   }, [interaction.cues, interaction.snippetHotspots]);
-  const hotspotPresentation = useMemo(() => ({ hotspots: interaction.snippetHotspots.map((hotspot) => ({ ...hotspot, panelId: questionMode === "single-choice" ? interaction.presentation?.panels[0]?.id || null : interaction.questionSurface ? NATIVE_OPEN_RESPONSE_LEGACY_PANEL_ID : null, activityArea: hotspot.area })), activeHotspotId: null, onToggle: selectSnippet }), [interaction.presentation, interaction.questionSurface, interaction.snippetHotspots, questionMode, selectSnippet]);
+  const questionPanelId = questionMode === "drag-drop" ? interaction.questionInteraction.panels[0].id : questionMode === "single-choice" ? interaction.presentation?.panels[0]?.id || null : interaction.questionSurface ? NATIVE_OPEN_RESPONSE_LEGACY_PANEL_ID : null;
+  const hotspotPresentation = useMemo(() => ({
+    hotspots: [
+      ...interaction.snippetHotspots.map((hotspot) => ({ ...hotspot, id: `listening:${hotspot.id}`, panelId: questionPanelId, activityArea: hotspot.area })),
+      ...(audioHotspotPresentation?.hotspots || []).map((hotspot) => ({ ...hotspot, id: `readable:${hotspot.id}`, panelId: questionPanelId })),
+    ],
+    activeHotspotId: audioHotspotPresentation?.activeHotspotId ? `readable:${audioHotspotPresentation.activeHotspotId}` : null,
+    onToggle(id) { if (id.startsWith("listening:")) selectSnippet(id.slice(10)); else audioHotspotPresentation?.onToggle(id.slice(9)); },
+    onPanelChange() {},
+  }), [interaction.snippetHotspots, questionPanelId, audioHotspotPresentation, selectSnippet]);
   const onQuestionState = useCallback((state) => { if (state?.reveal) setRevealState(state.reveal); }, []);
-  const questionPresentation = useMemo(() => presentation ? { command: presentation.command, onStateChange: onQuestionState } : null, [onQuestionState, presentation?.command]);
+  const questionPresentation = useMemo(() => presentation ? { command: ["previous-panel", "next-panel", "toggle-text"].includes(presentation.command?.type) ? null : presentation.command, onStateChange: onQuestionState } : null, [onQuestionState, presentation?.command]);
 
   useEffect(() => {
     if (!playing) return undefined;
@@ -116,27 +126,28 @@ export function NativeOldschoolListeningSurface({ publicDocument, assetUrl = () 
     const command = presentation?.command;
     if (!command || command.token === lastCommand.current) return;
     lastCommand.current = command.token;
-    if (command.type === "reset-activity") reset();
+    if (command.type === "reset-activity") { reset(); setQuestionResetToken(command.token); }
     if (command.type === "previous-panel") { setView("questions"); setFocusedCueIds([]); }
     if (command.type === "next-panel") { setView("page"); setFocusedCueIds([]); }
-    if (command.type === "toggle-text") { setView((current) => current === "page" ? "questions" : "page"); setFocusedCueIds([]); }
+
   }, [presentation?.command, reset]);
-  useEffect(() => { presentation?.onStateChange?.({ view: view === "page" ? "text" : "questions", readableTextAvailable: true, panelNavigationActive: true, panelIndex: view === "page" ? 1 : 0, panelCount: 2, reveal: teacherMode ? revealState : { supported: false, total: 0, revealed: 0, pristine: true } }); }, [presentation?.onStateChange, revealState, teacherMode, view]);
+  useEffect(() => { presentation?.onStateChange?.({ view: "questions", readableTextAvailable: false, panelNavigationActive: true, panelIndex: view === "page" ? 1 : 0, panelCount: 2, reveal: teacherMode ? revealState : { supported: false, total: 0, revealed: 0, pristine: true } }); }, [presentation?.onStateChange, revealState, teacherMode, view]);
 
   const play = () => { if (!audioRef.current || !audioUrl) return; setView("page"); setFocusedCueIds([]); if (audioRef.current.ended || currentMs >= interaction.audioDurationMs) { audioRef.current.currentTime = 0; setCurrentMs(0); } setAudioError(false); audioRef.current.play().catch(() => setAudioError(true)); };
   const pause = () => audioRef.current?.pause();
   const seek = (nextMs) => { if (!audioRef.current || !Number.isFinite(nextMs)) return; audioRef.current.currentTime = nextMs / 1_000; setCurrentMs(nextMs); setSeekVersion((value) => value + 1); setView("page"); setFocusedCueIds([]); };
   const toggleMute = () => { const next = !muted; setMuted(next); if (audioRef.current) audioRef.current.muted = next; };
 
-  return <NativeScrollControlsHost className="native-oldschool-listening" data-panel={view === "questions" ? 1 : 2} data-view={view}>
+  return <NativeScrollControlsHost className="native-oldschool-listening" data-panel={view === "questions" ? 1 : 2} data-view={view} data-question-mode={questionMode}>
     <div className="native-oldschool-listening-local-stage">
       <div className="native-oldschool-listening-activity-stage" style={{ aspectRatio: `${interaction.panels[0].sourceWidth}/${interaction.panels[0].sourceHeight}` }}>
-        {view === "questions" ? renderQuestions({ audioHotspotPresentation: hotspotPresentation, presentation: questionPresentation }) : null}
+        <div className="native-oldschool-question-session" hidden={view !== "questions"}>{renderQuestions({ audioHotspotPresentation: hotspotPresentation, presentation: questionPresentation, resetToken: questionResetToken })}</div>
         {view === "questions" && questionMode === "single-choice" && !interaction.presentation ? <NativeAudioTextHotspotButtons panelId={null} surface={{ width: interaction.panels[0].sourceWidth, height: interaction.panels[0].sourceHeight }} presentation={hotspotPresentation} /> : null}
         {view === "page" ? <OldschoolPage document={publicDocument} interaction={interaction} assetUrl={assetUrl} highlightedCueIds={highlightedCueIds} viewportApiRef={viewportApiRef} pageCanvasRef={pageCanvasRef} onManualScrollStateChange={onManualScrollStateChange} /> : null}
         <div className="native-oldschool-listening-player-anchor" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}><LegacyListeningPlayer assets={nativeListeningPlayerAssets} currentMs={currentMs} durationMs={interaction.audioDurationMs} playing={playing} muted={muted} disabled={!audioUrl} formatTime={formatNativeListeningTime} onPlay={play} onPause={pause} onStop={reset} onSeek={seek} onToggleMute={toggleMute} /></div>
       </div>
     </div>
+    {!presentation ? <nav aria-label="Listening panels"><button type="button" disabled={view === "questions"} onClick={() => setView("questions")}>Previous</button><span>Panel {view === "questions" ? 1 : 2} of 2</span><button type="button" disabled={view === "page"} onClick={() => setView("page")}>Next</button></nav> : null}
     {!audioUrl ? <p className="native-oldschool-listening-error" role="alert">Listening audio is unavailable.</p> : null}
     {audioError ? <p className="native-oldschool-listening-error" role="alert">Listening audio could not be played.</p> : null}
     <audio ref={audioRef} hidden preload="metadata" src={audioUrl} onPlay={(event) => { pauseSiblingNativeMedia(event.currentTarget); setPlaying(true); }} onPause={() => setPlaying(false)} onTimeUpdate={() => { if (audioRef.current) setCurrentMs(Math.round(audioRef.current.currentTime * 1_000)); }} onSeeked={() => { if (audioRef.current) { setCurrentMs(Math.round(audioRef.current.currentTime * 1_000)); setSeekVersion((value) => value + 1); } }} onEnded={reset} onError={() => setAudioError(true)} />

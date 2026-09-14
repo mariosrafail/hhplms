@@ -8,12 +8,14 @@ export function buildLegacyFinalSubmission({ assignmentId, activityId, result } 
 }
 
 export function buildNativeFinalSubmission({ assignmentId, target, responses = {} } = {}) {
-  const interaction = target?.entry?.document?.parts?.[0]?.interaction || {};
+  let interaction = target?.entry?.document?.parts?.[0]?.interaction || {};
+  const responseKind = target?.nativeKind === "oldschool-listening" ? interaction.questionMode || "open-response" : target?.nativeKind;
+  if (responseKind === "drag-drop" && target?.nativeKind === "oldschool-listening") interaction = interaction.questionInteraction;
   if (target?.nativeKind === "multi-part") return {
     assignmentId,
     response: { schemaVersion: "native-multi-response.v1", sections: (interaction.sections || []).filter((section) => section.kind !== "image").map((section) => ({ id: section.id, kind: section.kind, response: buildNativeFinalSubmission({ target: { nativeKind: section.kind, capability: { responseSchemaVersion: "native-response.v1" }, entry: { document: { parts: [{ interaction: section.interaction }] } } }, responses: responses[section.id] || {} }).response })) },
   };
-  const questions = target?.nativeKind === "mark-the-words" ? markWordsResponseGroups(interaction) : target?.nativeKind === "drag-drop"
+  const questions = target?.nativeKind === "mark-the-words" ? markWordsResponseGroups(interaction) : responseKind === "drag-drop"
     ? (interaction.panels || []).flatMap((panel) => panel.dropTargets || [])
     : interaction.questions || interaction.items || [];
   return {
@@ -21,7 +23,7 @@ export function buildNativeFinalSubmission({ assignmentId, target, responses = {
     response: {
       schemaVersion: target?.capability?.responseSchemaVersion,
       items: questions
-        .filter((question) => !["single-choice", "drag-drop"].includes(target?.nativeKind) || responses[question.id])
+        .filter((question) => !["single-choice", "drag-drop"].includes(responseKind) || responses[question.id])
         .map((question) => ({ id: question.id, value: responses[question.id] || (target?.nativeKind === "mark-the-words" ? [] : "") })),
     },
   };

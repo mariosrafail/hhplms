@@ -1,3 +1,4 @@
+import { removeNativeMultiPartOwnedHotspots } from "../../../data/native-activities/nativeAudioTextHotspots.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StudioButton, StudioField, StudioSaveBar, StudioTabWorkspace } from "../../../components/builder-studio/StudioControls.jsx";
 import { StageGeometryControls } from "../../../components/builder-studio/StageGeometryControls.jsx";
@@ -69,10 +70,11 @@ export function NativeMultiPartEditor({ bookSlug, componentSlug, activityId, pla
     setPanelId(id); setSectionId(null);
   };
   const remove = (type, id) => {
-    if (!globalThis.confirm(type === "panel" ? "Delete this panel and all its sections?" : "Delete this section and its answers?")) return;
+    if (!globalThis.confirm(type === "panel" ? "Delete this panel, its sections and their readable-text hotspots?" : "Delete this section, its answers and its readable-text hotspots?")) return;
     mutate((next) => {
       const current = next.publicDocument.parts[0].interaction;
       const removed = new Set(current.sections.filter((entry) => type === "panel" ? entry.panelId === id : entry.id === id).map((entry) => entry.id));
+      removeNativeMultiPartOwnedHotspots(next.publicDocument, { panelId: type === "panel" ? id : null, sectionIds: [...removed] });
       current.sections = current.sections.filter((entry) => !removed.has(entry.id));
       if (type === "panel") current.panels = current.panels.filter((entry) => entry.id !== id);
       next.teacherDocument.parts[0].solution.sections = next.teacherDocument.parts[0].solution.sections.filter((entry) => !removed.has(entry.id));
@@ -141,7 +143,7 @@ export function NativeMultiPartEditor({ bookSlug, componentSlug, activityId, pla
     </> : null}
     {interaction.sections.map((entry) => { const Editor = editors[entry.kind]; return <fieldset className="native-multi-part-child-editor" disabled={saving} key={entry.id} hidden={mode !== "compose" || entry.id !== sectionId}><Editor {...scope} placementLabel={entry.title || nativeActivityKindLabels[entry.kind]} compositeBinding={{ backgroundRevision, ...multiPartSectionAuthoringProjection(pair, entry), onPairChange: (child) => installChild(entry.id, child), onBusyChange: setBusy }} /></fieldset>; })}
     <fieldset className="native-multi-part-child-editor" disabled={saving} hidden={mode !== "media"}><NativeReadableTextEditor {...mediaProps} onIncompleteChange={mediaCallbacks.readable} /><NativeSupplementalAudioEditor {...mediaProps} onIncompleteChange={mediaCallbacks.audio} /><NativeVideoEditor {...mediaProps} onIncompleteChange={mediaCallbacks.video} /></fieldset>
-    {mode === "preview" ? <><label><input type="checkbox" checked={teacherPreview} onChange={(event) => setTeacherPreview(event.target.checked)} />Teacher preview</label>{issues.length ? <p role="status">Resolve the listed issues to preview the complete activity.</p> : <NativeReadableTextPresentation document={document} assetUrl={assetUrl}>{teacherPreview ? <NativeMultiPartTeacherSurface publicDocument={document} teacherDocument={pair.teacherDocument} assetUrl={assetUrl} teacherAssetUrl={assetUrl} /> : <NativeMultiPartStudentSurface document={document} assetUrl={assetUrl} />}</NativeReadableTextPresentation>}</> : null}
+    {mode === "preview" ? <><label><input type="checkbox" checked={teacherPreview} onChange={(event) => setTeacherPreview(event.target.checked)} />Teacher preview</label>{issues.length ? <p role="status">Resolve the listed issues to preview the complete activity.</p> : <NativeReadableTextPresentation document={document} assetUrl={assetUrl}>{(presentation, audioHotspotPresentation) => teacherPreview ? <NativeMultiPartTeacherSurface presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} publicDocument={document} teacherDocument={pair.teacherDocument} assetUrl={assetUrl} teacherAssetUrl={assetUrl} /> : <NativeMultiPartStudentSurface presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} document={document} assetUrl={assetUrl} />}</NativeReadableTextPresentation>}</> : null}
     </StudioTabWorkspace>
     <StudioSaveBar dirty={dirty} saving={saving} message={message} ready={!issues.length} issues={issues} disabled={!dirty || busy || saving || Object.values(mediaIncomplete).some(Boolean)} onSave={save} />
     {dirty && message && message !== "Draft saved." ? <p role="status">{message}</p> : null}

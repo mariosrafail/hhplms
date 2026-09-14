@@ -70,6 +70,24 @@ function area(input, label, bounds, { circular = false } = {}) {
 
 export function nativeAudioTextHotspotTargets(publicDocument) {
   const interaction = publicDocument?.parts?.[0]?.interaction;
+  if (publicDocument?.kind === "multi-part") {
+    return (interaction?.panels || []).flatMap((panel) => {
+      if (panel.layout === "canvas") return [{ panelId: panel.id, parentPanelId: panel.id, sectionId: null, childPanelId: null, ...panel.surface, label: panel.title || panel.id }];
+      return (interaction.sections || []).filter((section) => section.panelId === panel.id).flatMap((section) =>
+        nativeAudioTextHotspotTargets({ kind: section.kind, parts: [{ interaction: section.interaction }] }).map((target) => ({
+          ...target, panelId: `${panel.id}/${section.id}/${target.panelId || "surface"}`,
+          parentPanelId: panel.id, sectionId: section.id, childPanelId: target.panelId,
+          label: `${panel.title || panel.id} / ${section.title || section.kind}`,
+        })));
+    });
+  }
+  if (publicDocument?.kind === "mark-the-words" && ["visual-target", "image-hotspot"].includes(interaction?.presentation?.kind)) {
+    return interaction.presentation.panels.map((panel) => ({ panelId: panel.id, width: panel.sourceWidth, height: panel.sourceHeight }));
+  }
+  if (publicDocument?.kind === "oldschool-listening") {
+    const panel = interaction?.panels?.[0];
+    return panel ? [{ panelId: "panel-1", width: panel.sourceWidth, height: panel.sourceHeight }] : [];
+  }
   if (publicDocument?.kind === "drag-drop") {
     return (interaction?.panels || []).map((panel) => ({ panelId: panel.id, width: panel.surface.width, height: panel.surface.height }));
   }
@@ -162,4 +180,26 @@ export function nativeAudioTextAssetRequirements(publicDocument) {
     seen.add(slot);
     return [{ slot, mediaType: "audio/mpeg", label: `Audio hotspot ${index + 1}` }];
   });
+}
+
+// The same target identity is stored, validated, previewed and routed. Child panel
+// IDs are local to a section; array positions are never part of ownership.
+export function nativeMultiPartAudioTextPresentation(document, presentation, sectionId) {
+  if (!presentation) return null;
+  const targets = new Map(nativeAudioTextHotspotTargets(document).filter((target) => target.sectionId === sectionId).map((target) => [target.panelId, target]));
+  return {
+    ...presentation,
+    hotspots: presentation.hotspots.filter((hotspot) => targets.has(hotspot.panelId)).map((hotspot) => ({ ...hotspot, panelId: targets.get(hotspot.panelId).childPanelId })),
+    onPanelChange() {}, // The parent owns navigation; hidden children must not close another section's focus.
+  };
+}
+
+export function removeNativeMultiPartOwnedHotspots(document, { panelId = null, sectionIds = [] }) {
+  if (!document.audioTextHotspots) return;
+  const owners = new Map(nativeAudioTextHotspotTargets(document).map((target) => [target.panelId, target]));
+  document.audioTextHotspots.hotspots = document.audioTextHotspots.hotspots.filter((hotspot) => {
+    const owner = owners.get(hotspot.panelId);
+    return !owner || !(owner.parentPanelId === panelId || sectionIds.includes(owner.sectionId));
+  });
+  if (!document.audioTextHotspots.hotspots.length) delete document.audioTextHotspots;
 }

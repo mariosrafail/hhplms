@@ -37,3 +37,5 @@
 .native-multi-part-panel--flow .native-complete-sentences-stage { max-height: none; }
 
 .native-multi-part-editor .native-multi-part-child-editor { min-width: 0; border: 0; padding: 0; margin: 0; }
+
+.native-multi-part-panel--canvas > .native-audio-text-hotspot { z-index: 100; pointer-events: auto; }

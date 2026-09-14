@@ -610,3 +610,46 @@ and resize cleanup. Multipart common media ownership is unchanged; child hotspot
 are not part of its current projection. See [contract and regression scope](NATIVE_DRAG_DROP_OPTIONS_AND_HOTSPOTS.md).
 Historical compiler/release/assignment semantics remain unchanged. No migration or
 hosted mutation is part of this local candidate; the Project copy is not updated.
+
+## Oldschool Listening question modes and supporting text (local candidate)
+
+VerifiedAt: 2026-09-14; fresh remote baseline `0089dc6a315a0bb986302d333277465cd92dbf86`.
+Oldschool remains one activity with exactly two outer panels. Panel 1 supports
+`open-response`, `single-choice`, and `drag-drop`; absent legacy mode means OR,
+while explicit unknown modes fail validation. DnD uses `questionInteraction`, a
+canonical drag-drop interaction with exactly one canvas matching outer Panel 1,
+and private Teacher `mappings`. Its submission envelope remains
+`kind: oldschool-listening`, with canonical DnD stable-ID validation and grading.
+
+The Builder embeds NativeOpenResponseEditor / NativeDragDropEditor through
+`nativeOldschoolQuestionBinding.js`. Only the parent saves real revisions and
+owns shared media. Child projection excludes shared content/assets; write-back
+preserves them and converts OR `img-` identities back to legacy `art-` identities.
+The parent owns authoring tabs and disables deletion of its sole question canvas.
+Canvas shrinkage that would strand hotspots requires their repositioning first.
+
+Top-level readable text and hotspots are independent of the synchronized page.
+Readable hotspots persist against outer `panel-1`; runtime maps that identity to
+the canonical child panel and namespaces actions separately from legacy snippets.
+Previous/Next navigate the two activity panels; Toggle Text belongs to the common
+readable presentation. Question sessions stay mounted across panel/text switches.
+The DnD wrapper reserves a player row to avoid covering the answer bank.
+
+Regressions: `native-oldschool-modes.test.js`, `oldschool-modes-regressions.mjs`
+(through the existing native runtime CI entry point), and disposable PostgreSQL
+helpers in font persistence / published assignment suites. No migration, frozen
+compiler change, immutable release rewrite, or current-draft fallback is introduced.
+Hosted/staging acceptance is NOT RUN; production operational readiness is not
+established by these local checks. The Project copy is not synchronized.
+
+### Multi-Part readable hotspots, worksheet artwork and adaptive banks ? local candidate
+
+VerifiedAt: 2026-09-14. Sources: `nativeAudioTextHotspots.js`, `NativeMultiPartLayout.jsx`, the Student/Teacher dispatch callers, `NativeAudioTextHotspotEditor.jsx`, `NativeDragDropSurface.jsx`, `nativeDragDrop.css`, and `teacherAppAuthoring.js`. This combined candidate preserves the preceding Oldschool implementation; its execution receipts are separate from the preceding candidate's validation.
+
+Multi-Part uses the existing top-level readableText/audioTextHotspots contract. A shared canvas is addressed by its stable parent panel ID and rendered once. A flow visual target uses a stable parent-panel/section/child-panel path (or the child's unpanelled surface), with the actual child source dimensions. The common target resolver drives authoring, bounds validation and runtime adapters. Text-only flow sections supply no fabricated canvas. Reorder does not change ownership; duplication creates independent child identities and retains the original hotspots. Confirmed section/panel deletion removes owned hotspots and prunes unused common assets. Background replacement retains coordinates and lets strict validation report invalid bounds. The public authoring canvas receives no Teacher document. Existing v1/v2 Multi-Part payloads, compiler IDs and historical snapshots are not rewritten.
+
+The existing navigation.videoWorksheet binding now resolves to a dedicated document/download PNG, generated from its tracked SVG by `scripts/book-builder/generate-video-worksheet-artwork.mjs` (`--check` verifies bytes). The video/play binding and explicit UI overrides remain independent. The canonical asset resolver and Android pack builder include the new raster through their existing inventories; no manual checksum replacement or published UI refresh is used. Web PDF download and Android PdfSaver dispatch remain unchanged.
+
+DnD measures remaining rendered rows, fonts, padding and images at runtime in standard and text layouts. The full bank retains its authored budget; partial banks use the measured footprint, bounded by that budget or the shared bankRegion. The empty bank retains a 24px return affordance. Text layout retains its authored initial text-panel/bank budget, gives reclaimed bank space directly to the scroll viewport, and keeps the source-sized stage independent of viewport height. Runtime measurements are never persisted. Pointer return from a placed response commits only on a valid bank drop; cancelled or invalid returns retain the response. Existing reusable-item, multi-capacity, Teacher-reveal and Oldschool media/session semantics remain in the shared runtime.
+
+Regression entry points remain the current CI commands. `native-runtime-regressions.mjs` includes `runtime-corrections-regressions.mjs` and the real Multi-Part editor round-trip helper. Disposable PostgreSQL tests cover pair save/reload, publication projection and pinned assignments with readable hotspots. Repository validation does not establish hosted/staging acceptance or production operational readiness. No migration, shared/provider mutation, commit, push or deployment is part of this local task.

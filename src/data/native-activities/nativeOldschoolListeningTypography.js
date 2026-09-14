@@ -47,7 +47,7 @@ export function oldschoolTranscriptFontSlots(interaction) {
 // the parent and must not appear as unused Panel 1 answer fonts.
 export function oldschoolQuestionAssets(interaction, assets) {
   const transcript = oldschoolTranscriptFontSlots(interaction);
-  const answers = new Set((interaction.questions || []).map((question) => question.responseRegion?.presentation?.answerFontAssetSlot));
+  const answers = new Set([...(interaction.questions || []).map((question) => question.responseRegion?.presentation?.answerFontAssetSlot), interaction.questionInteraction?.presentation?.bankWordStyle?.fontAssetSlot, interaction.questionInteraction?.presentation?.placedAnswerStyle?.fontAssetSlot]);
   return assets.filter((asset) => asset.role !== "activity_font" || !transcript.has(asset.slot) || answers.has(asset.slot));
 }
 

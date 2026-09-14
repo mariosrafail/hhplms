@@ -41,7 +41,7 @@ export const ultimateB2TeacherExtrasDefinitions = Object.freeze([
 const navigationFiles = Object.freeze({
   back: "back.png", check: "check.png", home: "home.png", next: "next.png", previous: "previous.png",
   close: "dialogs/exit-btn-enabled.png", minimize: "dialogs/minimize-btn-enabled.png",
-  settings: "navigation/navibar-settings-active.png", video: "navigation/navibar-video-active.png", videoWorksheet: "navigation/navibar-video-active.png",
+  settings: "navigation/navibar-settings-active.png", video: "navigation/navibar-video-active.png", videoWorksheet: "src/assets/native-activities/video-worksheet-navigation.png",
   showText: "navigation/navibar-show-text-active.png", showTextPressed: "navigation/navibar-show-text-pressed.png",
   previousInternal: "navigation/navibar-previous-internal-active.png",
   previousInternalDisabled: "navigation/navibar-previous-internal-disabled.png",
@@ -134,7 +134,7 @@ function buildDefaultAssets() {
       asset(`extras.${id}.active`, "extras", `${legacyRoot}/book-menu/units-extras/${file}-hover-pressed.png`),
     );
   }
-  for (const [id, file] of Object.entries(navigationFiles)) entries.push(asset(`navigation.${id}`, "navigation", `${legacyRoot}/icons/${file}`));
+  for (const [id, file] of Object.entries(navigationFiles)) entries.push(asset(`navigation.${id}`, "navigation", file.startsWith("src/assets/") ? file : `${legacyRoot}/icons/${file}`));
   for (const { id, sourceFilename } of ultimateB2TeacherNavibarAssetDefinitions) entries.push(asset(id, wiredNavibarAssetIds.has(id) ? (id.startsWith("navibar.reload.") || id.startsWith("navibar.show.") ? "navigation-control" : "book-switch") : "navibar-library", `${legacyRoot}/icons/navigation/publisher-navibar/${sourceFilename}`));
   for (const [id, file] of Object.entries(mediaPlayerFiles)) entries.push(asset(`media-player.${id}`, "media-player", `${legacyRoot}/icons/media/${file}`));
   for (const [id] of toolbarLabels) {

@@ -28,7 +28,9 @@ export function NativeAudioTextHotspotButtons({ panelId = null, surface, present
       style={logicalAreaStyle(hotspot.activityArea, surface)}
       aria-label={hotspot.label}
       aria-pressed={active}
-      onClick={() => presentation.onToggle(hotspot.id)}
+      onPointerDown={(event) => event.stopPropagation()}
+      onKeyDown={(event) => { if (["Enter", " "].includes(event.key)) event.stopPropagation(); }}
+      onClick={(event) => { event.stopPropagation(); presentation.onToggle(hotspot.id); }}
     ><img src={active ? artwork.pressed : artwork.active} alt="" /></button>;
   });
 }

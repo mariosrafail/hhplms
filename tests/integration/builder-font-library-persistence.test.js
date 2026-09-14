@@ -1,3 +1,5 @@
+import { exerciseMultiPartReadablePersistence } from "./_multi-part-readable-persistence.mjs";
+import { exerciseOldschoolModesPersistence } from "./_oldschool-modes-persistence.mjs";
 import { exerciseOldschoolTypographyPairSave } from "./_oldschool-typography-persistence.mjs";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -80,6 +82,8 @@ test("isolated PostgreSQL scopes, deduplicates, and validates reusable component
   await assert.rejects(validateBuilderNativeAssetReferences(sql, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", activityId: "activity-two", assets: [{ ...reference, slot: "font-forged" }] }));
 
   await exerciseOldschoolTypographyPairSave({ pool, sql, actor, fontReference: reference });
+  await exerciseOldschoolModesPersistence({ pool, sql, actor, fontReference: reference });
+  await exerciseMultiPartReadablePersistence({ pool, sql, actor });
 
   const row = await loadBuilderFontAsset(sql, { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", assetId: firstAssetId });
   assert.equal(row.source_metadata.font_library_scope, "component");

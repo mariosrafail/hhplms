@@ -139,7 +139,7 @@ function sourceFragments(xml, assets, fontBindings) {
 export function previewOldschoolTranscriptTypographyXml(xml, interaction, { assets = [], fontBindings = {}, ...context } = {}) {
   const fragments = sourceFragments(xml, assets, fontBindings);
   const previousSlots = oldschoolTranscriptFontSlots(interaction);
-  const answerSlots = new Set(interaction.questions.map((question) => question.responseRegion?.presentation?.answerFontAssetSlot));
+  const answerSlots = new Set([...(interaction.questions || []).map((question) => question.responseRegion?.presentation?.answerFontAssetSlot), interaction.questionInteraction?.presentation?.bankWordStyle?.fontAssetSlot, interaction.questionInteraction?.presentation?.placedAnswerStyle?.fontAssetSlot]);
   const bindingSlots = new Set(Object.values(fontBindings).map((binding) => binding.fontAssetSlot).filter(Boolean));
   const initialAssets = assets.filter((asset) => !bindingSlots.has(asset.slot) || previousSlots.has(asset.slot) || answerSlots.has(asset.slot));
   const current = normalizeNativeOldschoolListeningInteraction(interaction, { ...context, assets: initialAssets });

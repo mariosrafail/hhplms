@@ -325,7 +325,7 @@ test("Student assignment workspace adapts Drag & Drop targets to the existing co
     readFile(new URL("../src/components/lms/student/portal/StudentAssignmentWorkspace.jsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/lms/student/runtime/studentSubmissionContract.js", import.meta.url), "utf8"),
   ]);
-  assert.match(contract, /nativeKind === "drag-drop"/);
+  assert.match(contract, /responseKind === "drag-drop"/);
   assert.match(contract, /flatMap\(\(panel\) => panel\.dropTargets/);
   assert.match(contract, /\["single-choice", "drag-drop"\]\.includes/);
   assert.match(source, /responses=\{nativeResponses\}/);

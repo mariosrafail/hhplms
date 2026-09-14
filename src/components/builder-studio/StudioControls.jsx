@@ -32,7 +32,8 @@ export function StudioTabPanel({ tabsId, tabId, className = "", children }) {
   return <div id={`${base}-${tab}-panel`} className={`studio-tab-panel ${className}`.trim()} role="tabpanel" aria-labelledby={`${base}-${tab}-tab`} tabIndex={0}>{children}</div>;
 }
 
-export function StudioTabWorkspace({ id, value, onChange, tabs, label, className = "", children }) {
+export function StudioTabWorkspace({ id, value, onChange, tabs, label, className = "", embedded = false, children }) {
+  if (embedded) return <div className={className} data-active-tab={value}>{children}</div>;
   return <div className={`studio-tab-workspace ${className}`.trim()} data-active-tab={value}>
     <StudioTabs id={id} value={value} onChange={onChange} tabs={tabs} label={label} />
     <StudioTabPanel tabsId={id} tabId={value}>{children}</StudioTabPanel>

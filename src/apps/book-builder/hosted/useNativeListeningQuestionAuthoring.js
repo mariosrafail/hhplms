@@ -1,9 +1,11 @@
+import { projectOldschoolQuestionPair, writeBackOldschoolQuestionPair } from "../../../data/native-activities/nativeOldschoolQuestionBinding.js";
+import { resizeNativeDragDropAudioTextHotspots } from "../../../data/native-activities/nativeDragDrop.js";
 import { useState } from "react";
 
 import { createNativeChildId } from "../../../data/native-activities/nativeChildIdentity.js";
 import { generateNativeBulkCandidate } from "../../../data/native-activities/nativeBulkAuthoring.js";
 import { mergeNativeManagedAssetReference, removeNativeManagedAssetReferenceIfUnused } from "../../../data/native-activities/nativeActivityPublic.js";
-import { nativeOldschoolListeningQuestionMode, nativeOldschoolListeningQuestionPublicDocument, nativeOldschoolListeningQuestionTeacherDocument } from "../../../data/native-activities/nativeOldschoolListening.js";
+import { nativeOldschoolListeningQuestionMode } from "../../../data/native-activities/nativeOldschoolListening.js";
 import { switchNativeOldschoolListeningQuestionMode } from "../../../data/native-activities/nativeOldschoolListeningAuthoring.js";
 import { createNativeOpenResponseQuestion } from "../../../data/native-activities/nativeOpenResponse.js";
 import { createNativeSingleChoiceQuestion, nativeSingleChoiceCorrectOptionIds } from "../../../data/native-activities/nativeSingleChoice.js";
@@ -15,15 +17,9 @@ const clone = (value) => structuredClone(value);
 const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
 
 function mutateProjectedSingleChoice(nextPublic, nextTeacher, mutator) {
-  const projectedPublic = nativeOldschoolListeningQuestionPublicDocument(nextPublic);
-  const projectedTeacher = nativeOldschoolListeningQuestionTeacherDocument(nextTeacher);
-  mutator(projectedPublic, projectedTeacher);
-  const outerInteraction = nextPublic.parts[0].interaction;
-  const projectedInteraction = projectedPublic.parts[0].interaction;
-  outerInteraction.questions = projectedInteraction.questions;
-  if (projectedInteraction.presentation) outerInteraction.presentation = projectedInteraction.presentation;
-  else delete outerInteraction.presentation;
-  nextTeacher.parts[0].solution.correctAnswers = projectedTeacher.parts[0].solution.correctAnswers;
+  const projected = projectOldschoolQuestionPair(nextPublic, nextTeacher);
+  mutator(projected.publicDocument, projected.teacherDocument);
+  writeBackOldschoolQuestionPair(nextPublic, nextTeacher, projected);
 }
 
 export function useNativeListeningQuestionAuthoring({ oldschool, publicDraft, teacherDraft, setPublicDraft, setTeacherDraft, mutatePublic, mutatePair, changed, interaction, questions, selectedQuestion, selectedQuestionId, setSelectedQuestionId, setQuestionSelection, bookSlug, componentSlug, activityId, uploading, setUploading, setState, previewAssetUrl }) {
@@ -77,30 +73,17 @@ export function useNativeListeningQuestionAuthoring({ oldschool, publicDraft, te
   });
   const switchQuestionMode = (requestedMode) => {
     if (!oldschool || requestedMode === questionMode) return;
-    const authored = questions.length > 0 || (questionMode === "open-response" ? (interaction.artwork?.length || teacherDraft.parts[0].solution.modelAnswers?.length) : (interaction.presentation || teacherDraft.parts[0].solution.correctAnswers?.length));
-    if (authored && !globalThis.confirm(`Switch Panel 1 to ${requestedMode === "single-choice" ? "Multiple Choice" : "Open Response"}? This replaces all Panel 1 questions, visual question content, and private answers. Audio, timeline cues, page mappings, Show Text hotspots, and supporting content will be preserved.`)) return;
+    const authored = interaction.questionInteraction?.words.length > 0 || interaction.questionInteraction?.panels.some((panel) => panel.images.length || panel.dropTargets.length) || questions.length > 0 || (questionMode === "open-response" ? (interaction.artwork?.length || teacherDraft.parts[0].solution.modelAnswers?.length) : (interaction.presentation || teacherDraft.parts[0].solution.correctAnswers?.length));
+    if (authored && !globalThis.confirm(`Switch Panel 1 to ${requestedMode === "drag-drop" ? "Drag & Drop" : requestedMode === "single-choice" ? "Multiple Choice" : "Open Response"}? This replaces all Panel 1 questions, visual question content, and private answers. Audio, timeline cues, page mappings, listening and readable-text hotspots, and supporting content will be preserved.`)) return;
     mutatePair((nextPublic, nextTeacher) => switchNativeOldschoolListeningQuestionMode(nextPublic, nextTeacher, requestedMode));
     setSelectedQuestionId(null); setQuestionSelection(null); setSelectedPanelId(null); setSelectedHotspotId(null);
-    setState((current) => ({ ...current, message: `Panel 1 changed to ${requestedMode === "single-choice" ? "Multiple Choice" : "Open Response"}; incompatible question data was reset.` }));
+    setState((current) => ({ ...current, message: `Panel 1 changed to ${requestedMode === "drag-drop" ? "Drag & Drop" : requestedMode === "single-choice" ? "Multiple Choice" : "Open Response"}; incompatible question data was reset.` }));
   };
   const generateBulk = oldschool ? (source, options) => {
-    const projectedPublic = nativeOldschoolListeningQuestionPublicDocument(publicDraft); const projectedTeacher = nativeOldschoolListeningQuestionTeacherDocument(teacherDraft);
-    const result = generateNativeBulkCandidate({ kind: questionMode, source, publicDocument: projectedPublic, teacherDocument: projectedTeacher, ...options });
+    const projected = projectOldschoolQuestionPair(publicDraft, teacherDraft);
+    const result = generateNativeBulkCandidate({ kind: questionMode, source, ...projected, ...options });
     const nextPublic = clone(publicDraft); const nextTeacher = clone(teacherDraft);
-    nextPublic.parts[0].interaction.questions = result.publicDocument.parts[0].interaction.questions;
-    if (questionMode === "open-response") {
-      nextTeacher.parts[0].solution.modelAnswers = result.teacherDocument.parts[0].solution.modelAnswers;
-      if (nextPublic.parts[0].interaction.questionSurface) {
-        const panel = result.publicDocument.parts[0].interaction.presentation.panels[0];
-        nextPublic.parts[0].interaction.questionSurface = { promptQuestionIds: panel.promptQuestionIds || panel.questionIds, responseQuestionIds: panel.responseQuestionIds || panel.questionIds };
-      }
-    }
-    else {
-      const generatedPresentation = result.publicDocument.parts[0].interaction.presentation;
-      if (generatedPresentation) nextPublic.parts[0].interaction.presentation = generatedPresentation;
-      else delete nextPublic.parts[0].interaction.presentation;
-      nextTeacher.parts[0].solution.correctAnswers = result.teacherDocument.parts[0].solution.correctAnswers;
-    }
+    writeBackOldschoolQuestionPair(nextPublic, nextTeacher, result);
     setPublicDraft(nextPublic); setTeacherDraft(nextTeacher); setSelectedQuestionId(nextPublic.parts[0].interaction.questions[0]?.id || null); setQuestionSelection(null); changed();
     return result;
   } : null;
@@ -123,13 +106,14 @@ export function useNativeListeningQuestionAuthoring({ oldschool, publicDraft, te
         next.assets = mergeNativeManagedAssetReference(next.assets, uploaded.reference);
         const panelOne = current.panels[0]; const scaleX = uploaded.metadata.width / panelOne.sourceWidth; const scaleY = uploaded.metadata.height / panelOne.sourceHeight;
         current.snippetHotspots.forEach((hotspot) => { hotspot.area = { x: Math.round(hotspot.area.x * scaleX), y: Math.round(hotspot.area.y * scaleY), width: Math.max(1, Math.round(hotspot.area.width * scaleX)), height: Math.max(1, Math.round(hotspot.area.height * scaleY)) }; });
+        resizeNativeDragDropAudioTextHotspots(next, "panel-1", { width: panelOne.sourceWidth, height: panelOne.sourceHeight }, { width: uploaded.metadata.width, height: uploaded.metadata.height });
         panelOne.sourceWidth = uploaded.metadata.width; panelOne.sourceHeight = uploaded.metadata.height; panel.backgroundAssetSlot = uploaded.reference.slot; panel.sourceWidth = uploaded.metadata.width; panel.sourceHeight = uploaded.metadata.height; panel.hotspots = [];
         if (previousSlot && previousSlot !== uploaded.reference.slot) removeNativeManagedAssetReferenceIfUnused(next, previousSlot);
       });
       setSelectedHotspotId(null); setState((current) => ({ ...current, message: "Multiple Choice background uploaded. Redraw hotspots for its intrinsic dimensions." }));
     } catch (error) { setState((current) => ({ ...current, message: error.message || "Background upload failed." })); } finally { setUploading(""); }
   };
-  const importHotspots = (source, options) => { const result = generateNativeSingleChoiceHotspotImportCandidate({ source, publicDocument: nativeOldschoolListeningQuestionPublicDocument(publicDraft), ...options }); const next = clone(publicDraft); next.parts[0].interaction.presentation = result.publicDocument.parts[0].interaction.presentation; setPublicDraft(next); setSelectedPanelId(result.selection.panelId); setSelectedHotspotId(result.selection.hotspotId); changed(); return result; };
+  const importHotspots = (source, options) => { const result = generateNativeSingleChoiceHotspotImportCandidate({ source, publicDocument: projectOldschoolQuestionPair(publicDraft, teacherDraft).publicDocument, ...options }); const next = clone(publicDraft); next.parts[0].interaction.presentation = result.publicDocument.parts[0].interaction.presentation; setPublicDraft(next); setSelectedPanelId(result.selection.panelId); setSelectedHotspotId(result.selection.hotspotId); changed(); return result; };
   const updateHotspot = (mutator) => mutatePublic((next) => { const hotspot = next.parts[0].interaction.presentation?.panels.find((panel) => panel.id === selectedPanel?.id)?.hotspots.find((entry) => entry.id === selectedHotspotId); if (hotspot) mutator(hotspot); });
   const mappedBindings = new Set(questionMode === "single-choice" ? panels.flatMap((panel) => panel.hotspots.map((hotspot) => `${hotspot.questionId}:${hotspot.optionId}`)) : []);
   const nextHotspotBinding = questionMode === "single-choice" ? findNextUnusedNativeSingleChoiceBinding(questions, panels, hotspotBinding) : null;

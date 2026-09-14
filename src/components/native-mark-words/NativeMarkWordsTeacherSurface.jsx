@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { NativeMarkWordsPresentation } from "./NativeMarkWordsStudentSurface.jsx";
 import { normalizeNativeRuntimeTeacherDocument } from "../../data/native-activities/nativeActivityRuntimeValidation.js";
 
-function TeacherSession({ publicDocument, teacherDocument, assetUrl, presentation, embeddedCanvas = false }) {
+function TeacherSession({ publicDocument, teacherDocument, assetUrl, presentation, embeddedCanvas = false, audioHotspotPresentation = null }) {
   const [revealed, setRevealed] = useState([]); const [panelIndex, setPanelIndex] = useState(0);
   const lastCommand = useRef(presentation?.command?.token);
   const visual = isMarkWordsVisual(publicDocument.parts[0].interaction);
@@ -28,7 +28,7 @@ function TeacherSession({ publicDocument, teacherDocument, assetUrl, presentatio
   const responses = visual ? Object.fromEntries(groups.map((group) => [group.id, [...new Set([...(selected[group.id] || []), ...group.options.filter((id) => revealed.includes(id))])]])) : Object.fromEntries(teacherDocument.parts[0].solution.answers.filter((answer) => revealed.includes(answer.itemId)).map((answer) => [answer.itemId, answer.correctWordIds]));
   return <>
     {!presentation ? <div role="group" aria-label="Teacher presentation"><button type="button" onClick={showNext}>Reveal next</button><button type="button" onClick={() => setRevealed(items.map((item) => item.id))}>Reveal all</button><button type="button" onClick={reset}>Hide / reset</button></div> : null}
-    <NativeMarkWordsPresentation document={publicDocument} assetUrl={assetUrl} embeddedCanvas={embeddedCanvas} responses={responses} panelIndex={panelIndex} onPanelChange={setPanelIndex} externalNavigation={Boolean(presentation)} onToggle={(itemId, targetId) => {
+    <NativeMarkWordsPresentation audioHotspotPresentation={audioHotspotPresentation} document={publicDocument} assetUrl={assetUrl} embeddedCanvas={embeddedCanvas} responses={responses} panelIndex={panelIndex} onPanelChange={setPanelIndex} externalNavigation={Boolean(presentation)} onToggle={(itemId, targetId) => {
       if (!visual) return setRevealed((current) => current.includes(itemId) ? current.filter((id) => id !== itemId) : [...current, itemId]);
       const active = responses[itemId]?.includes(targetId);
       setRevealed((current) => current.filter((id) => id !== targetId));

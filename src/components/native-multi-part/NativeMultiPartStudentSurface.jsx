@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { nativeMultiPartAudioTextPresentation } from "../../data/native-activities/nativeAudioTextHotspots.js";
 import { NativeMultiPartLayout } from "./NativeMultiPartLayout.jsx";
 import { NativeDragDropStudentSurface } from "../native-drag-drop/NativeDragDropSurface.jsx";
 import { NativeSingleChoicePresentation } from "../native-single-choice/NativeSingleChoicePresentation.jsx";
@@ -7,7 +8,7 @@ import { NativeOpenResponseStudentSurface } from "../native-open-response/Native
 import { NativeMarkWordsStudentSurface } from "../native-mark-words/NativeMarkWordsStudentSurface.jsx";
 import { NativeImagePresentation } from "../native-image/NativeImageSurface.jsx";
 
-function Session({ document, assetUrl = () => "", responses: controlled = null, initialResponses = null, onResponsesChange, readOnly = false, presentation = null }) {
+function Session({ document, assetUrl = () => "", responses: controlled = null, initialResponses = null, onResponsesChange, readOnly = false, presentation = null, audioHotspotPresentation = null }) {
   const [local, setLocal] = useState(initialResponses || {});
   const [panelIndex, setPanelIndex] = useState(0);
   const responses = controlled || local;
@@ -29,14 +30,14 @@ function Session({ document, assetUrl = () => "", responses: controlled = null, 
     if (!controlled) setLocal(next);
     onResponsesChange?.(next);
   };
-  return <NativeMultiPartLayout {...{ document, assetUrl, panelIndex, setPanelIndex }} externalNavigation={Boolean(presentation)} renderSection={(section, child, embeddedCanvas) => {
-    const props = { document: child.publicDocument, assetUrl, responses: responses[section.id] || {}, onResponsesChange: (values) => change(section.id, values), readOnly };
+  return <NativeMultiPartLayout {...{ document, assetUrl, panelIndex, setPanelIndex }} audioHotspotPresentation={audioHotspotPresentation} externalNavigation={Boolean(presentation)} renderSection={(section, child, embeddedCanvas) => {
+    const props = { audioHotspotPresentation: nativeMultiPartAudioTextPresentation(document, audioHotspotPresentation, section.id), document: child.publicDocument, assetUrl, responses: responses[section.id] || {}, onResponsesChange: (values) => change(section.id, values), readOnly };
     if (section.kind === "drag-drop") return <NativeDragDropStudentSurface {...props} embeddedCanvas={embeddedCanvas} />;
     if (section.kind === "single-choice") return <NativeSingleChoicePresentation {...props} navigationMode="external" embeddedCanvas={Boolean(embeddedCanvas)} />;
     if (section.kind === "complete-sentences") return <NativeCompleteSentencesStudentSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
     if (section.kind === "open-response") return <NativeOpenResponseStudentSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
     if (section.kind === "mark-the-words") return <NativeMarkWordsStudentSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
-    if (section.kind === "image") return <NativeImagePresentation document={child.publicDocument} assetUrl={assetUrl} />;
+    if (section.kind === "image") return <NativeImagePresentation {...props} />;
     throw new Error("Unsupported Multi-Part section.");
   }} />;
 }

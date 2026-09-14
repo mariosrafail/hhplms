@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { nativeMultiPartAudioTextPresentation } from "../../data/native-activities/nativeAudioTextHotspots.js";
 import { NativeMultiPartLayout } from "./NativeMultiPartLayout.jsx";
 import { NativeDragDropTeacherSurface } from "../native-drag-drop/NativeDragDropTeacherSurface.jsx";
 import { NativeSingleChoiceTeacherSurface } from "../native-single-choice/NativeSingleChoiceTeacherSurface.jsx";
@@ -7,7 +8,7 @@ import { NativeOpenResponseTeacherSurface } from "../native-open-response/Native
 import { NativeMarkWordsTeacherSurface } from "../native-mark-words/NativeMarkWordsTeacherSurface.jsx";
 import { NativeImageTeacherPresentation } from "../native-image/NativeImageTeacherPresentation.jsx";
 
-function Session({ publicDocument: document, teacherDocument, assetUrl = () => "", teacherAssetUrl, presentation = null }) {
+function Session({ publicDocument: document, teacherDocument, assetUrl = () => "", teacherAssetUrl, presentation = null, audioHotspotPresentation = null }) {
   const [panelIndex, setPanelIndex] = useState(0);
   const [states, setStates] = useState({});
   const [commands, setCommands] = useState({});
@@ -35,14 +36,14 @@ function Session({ publicDocument: document, teacherDocument, assetUrl = () => "
     presentation?.onStateChange?.({ panelIndex, panelCount: interaction.panels.length, reveal: { ...reveal, pristine: Object.values(states).every((state) => state.reveal?.pristine !== false) } });
   }, [states, panelIndex, interaction.panels.length, presentation?.onStateChange]);
   const controls = !presentation ? <div className="native-multi-part-controls" role="group" aria-label="Multi-Part Teacher presentation"><button type="button" onClick={() => command("show-next")}>Show next</button><button type="button" onClick={() => command("show-all")}>Show all</button><button type="button" onClick={() => command("reset-activity")}>Reset activity</button></div> : null;
-  return <NativeMultiPartLayout controls={controls} {...{ document, teacherDocument, assetUrl, panelIndex, setPanelIndex }} externalNavigation={Boolean(presentation)} renderSection={(section, child, embeddedCanvas, visible) => {
-      const props = { ...child, assetUrl, presentation: { command: commands[section.id], onStateChange: onChildState[section.id] } };
+  return <NativeMultiPartLayout controls={controls} {...{ document, teacherDocument, assetUrl, panelIndex, setPanelIndex }} audioHotspotPresentation={audioHotspotPresentation} externalNavigation={Boolean(presentation)} renderSection={(section, child, embeddedCanvas, visible) => {
+      const props = { audioHotspotPresentation: nativeMultiPartAudioTextPresentation(document, audioHotspotPresentation, section.id), ...child, assetUrl, presentation: { command: commands[section.id], onStateChange: onChildState[section.id] } };
       if (section.kind === "drag-drop") return <NativeDragDropTeacherSurface {...props} embeddedCanvas={embeddedCanvas} />;
       if (section.kind === "single-choice") return <NativeSingleChoiceTeacherSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
       if (section.kind === "complete-sentences") return <NativeCompleteSentencesTeacherSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
       if (section.kind === "open-response") return <NativeOpenResponseTeacherSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
       if (section.kind === "mark-the-words") return <NativeMarkWordsTeacherSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;
-      if (section.kind === "image") return <NativeImageTeacherPresentation document={child.publicDocument} teacherDocument={visible ? child.teacherDocument : null} assetUrl={assetUrl} teacherAssetUrl={teacherAssetUrl ? (assetId) => teacherAssetUrl(assetId, section.id) : undefined} identity={section.id} />;
+      if (section.kind === "image") return <NativeImageTeacherPresentation audioHotspotPresentation={props.audioHotspotPresentation} document={child.publicDocument} teacherDocument={visible ? child.teacherDocument : null} assetUrl={assetUrl} teacherAssetUrl={teacherAssetUrl ? (assetId) => teacherAssetUrl(assetId, section.id) : undefined} identity={section.id} />;
       throw new Error("Unsupported Multi-Part Teacher section.");
     }} />;
 }

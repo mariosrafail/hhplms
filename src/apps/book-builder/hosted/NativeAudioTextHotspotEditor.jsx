@@ -1,3 +1,6 @@
+import { NativeMultiPartStudentSurface } from "../../../components/native-multi-part/NativeMultiPartStudentSurface.jsx";
+import { projectNativeMultiPartChild } from "../../../data/native-activities/nativeMultiPart.js";
+import { nativeOldschoolListeningQuestionPublicDocument } from "../../../data/native-activities/nativeOldschoolListening.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpenText, Trash2, Upload, VolumeX } from "lucide-react";
 
@@ -47,10 +50,25 @@ function pointInSource(event, source) {
 }
 
 function ActivityCanvas({ document, target, hotspot, assetUrl, onPlace }) {
+  if (document.kind === "multi-part" && target.sectionId) {
+    const section = document.parts[0].interaction.sections.find((entry) => entry.id === target.sectionId);
+    document = projectNativeMultiPartChild(document, section).publicDocument;
+    target = { ...target, panelId: target.childPanelId };
+  }
+  if (document.kind === "oldschool-listening") {
+    document = nativeOldschoolListeningQuestionPublicDocument(document);
+    const question = document.parts[0].interaction;
+    target = { ...target, panelId: document.kind === "drag-drop" ? question.panels[0].id : question.presentation?.panels?.[0]?.id || null };
+  }
   const interaction = document.parts[0].interaction;
   const marker = hotspot ? <span className="native-audio-hotspot-authoring-marker" style={logicalAreaStyle(hotspot.activityArea, target)}><img src={nativeAudioTextHotspotArtwork(hotspot).active} alt="" /></span> : null;
   let content = null;
-  if (document.kind === "image") content = <NativeImageSurface document={document} assetUrl={assetUrl} />;
+  if (document.kind === "multi-part") {
+    const panel = interaction.panels.find((entry) => entry.id === target.parentPanelId);
+    const preview = { ...document, parts: [{ id: "part-1", interaction: { ...interaction, panels: [panel], sections: interaction.sections.filter((entry) => entry.panelId === panel.id) } }] };
+    content = <NativeMultiPartStudentSurface document={preview} assetUrl={assetUrl} readOnly />;
+  }
+  else if (document.kind === "image") content = <NativeImageSurface document={document} assetUrl={assetUrl} />;
   else if (document.kind === "drag-drop") {
     const panel = interaction.panels.find((entry) => entry.id === target.panelId);
     content = panel ? <NativeImageSurface document={{ ...document, parts: [{ id: "part-1", interaction: { kind: "image", surface: panel.surface, images: panel.images } }] }} assetUrl={assetUrl} /> : null;
@@ -191,7 +209,7 @@ export function NativeAudioTextHotspotEditor({ bookSlug, componentSlug, activity
   const uploadAudio = async (file) => {
     if (!file || !selected) return;
     setUploading(true);
-    onStatusChange("Uploading hotspot MP3…");
+    onStatusChange("Uploading hotspot MP3â€¦");
     try {
       const uploaded = await uploadNativeActivityAsset({ bookSlug, componentSlug, activityId, assetSlot: createNativeChildId("asset"), file });
       if (uploaded.metadata?.mimeType !== "audio/mpeg") throw new Error("Uploaded hotspot audio is not an MP3.");
@@ -217,13 +235,14 @@ export function NativeAudioTextHotspotEditor({ bookSlug, componentSlug, activity
 
   return <section className="native-audio-hotspot-editor" aria-labelledby={`${activityId}-audio-hotspots-heading`}>
     <header><span className="studio-section-icon"><BookOpenText aria-hidden="true" /></span><div><h3 id={`${activityId}-audio-hotspots-heading`}>Readable-Text Hotspots</h3><p>Place a readable-text cue, focus an excerpt, and optionally attach one MP3.</p></div></header>
-    {!targets.length ? <p role="alert">This text-only activity has no safe visual stage for readable-text hotspots.</p> : <button type="button" className="studio-button studio-button--primary" disabled={hotspots.length >= 16} onClick={add}>Add readable-text hotspot</button>}
+    {!targets.length ? <p role="alert">Add a shared canvas or a section with a visual panel to place readable-text hotspots. Text-only sections have no image coordinates.</p> : <button type="button" className="studio-button studio-button--primary" disabled={hotspots.length >= 16} onClick={add}>Add readable-text hotspot</button>}
+    {incomplete ? <p role="alert">A hotspot has a missing visual owner or invalid bounds. Restore the surface, select its intended panel, or remove the hotspot before saving.</p> : null}
     {hotspots.length ? <div className="native-audio-hotspot-list" role="tablist" aria-label="Readable-text hotspots">{hotspots.map((hotspot, index) => <button key={hotspot.id} type="button" role="tab" aria-selected={hotspot.id === selected?.id} onClick={() => { setSelectedId(hotspot.id); setPreviewing(false); }}>Hotspot {index + 1}</button>)}</div> : <p>No readable-text hotspots added.</p>}
     {selected && selectedTarget ? <div className="native-audio-hotspot-authoring">
-      {targets.length > 1 ? <label className="studio-field"><span>Activity panel</span><select value={selected.panelId || ""} onChange={(event) => {
+      {targets.length > 1 ? <label className="studio-field"><span>Activity panel</span><select aria-label="Activity panel" value={selected.panelId || ""} onChange={(event) => {
         const target = targets.find((entry) => entry.panelId === event.target.value);
         updateSelected((hotspot) => { hotspot.panelId = target.panelId; hotspot.activityArea = defaultActivityArea(target); });
-      }}>{targets.map((target, index) => <option key={target.panelId} value={target.panelId}>Panel {index + 1}</option>)}</select></label> : null}
+      }}>{targets.map((target, index) => <option key={target.panelId} value={target.panelId}>{target.label || `Panel ${index + 1}`}</option>)}</select></label> : null}
       <div><h4>1. Place on activity</h4><ActivityCanvas document={publicDraft} target={selectedTarget} hotspot={selected} assetUrl={previewUrl} onPlace={(point) => updateSelected((hotspot) => {
         hotspot.activityArea.x = clamp(Math.round(point.x - hotspot.activityArea.width / 2), 0, Math.floor(selectedTarget.width - hotspot.activityArea.width));
         hotspot.activityArea.y = clamp(Math.round(point.y - hotspot.activityArea.height / 2), 0, Math.floor(selectedTarget.height - hotspot.activityArea.height));
@@ -245,7 +264,7 @@ export function NativeAudioTextHotspotEditor({ bookSlug, componentSlug, activity
       </fieldset>
       <label className="studio-field"><span>Hotspot accessible label</span><input value={selected.label} maxLength={160} onChange={(event) => updateSelected((hotspot) => { hotspot.label = event.target.value; })} /></label>
       <p className="native-audio-hotspot-audio-status" data-audio-attached={Boolean(audioReference) || undefined}>{audioReference ? "MP3 attached" : "No MP3 attached (optional)"}</p>
-      <label className="studio-upload-action"><Upload aria-hidden="true" /><span><strong>{uploading ? "Uploading…" : audioReference ? "Replace MP3" : "Upload MP3"}</strong><small>MP3, up to 50 MB</small></span><input type="file" accept="audio/mpeg,.mp3" disabled={uploading} onChange={(event) => { uploadAudio(event.target.files?.[0]); event.target.value = ""; }} /></label>
+      <label className="studio-upload-action"><Upload aria-hidden="true" /><span><strong>{uploading ? "Uploadingâ€¦" : audioReference ? "Replace MP3" : "Upload MP3"}</strong><small>MP3, up to 50 MB</small></span><input type="file" accept="audio/mpeg,.mp3" disabled={uploading} onChange={(event) => { uploadAudio(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {audioReference ? <audio controls preload="metadata" src={previewUrl(audioReference.assetId)} aria-label={`Preview ${selected.label}`} /> : null}
       <div className="native-audio-hotspot-actions"><button type="button" className="studio-button" onClick={() => setPreviewing((value) => !value)}>{previewing ? "Close hotspot preview" : "Test hotspot"}</button>{audioReference ? <button type="button" className="studio-button studio-button--danger-ghost" onClick={removeAudio}><VolumeX aria-hidden="true" />Remove MP3</button> : null}<button type="button" className="studio-button studio-button--danger-ghost" onClick={remove}><Trash2 aria-hidden="true" />Remove hotspot</button></div>
       {previewing ? <div className="native-audio-hotspot-authoring-preview"><NativeAudioTextFocusContent document={publicDraft} hotspot={selected} assetUrl={previewUrl} autoPlay /><ActivityCanvas document={publicDraft} target={selectedTarget} hotspot={selected} assetUrl={previewUrl} onPlace={() => {}} /></div> : null}

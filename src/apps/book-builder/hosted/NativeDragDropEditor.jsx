@@ -75,10 +75,12 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [mappingIssueWordId, setMappingIssueWordId] = useState(null);
   const [mappingIssue, setMappingIssue] = useState("");
+  useEffect(() => { if (state.message && state.message !== "Saved draft") compositeBinding?.onStatusChange?.(state.message); }, [state.message]);
   const [publicDraft, setPublicDraft] = useState(null);
   const [teacherDraft, setTeacherDraft] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState("content");
+  useEffect(() => { if (compositeBinding?.activeTab) setTab(compositeBinding.activeTab); }, [compositeBinding?.activeTab]);
   const [panelId, setPanelId] = useState(null);
   const [selection, setSelection] = useState(null);
   const [drawingTarget, setDrawingTarget] = useState(false);
@@ -169,6 +171,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
   };
   const movePanel = (index, delta) => mutatePublic((next) => moveInArray(next.parts[0].interaction.panels, index, delta));
   const deletePanel = () => {
+    if (compositeBinding?.fixedPanel) return;
     if (!panel || !globalThis.confirm?.("Remove this panel, its targets, and its image layers?")) return;
     const nextId = interaction.panels.find((entry) => entry.id !== panel.id)?.id || null;
     mutatePair((nextPublic, nextTeacher) => removeNativeDragDropPanel(nextPublic, nextTeacher, panel.id));
@@ -293,14 +296,15 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
   if (state.kind === "error" || !publicDraft || !teacherDraft) return <section className="native-activity-foundation studio-error" role="alert"><p>{state.message || "Native draft is unavailable."}</p><p>The saved activity is preserved. Reload after correcting the reported problem.</p><StudioButton onClick={() => setLoadAttempt((value) => value + 1)}>Reload draft</StudioButton></section>;
 
   return <section className="native-activity-foundation native-drag-drop-editor studio-editor">
+    {compositeBinding?.fixedPanel && state.message && state.message !== "Saved draft" ? <p role="status">{state.message}</p> : null}
     {mappingIssue && tab !== "content" ? <p className="builder-inline-error" role="alert">{mappingIssue}</p> : null}
-    <header className="studio-editor-header"><div><span className="studio-eyebrow">{placementLabel} · Drag &amp; Drop</span><h2>{publicDraft.metadata.title}</h2><p>{readiness.ready ? "Content complete" : `${readiness.issues.length} item${readiness.issues.length === 1 ? "" : "s"} need attention`}</p></div><details className="builder-technical-details"><summary>Technical details</summary><code>{activityId}</code></details></header>
-    <StudioTabWorkspace id="native-drag-drop-tabs" value={tab} onChange={(value) => { setTab(value); setDrawingTarget(false); }} tabs={compositeEditorTabs(compositeBinding, tabs)} label="Drag and Drop authoring modes">
+    {!compositeBinding?.fixedPanel ? <header className="studio-editor-header"><div><span className="studio-eyebrow">{placementLabel} · Drag &amp; Drop</span><h2>{publicDraft.metadata.title}</h2><p>{readiness.ready ? "Content complete" : `${readiness.issues.length} item${readiness.issues.length === 1 ? "" : "s"} need attention`}</p></div><details className="builder-technical-details"><summary>Technical details</summary><code>{activityId}</code></details></header> : null}
+    <StudioTabWorkspace embedded={compositeBinding?.fixedPanel} id="native-drag-drop-tabs" value={tab} onChange={(value) => { setTab(value); setDrawingTarget(false); }} tabs={compositeEditorTabs(compositeBinding, tabs)} label="Drag and Drop authoring modes">
 
     {tab === "content" ? <NativeBulkGenerator kind="drag-drop" hasExistingContent={interaction.words.length > 0} onGenerate={generateBulk} /> : null}
 
     {tab === "content" ? <div className="studio-content-panel native-drag-drop-content">
-      <StudioField label="Activity title"><input value={publicDraft.metadata.title} maxLength="300" onChange={(event) => mutatePublic((next) => { next.metadata.title = event.target.value; })} /></StudioField>
+      {!compositeBinding?.fixedPanel ? <StudioField label="Activity title"><input value={publicDraft.metadata.title} maxLength="300" onChange={(event) => mutatePublic((next) => { next.metadata.title = event.target.value; })} /></StudioField> : null}
       <fieldset className="native-drag-drop-layout-settings"><legend>Activity layout</legend>
         <label><input type="radio" name={`${activityId}-layout`} checked={interaction.layoutMode === "standard"} onChange={() => setLayoutMode("standard")} /> Standard drag-and-drop</label>
         <label><input type="radio" name={`${activityId}-layout`} disabled={compositeBinding?.sharedCanvas} checked={interaction.layoutMode === "text"} onChange={() => setLayoutMode("text")} /> Text drag-and-drop</label>
@@ -331,7 +335,7 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
         <label><ImagePlus aria-hidden="true" />{interaction.layoutMode === "text" ? "Add Text Image" : "Add Background"}<input aria-label="Add Background" type="file" accept="image/png,image/jpeg,image/webp" disabled={compositeBinding?.sharedCanvas || !panel || uploading || panel?.images.length >= NATIVE_DRAG_DROP_LIMITS.imagesPerPanel || interaction.layoutMode === "text" && panel?.images.some((image) => image.locked && image.order === 0)} onChange={(event) => { uploadImage(event.target.files?.[0], { background: true }); event.target.value = ""; }} /></label>
         <label><Layers3 aria-hidden="true" />Add Image<input type="file" accept="image/png,image/jpeg,image/webp" disabled={compositeBinding?.sharedCanvas || !panel || uploading || panel?.images.length >= NATIVE_DRAG_DROP_LIMITS.imagesPerPanel} onChange={(event) => { uploadImage(event.target.files?.[0]); event.target.value = ""; }} /></label>
         <StudioButton onClick={() => { setDrawingTarget((value) => !value); setSelection(null); }} disabled={!panel || !interaction.words.length}>{drawingTarget ? "Cancel drawing" : "Draw Drop Target"}</StudioButton>
-        <StudioButton variant="danger-ghost" onClick={deletePanel} disabled={!panel}>Remove panel</StudioButton>
+        <StudioButton variant="danger-ghost" onClick={deletePanel} disabled={!panel || compositeBinding?.fixedPanel}>Remove panel</StudioButton>
       </div><StudioCanvasToolbar zoom={zoom} onZoomChange={setZoom} />{panel ? <div className="studio-canvas-viewport"><div className="studio-artboard-wrap" style={{ width: `${zoom * 100}%` }}><NativeDragDropAuthoringCanvas document={publicDraft} panel={panel} assetUrl={assetUrl} selection={selection} onSelect={setSelection} drawingTarget={drawingTarget} onCreateTarget={addTarget} onChangeImage={(area) => mutatePublic((next) => { next.parts[0].interaction.panels.find((entry) => entry.id === panel.id).images.find((entry) => entry.id === selectedImage.id).area = area; })} onChangeTarget={(area) => mutatePublic((next) => { next.parts[0].interaction.panels.find((entry) => entry.id === panel.id).dropTargets.find((entry) => entry.id === selectedTarget.id).area = area; })} onDelete={deleteSelection} /></div></div> : <p>Add a panel to begin.</p>}</section>
       <aside className="native-drag-drop-editor-inspector">
         <h3>{selectedImage ? "Image layer" : selectedTarget ? "Drop target" : "Properties"}</h3>

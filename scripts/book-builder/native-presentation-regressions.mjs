@@ -172,7 +172,7 @@ export async function runNativePresentationRegressions(browser, output) {
     await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await touch.detach();
     await expect(word(2)).toHaveCount(0);
     await word(3).focus(); await page.keyboard.press("Enter"); await target(3).focus(); await page.keyboard.press("Enter");
-    await expect.poll(async () => (await geometry()).bank).toBe(0);
+    await expect.poll(async () => (await geometry()).bank).toBe(24);
     await page.keyboard.press("Delete"); await expect(word(3)).toBeVisible();
     await expect.poll(async () => (await geometry()).bank).toBeGreaterThan(0);
     await expect.poll(() => page.locator(".native-drag-drop-bank-items").evaluate((node) => node.scrollHeight <= node.clientHeight)).toBe(true);

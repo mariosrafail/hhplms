@@ -1,3 +1,4 @@
+import { NativeOldschoolQuestionEditor } from "./NativeOldschoolQuestionEditor.jsx";
 import { useEffect, useMemo, useState } from "react";
 import { StudioField, StudioSaveBar, StudioTabWorkspace } from "../../../components/builder-studio/StudioControls.jsx";
 import { NativeListeningStudentSurface, NativeListeningTeacherSurface } from "../../../components/native-listening/NativeListeningSurface.jsx";
@@ -46,6 +47,8 @@ export function NativeListeningEditor({ bookSlug, componentSlug, activityId, pla
   const [selectedSnippetId, setSelectedSnippetId] = useState(null);
   const [selectedRegionId, setSelectedRegionId] = useState(null);
   const [playheadMs, setPlayheadMs] = useState(0);
+  const [questionBusy, setQuestionBusy] = useState(false);
+  const [questionError, setQuestionError] = useState("");
   const [uploading, setUploading] = useState("");
   const [readableTextIncomplete, setReadableTextIncomplete] = useState(false);
   const [videoIncomplete, setVideoIncomplete] = useState(false);
@@ -95,7 +98,7 @@ export function NativeListeningEditor({ bookSlug, componentSlug, activityId, pla
           saving: false,
           message: "Saved draft",
         });
-        setSelectedQuestionId(publicValue.document.parts[0].interaction.questions[0]?.id || null);
+        setSelectedQuestionId(publicValue.document.parts[0].interaction.questions?.[0]?.id || null);
         setSelectedCueId(publicValue.document.parts[0].interaction.cues[0]?.id || null);
       })
       .catch((error) => {
@@ -465,7 +468,7 @@ export function NativeListeningEditor({ bookSlug, componentSlug, activityId, pla
   };
   const { addRegion: addPageRegion, updateRegion: updatePageRegion, removeRegion: removePageRegion, clearMappings: clearPageMappings, clearCueMappings: clearSelectedCueMappings } = createOldschoolMappingActions({ selectedCue, selectedRegionId, mutatePublic, setSelectedRegionId });
   const save = async () => {
-    if (oldschool && uploading === "question-image") return;
+    if (oldschool && (uploading || questionBusy || questionError)) return;
     setState((current) => ({ ...current, saving: true, message: "Saving…" }));
     try {
       const value = await saveNativeActivityPair({
@@ -517,8 +520,8 @@ export function NativeListeningEditor({ bookSlug, componentSlug, activityId, pla
     mutatePublic((next) => {
       next.parts[0].interaction.panels[1].transcriptArea = Object.fromEntries(Object.entries(geometry).map(([key, value]) => [key, Math.round(value)]));
     });
-  const readinessIssues = [...readiness.issues, readableTextIncomplete ? "Upload a readable-text image." : "", videoIncomplete ? "Upload one MP4 and one valid SRT subtitle file." : "", !oldschool && supplementalAudioIncomplete ? "Complete the Supplemental MP3 setup." : ""].filter(Boolean);
-  const readyToSave = readiness.ready && !readableTextIncomplete && !videoIncomplete && (oldschool || !supplementalAudioIncomplete);
+  const readinessIssues = [...readiness.issues, questionError, readableTextIncomplete ? "Upload a readable-text image." : "", videoIncomplete ? "Upload one MP4 and one valid SRT subtitle file." : "", !oldschool && supplementalAudioIncomplete ? "Complete the Supplemental MP3 setup." : ""].filter(Boolean);
+  const readyToSave = readiness.ready && !questionBusy && !questionError && !readableTextIncomplete && !videoIncomplete && (oldschool || !supplementalAudioIncomplete);
   return (
     <section className={`native-activity-foundation native-listening-editor ${oldschool ? "native-oldschool-listening-editor" : ""} studio-editor studio-open-response`}>
       <header className="studio-editor-header">
@@ -536,7 +539,7 @@ export function NativeListeningEditor({ bookSlug, componentSlug, activityId, pla
         {tab === "content" ? (
           <section className="studio-content-panel">
             <div className="studio-form-grid">
-              {oldschool ? <StudioField label="Panel 1 activity type"><select value={questionMode} onChange={(event) => switchQuestionMode(event.target.value)}><option value="open-response">Open Response</option><option value="single-choice">Multiple Choice</option></select></StudioField> : null}
+              {oldschool ? <StudioField label="Panel 1 activity type"><select aria-label="Panel 1 activity type" disabled={questionBusy || Boolean(uploading)} value={questionMode} onChange={(event) => switchQuestionMode(event.target.value)}><option value="open-response">Open Response</option><option value="single-choice">Multiple Choice</option><option value="drag-drop">Drag &amp; Drop</option></select></StudioField> : null}
               <StudioField label="Activity title">
                 <input
                   value={publicDraft.metadata.title}
@@ -551,7 +554,7 @@ export function NativeListeningEditor({ bookSlug, componentSlug, activityId, pla
             </div>
           </section>
         ) : null}
-        {["content", "visual", "answer-key"].includes(tab) && questionMode === "open-response" ? (
+        {!oldschool && ["content", "visual", "answer-key"].includes(tab) && questionMode === "open-response" ? (
           <NativeListeningQuestionAuthoring
             mode={tab}
             {...{
@@ -593,6 +596,7 @@ export function NativeListeningEditor({ bookSlug, componentSlug, activityId, pla
             }}
           />
         ) : null}
+        {oldschool && questionMode !== "single-choice" ? <div hidden={!["content", "visual", "answer-key"].includes(tab)}><NativeOldschoolQuestionEditor authoringTab={tab} key={`${activityId}:${questionMode}`} publicDocument={publicDraft} teacherDocument={teacherDraft} mutatePair={mutatePair} onBusyChange={setQuestionBusy} onStatusChange={setQuestionError} onMessage={(message) => setState((current) => ({ ...current, message }))} bookSlug={bookSlug} componentSlug={componentSlug} activityId={activityId} placementLabel="Panel 1" /></div> : null}
         {["content", "answer-key"].includes(tab) && questionMode === "single-choice" ? <NativeSingleChoiceQuestionAuthoring {...singleChoiceQuestionProps} mode={tab} /> : null}
         {tab === "visual" && questionMode === "single-choice" ? <NativeSingleChoiceVisualAuthoring {...singleChoiceVisualProps} /> : null}
         {!oldschool && tab === "audio-transcript" ? <NativeListeningTranscriptAuthoring panel={panelTwo} backgroundReference={backgroundReference} audioReference={audioReference} assetUrl={assetUrl} uploading={uploading} uploadAudio={uploadAudio} uploadBackground={uploadBackground} transcriptSurface={transcriptSurface} commitTranscriptArea={commitTranscriptArea} importSrt={importSrt} interaction={interaction} cues={cues} selectedCue={selectedCue} selectedCueId={selectedCueId} setSelectedCueId={setSelectedCueId} setPlayheadMs={setPlayheadMs} addCue={addCue} mutatePublic={mutatePublic} setCueTime={setCueTime} playheadMs={playheadMs} moveCue={moveCue} removeCue={removeCue} /> : null}
@@ -611,7 +615,7 @@ export function NativeListeningEditor({ bookSlug, componentSlug, activityId, pla
                 Teacher Preview
               </button>
             </div>
-            <NativeReadableTextPresentation document={publicDraft} assetUrl={previewAssetUrl}>{(presentation) => preview === "student" ? (oldschool ? <NativeOldschoolListeningStudentSurface document={publicDraft} assetUrl={previewAssetUrl} presentation={presentation} /> : <NativeListeningStudentSurface document={publicDraft} assetUrl={previewAssetUrl} presentation={presentation} />) : (oldschool ? <NativeOldschoolListeningTeacherSurface publicDocument={publicDraft} teacherDocument={teacherDraft} assetUrl={previewAssetUrl} presentation={presentation} /> : <NativeListeningTeacherSurface publicDocument={publicDraft} teacherDocument={teacherDraft} assetUrl={previewAssetUrl} presentation={presentation} />)}</NativeReadableTextPresentation>
+            <NativeReadableTextPresentation document={publicDraft} assetUrl={previewAssetUrl}>{(presentation, audioHotspotPresentation) => preview === "student" ? (oldschool ? <NativeOldschoolListeningStudentSurface audioHotspotPresentation={audioHotspotPresentation} document={publicDraft} assetUrl={previewAssetUrl} presentation={presentation} /> : <NativeListeningStudentSurface document={publicDraft} assetUrl={previewAssetUrl} presentation={presentation} />) : (oldschool ? <NativeOldschoolListeningTeacherSurface audioHotspotPresentation={audioHotspotPresentation} publicDocument={publicDraft} teacherDocument={teacherDraft} assetUrl={previewAssetUrl} presentation={presentation} /> : <NativeListeningTeacherSurface publicDocument={publicDraft} teacherDocument={teacherDraft} assetUrl={previewAssetUrl} presentation={presentation} />)}</NativeReadableTextPresentation>
           </section>
         ) : null}
         {tab === "readable-text" ? <NativeReadableTextEditor bookSlug={bookSlug} componentSlug={componentSlug} activityId={activityId} publicDraft={publicDraft} mutatePublic={mutatePublic} previewUrl={assetUrl} onIncompleteChange={setReadableTextIncomplete} onIntentChange={changed} onStatusChange={(message) => setState((current) => ({ ...current, message }))} /> : null}

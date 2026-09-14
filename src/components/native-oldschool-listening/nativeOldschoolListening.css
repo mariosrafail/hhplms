@@ -1,5 +1,9 @@
 .native-oldschool-listening { width: 100%; color: #172033; }
 .native-oldschool-listening-local-stage { position: relative; width: 100%; }
+.native-oldschool-question-session[hidden] { display: none; }
+.native-oldschool-listening[data-question-mode="drag-drop"][data-view="questions"] .native-oldschool-listening-activity-stage { display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.native-oldschool-listening[data-question-mode="drag-drop"] .native-oldschool-question-session { min-height: 0; height: 100%; }
+.native-oldschool-listening[data-question-mode="drag-drop"][data-view="questions"] .native-oldschool-listening-player-anchor { position: relative; inset: auto; margin: 12px 24px 12px auto; }
 .native-oldschool-listening-activity-stage { position: relative; isolation: isolate; width: 100%; overflow: hidden; background: #f5f1e8; border: 1px solid #c8bda8; border-radius: 12px; }
 .native-oldschool-listening-page-panel { position: absolute; inset: 0; background: #d9d3c8; }
 .native-oldschool-listening-page-viewport { position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }

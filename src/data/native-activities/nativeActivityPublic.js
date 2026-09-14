@@ -168,6 +168,7 @@ export function nativeSupplementalAudioAssetRequirements(publicDocument) {
 export function nativeActivityUsesManagedAssetSlot(publicDocument, slot) {
   const interaction = publicDocument?.parts?.[0]?.interaction;
   if (interaction?.kind === "multi-part" && (interaction.panels.some((panel) => panel.background?.assetSlot === slot) || interaction.sections.some((section) => nativeActivityUsesManagedAssetSlot({ parts: [{ interaction: section.interaction }] }, slot)))) return true;
+  if (interaction?.kind === "oldschool-listening" && interaction.questionInteraction && nativeActivityUsesManagedAssetSlot({ parts: [{ interaction: interaction.questionInteraction }] }, slot)) return true;
   return (interaction?.kind === "oldschool-listening" && oldschoolTranscriptFontSlots(interaction).has(slot))
     || publicDocument?.readableText?.assetSlot === slot
     || publicDocument?.video?.assetSlot === slot

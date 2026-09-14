@@ -30,15 +30,25 @@ async function stageGeometry(page, label, record) {
     const hotspots = [...stage.querySelectorAll(".native-single-choice-hotspot, .native-audio-text-hotspot")].map(rect);
     const panelList = panel.parentElement;
     const visual = panelList.parentElement;
+    const surface = visual.parentElement;
+    const article = surface.closest("article");
+    const activityView = article.parentElement;
     const computed = (element) => {
       const css = getComputedStyle(element);
       return Object.fromEntries(["display", "position", "width", "height", "minWidth", "minHeight", "maxWidth", "maxHeight", "gridTemplateRows", "gridTemplateColumns", "gap", "alignSelf", "alignItems", "justifyItems", "inset", "margin", "aspectRatio", "containerType", "overflow"].map((key) => [key, css[key]]));
     };
-    return { index, mode: panelList.classList.contains("is-show-all") ? "show-all" : "paged", source: { width: source.sourceWidth, height: source.sourceHeight }, slot: rect(slot), stage: rect(stage), image: rect(image), imageSource: { width: image.naturalWidth, height: image.naturalHeight }, areas, hotspots, containerType: getComputedStyle(slot).containerType, position: getComputedStyle(stage).position, computed: { visual: computed(visual), panels: computed(panelList), panel: computed(panel), slot: computed(slot), stage: computed(stage) } };
+    const heightChain = Object.fromEntries(Object.entries({ activityView, article, surface, visual, panels: panelList, panel, slot }).map(([key, element]) => [key, { rect: rect(element), computed: computed(element) }]));
+    return { index, mode: panelList.classList.contains("is-show-all") ? "show-all" : "paged", runtimeArticle: article.className, heightChain, source: { width: source.sourceWidth, height: source.sourceHeight }, slot: rect(slot), stage: rect(stage), image: rect(image), imageSource: { width: image.naturalWidth, height: image.naturalHeight }, areas, hotspots, containerType: getComputedStyle(slot).containerType, position: getComputedStyle(stage).position, computed: { visual: computed(visual), panels: computed(panelList), panel: computed(panel), slot: computed(slot), stage: computed(stage) } };
   }));
   record({ label, panels: geometry });
   const near = (a, b, reason) => assert.ok(Math.abs(a - b) <= 1, `${label}: ${reason}: ${a} != ${b}`);
   for (const g of geometry) {
+    if (g.mode === "paged") {
+      const chain = Object.fromEntries(Object.entries(g.heightChain).map(([key, value]) => [key, value.rect]));
+      for (const [key, bounds] of Object.entries(chain)) assert.ok(Number.isFinite(bounds.height) && bounds.height > 0, `${label}: ${key} needs finite usable height`);
+      for (const [child, parent] of [["article", "activityView"], ["surface", "article"], ["visual", "surface"], ["panel", "panels"]]) near(chain[child].height, chain[parent].height, `${child} fills ${parent}`);
+      for (const [child, parent] of [["panels", "visual"], ["slot", "panel"]]) near(chain[child].y + chain[child].height, chain[parent].y + chain[parent].height, `${child} consumes remaining ${parent} height`);
+    }
     const aspect = g.source.width / g.source.height;
     const width = Math.min(g.slot.width, g.slot.height * aspect);
     assert.ok(width > 0 && g.stage.height > 0, `${label}: empty stage`);
@@ -98,7 +108,8 @@ async function warmTransition(page, button) {
   } finally { await session.detach(); }
 }
 
-export async function runSingleChoiceFocusRegressions(browser, baseUrl, output) {
+export async function runSingleChoiceFocusRegressions(browser, baseUrl, output, { published = false } = {}) {
+  const prefix = published ? "single-choice-published" : "single-choice";
   const css = await readFile("src/components/native-single-choice/nativeSingleChoice.css", "utf8");
   assert.doesNotMatch(css, /cq[wh]\b|container-type\s*:\s*size/);
   const assets = new Map();
@@ -129,18 +140,19 @@ export async function runSingleChoiceFocusRegressions(browser, baseUrl, output) 
     }, true);
   });
   try {
-    for (const scenario of cases) for (const teacher of [true, false]) {
+    for (const scenario of published ? [cases[2]] : cases) for (const teacher of [true, false]) {
       await page.setViewportSize(scenario.viewport);
       await page.goto(`${baseUrl}tests/fixtures/native-runtime-regressions/presentation.html?fixed-focus`);
       await page.getByRole("button", { name: "Open readable excerpt 1", exact: true }).waitFor();
-      await page.evaluate(({ scenario, teacher }) => { nativePresentationFixture.setSize(scenario.size); nativePresentationFixture.setScale(scenario.scale); nativePresentationFixture.setMode(teacher ? "choice" : "choice-student"); }, { scenario, teacher });
-      await expect(page.locator(teacher ? ".native-single-choice-teacher" : ".native-single-choice-student")).toBeVisible();
+      await page.evaluate(({ scenario, teacher, published }) => { nativePresentationFixture.setSize(scenario.size); nativePresentationFixture.setScale(scenario.scale); nativePresentationFixture.setMode(published ? teacher ? "choice-published-teacher" : "choice-published-student" : teacher ? "choice" : "choice-student"); }, { scenario, teacher, published });
+      const articleSelector = `.native-readable-text-activity-view > article.${published ? "published-native-activity" : "hosted-native-draft-activity"}`;
+      await expect(page.locator(`${articleSelector} ${teacher ? ".native-single-choice-teacher" : ".native-single-choice-student"}`)).toBeVisible();
       await page.evaluate(async () => {
         await Promise.all([...nativePresentationFixture.choice.publicDocument.assets.map((asset) => nativePresentationFixture.assetUrl(asset.assetId)), "/src/assets/native-activities/readable-text-hotspot-active.svg", "/src/assets/native-activities/readable-text-hotspot-pressed.svg"].map(async (src) => { const image = new Image(); image.src = src; await image.decode(); }));
         await document.fonts.ready;
       });
       await frames(page);
-      const entry = { scenario, mode: teacher ? "Teacher" : "Student", geometry: [] };
+      const entry = { scenario, mode: teacher ? "Teacher" : "Student", runtime: published ? "published" : "hosted-draft", geometry: [] };
       measurements.push(entry);
       const measure = async (label) => { await frames(page); await stageGeometry(page, `${entry.mode}/${scenario.name}/${label}`, (geometry) => entry.geometry.push(geometry)); };
       const hotspot = (number) => page.getByRole("button", { name: `Open readable excerpt ${number}`, exact: true });
@@ -151,7 +163,7 @@ export async function runSingleChoiceFocusRegressions(browser, baseUrl, output) 
       const before = await responseState(page, teacher);
       entry.performance = await warmTransition(page, hotspot(1));
       await measure("fixed-focus");
-      await page.screenshot({ path: `${output}/single-choice-${entry.mode}-${scenario.name}-focus.png` });
+      await page.screenshot({ path: `${output}/${prefix}-${entry.mode}-${scenario.name}-focus.png` });
       assert.deepEqual(await responseState(page, teacher), before, "Focus must retain responses and reveal state");
       await expect(focus.locator("svg")).toHaveAttribute("viewBox", "21 25 698 198");
       await page.keyboard.press("Escape"); await expect(focus).toHaveCount(0); await measure("closed");
@@ -187,15 +199,15 @@ export async function runSingleChoiceFocusRegressions(browser, baseUrl, output) 
         await expect(page.getByRole("button", { name: "Choose: Second", exact: true })).toHaveAttribute("aria-pressed", "true");
       }
       await measure("navigation-retains-response");
-      await page.screenshot({ path: `${output}/single-choice-${entry.mode}-${scenario.name}.png` });
+      await page.screenshot({ path: `${output}/${prefix}-${entry.mode}-${scenario.name}.png` });
     }
     assert.deepEqual(errors, []);
-    console.log(`Single Choice fixed-aspect focus: ${measurements.length} Teacher/Student scenarios passed; geometry, warm transitions, rapid switch, Escape and navigation verified.`);
+    console.log(`${published ? "Published " : ""}Single Choice fixed-aspect focus: ${measurements.length} Teacher/Student scenarios passed; geometry, warm transitions, rapid switch, Escape and navigation verified.`);
   } catch (error) {
-    await page.screenshot({ path: `${output}/single-choice-focus-failure.png` });
+    await page.screenshot({ path: `${output}/${prefix}-focus-failure.png` });
     throw error;
   } finally {
-    await writeFile(`${output}/single-choice-focus-measurements.json`, JSON.stringify({ browser: browser.version(), measurements, errors }, null, 2));
+    await writeFile(`${output}/${prefix}-focus-measurements.json`, JSON.stringify({ browser: browser.version(), measurements, errors }, null, 2));
     await page.close();
   }
 }

@@ -8,19 +8,18 @@ import { childId, presentationPair } from "../../tests/fixtures/native-runtime-r
 import { runSingleChoiceFocusRegressions } from "./native-single-choice-focus-regressions.mjs";
 
 // Only the data providers and unused legacy branches are substituted. The embedded
-// fitter, hosted native runner, Teacher surface and shared presentation are real.
+// fitter, hosted/published runners, surfaces and shared presentation are real.
 export function localProviders() {
   const modules = {
     "virtual:ultimate-b2-multiple-choice-presentation": "export default null;",
     "virtual:ultimate-b2-hosted-open-response-drafts": "export const useHostedOpenResponseDraft = () => null; export const useHostedOpenResponseImport = () => ({});",
-    "virtual:component-publication": "export const usePublishedComponentRelease = () => ({kind:'unavailable'});",
+    "virtual:component-publication": "export const usePublishedComponentRelease = () => ({kind:'unavailable'}); export const publishedNativeAssetUrl = (_, reference) => globalThis.nativePresentationFixture.assetUrl(reference.assetId); export const loadPublishedNativeTeacherDocument = async () => globalThis.nativePresentationFixture.choice.teacherDocument; export const publishedNativeTeacherAssetUrl = () => { throw Error('Unexpected protected answer asset request'); };",
     "virtual:hosted-native-drafts": "export const hostedNativeDraftTeacherAssetUrl = () => { throw Error('Unexpected protected answer request'); }; export const hostedNativeDraftAssetUrl = (_, id) => globalThis.nativePresentationFixture.assetUrl(id); export const useHostedNativeDraftActivity = () => { const fixture = globalThis.nativePresentationFixture; return fixture.choiceState ||= {kind:'ready',entry:{kind:'single-choice',document:fixture.choice.publicDocument},teacher:{kind:'ready',entry:{document:fixture.choice.teacherDocument}}}; };",
   };
   return { name: "isolated-native-presentation-providers", enforce: "pre",
     resolveId(id) {
       if (modules[id]) return `\0fixture:${id}`;
       if (id.endsWith("/NormalizedStudentsBookActivity.jsx")) return "\0fixture:legacy";
-      if (id.endsWith("/PublishedNativeTeacherActivityRunner.jsx")) return "\0fixture:published";
       if (id.endsWith("/studentsBookCatalog.js")) return "\0fixture:catalog";
       if (id.endsWith("/TeacherOfflineActivityVideoOverlay.jsx")) return "\0fixture:video";
       return null;
@@ -31,7 +30,6 @@ export function localProviders() {
       if (modules[key]) return modules[key];
       if (key === "catalog") return "export const findStudentsBookImplementation = () => null;";
       if (key === "legacy") return "export const NormalizedStudentsBookActivity = () => {throw Error('Unexpected legacy branch')};";
-      if (key === "published") return "export const PublishedNativeTeacherActivityRunner = () => {throw Error('Unexpected published branch')};";
       return "export default function UnusedVideo(){return null;}";
     },
   };
@@ -83,6 +81,7 @@ export async function runNativePresentationRegressions(browser, output) {
   });
   try {
     await runSingleChoiceFocusRegressions(browser, server.resolvedUrls.local[0], output);
+    await runSingleChoiceFocusRegressions(browser, server.resolvedUrls.local[0], output, { published: true });
     await page.goto(`${server.resolvedUrls.local[0]}tests/fixtures/native-runtime-regressions/presentation.html`);
     await page.locator(".native-drag-drop-phrase").first().waitFor();
     const word = (number) => page.locator(`[data-drag-drop-word-id="${childId("word", number)}"]`);

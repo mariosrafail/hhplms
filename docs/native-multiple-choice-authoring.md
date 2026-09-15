@@ -37,7 +37,7 @@ PANEL 2
 
 `SOURCE` is the one global coordinate plane for every panel block. Panel, question, and option ordinals are 1-based and resolve against the current order only when the import is applied: `1.3` means current Question 1, Option 3. Stable question and option IDs, never ordinals, are stored in the generated hotspots.
 
-Input is limited to 65,536 characters. That bound allows more than 500 characters for each of the maximum 120 current Multiple Choice option bindings, while preventing unbounded pasted input. Blank lines, CRLF/CR/LF line endings, and ordinary leading, trailing, or separating spaces and tabs are accepted. Comments, extra directives, reordered or extra geometry fields, fractions, exponent notation, non-safe integers, rectangles outside SOURCE, duplicate panels, duplicate bindings, and trailing tokens are rejected with a line-numbered error. A failure leaves the draft unchanged.
+Input is limited to 65,536 characters. That bound allows more than 300 characters for each of the maximum 200 current Multiple Choice option bindings (20 questions × 10 options), while preventing unbounded pasted input. Blank lines, CRLF/CR/LF line endings, and ordinary leading, trailing, or separating spaces and tabs are accepted. Comments, extra directives, reordered or extra geometry fields, fractions, exponent notation, non-safe integers, rectangles outside SOURCE, duplicate panels, duplicate bindings, and trailing tokens are rejected with a line-numbered error. A failure leaves the draft unchanged.
 
 ## Scaling and replacement
 

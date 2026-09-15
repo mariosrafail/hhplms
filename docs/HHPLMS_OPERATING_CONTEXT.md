@@ -653,3 +653,42 @@ The existing navigation.videoWorksheet binding now resolves to a dedicated docum
 DnD measures remaining rendered rows, fonts, padding and images at runtime in standard and text layouts. The full bank retains its authored budget; partial banks use the measured footprint, bounded by that budget or the shared bankRegion. The empty bank retains a 24px return affordance. Text layout retains its authored initial text-panel/bank budget, gives reclaimed bank space directly to the scroll viewport, and keeps the source-sized stage independent of viewport height. Runtime measurements are never persisted. Pointer return from a placed response commits only on a valid bank drop; cancelled or invalid returns retain the response. Existing reusable-item, multi-capacity, Teacher-reveal and Oldschool media/session semantics remain in the shared runtime.
 
 Regression entry points remain the current CI commands. `native-runtime-regressions.mjs` includes `runtime-corrections-regressions.mjs` and the real Multi-Part editor round-trip helper. Disposable PostgreSQL tests cover pair save/reload, publication projection and pinned assignments with readable hotspots. Repository validation does not establish hosted/staging acceptance or production operational readiness. No migration, shared/provider mutation, commit, push or deployment is part of this local task.
+
+### Flow bank lifecycle and ten-option Multiple Choice (local candidate)
+
+VerifiedAt: 2026-09-15; remote baseline `3e6b110d54b9ddf298d89039aa4801aa236538d8`.
+Flow text sections reserve the authored DnD viewport and bank budget. Bank and
+target text measurements do not animate between fit sizes. The Teacher surface
+owns normalized manual responses as well as revealed answers, so manual placement
+marks the activity non-pristine and Reset clears both states. Ordinary panel
+navigation preserves the mounted session; the Viewer Reload action starts a fresh
+session. Pointer return, reusable words and target capacities retain their existing
+canonical response semantics.
+
+Multiple Choice supports at most ten options per question, twenty questions and
+two hundred visual hotspots. The shared authoring and validation paths apply to
+standalone, Multi-Part and Oldschool MC. Stable option IDs preserve private answer
+identity through reordering; Oldschool uses its outer navigation for the question
+and synchronized transcript panels. Public documents contain options, while
+correct option IDs remain in the Teacher document.
+
+Local acceptance covered 31 Teacher-state checkpoints, 22 Flow lifecycle cases,
+8 delayed-asset cases and 70 MC cases. The complete built native-authoring suite
+also covered four Flow viewport/motion combinations and 28 readiness receipts.
+Its request guard classifies decoded semantic XML/IWB/import-prepare path tokens
+and rejects unsafe encoding; opaque build-hash substrings are allowed. It records
+deterministic pathname-only evidence before the final assertion.
+
+`native-runtime-regressions.mjs` invokes the Teacher-state, Flow-bank and
+ten-option browser helpers. `tests/forbidden-native-request-path.test.js` covers
+the pure request classifier. The published native assignment PostgreSQL suite
+invokes `_ten-option-choice-persistence.mjs`: twelve text/visual, single/multiple
+cases across all three MC containers save/reload real public/Teacher pairs,
+compile publication projections and submit tenth-option answers against pinned
+releases after newer drafts and releases change the correct answers. The local
+PostgreSQL run passed all twelve cases with public/Teacher isolation intact.
+
+These task receipts precede the final frozen-candidate CI gates. No migration,
+historical compiler change, release rewrite or current-draft assignment fallback
+is introduced. Hosted/staging acceptance is NOT RUN; production operational
+readiness is NOT ESTABLISHED. The ChatGPT Project copy is not synchronized.

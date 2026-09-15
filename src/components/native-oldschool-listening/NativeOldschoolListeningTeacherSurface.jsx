@@ -11,6 +11,6 @@ export function NativeOldschoolListeningTeacherSurface({ publicDocument, teacher
   return <NativeOldschoolListeningSurface key={`${publicDocument.activityId}:${questionMode}`} publicDocument={publicDocument} assetUrl={assetUrl} teacherMode {...props} renderQuestions={({ audioHotspotPresentation, presentation }) => questionMode === "drag-drop"
     ? <NativeDragDropTeacherSurface publicDocument={questionPublic} teacherDocument={questionTeacher} assetUrl={assetUrl} presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} />
     : questionMode === "single-choice"
-    ? <NativeSingleChoiceTeacherSurface publicDocument={questionPublic} teacherDocument={questionTeacher} assetUrl={assetUrl} presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} />
+    ? <NativeSingleChoiceTeacherSurface publicDocument={questionPublic} teacherDocument={questionTeacher} assetUrl={assetUrl} presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} navigationMode="external" />
     : <NativeOpenResponseTeacherSurface publicDocument={questionPublic} teacherDocument={questionTeacher} assetUrl={assetUrl} presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} />} />;
 }

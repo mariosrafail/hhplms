@@ -9,7 +9,7 @@ import { NativeReadableTextPresentation } from "../../../components/native-reada
 import { createNativeChildId } from "../../../data/native-activities/nativeChildIdentity.js";
 import { generateNativeBulkCandidate } from "../../../data/native-activities/nativeBulkAuthoring.js";
 import { mergeNativeManagedAssetReference, removeNativeManagedAssetReferenceIfUnused } from "../../../data/native-activities/nativeActivityPublic.js";
-import { assessNativeSingleChoiceReadiness, nativeSingleChoiceCorrectOptionIds } from "../../../data/native-activities/nativeSingleChoice.js";
+import { NATIVE_SINGLE_CHOICE_LIMITS, assessNativeSingleChoiceReadiness, nativeSingleChoiceCorrectOptionIds } from "../../../data/native-activities/nativeSingleChoice.js";
 import { generateNativeSingleChoiceHotspotImportCandidate } from "../../../data/native-activities/nativeSingleChoiceHotspotBulkAuthoring.js";
 import {
   addUnansweredNativeSingleChoiceQuestion,
@@ -152,12 +152,16 @@ export function NativeSingleChoiceEditor({ compositeBinding = null, bookSlug, co
     if (selectedIds.has(optionId)) selectedIds.delete(optionId); else selectedIds.add(optionId);
     setNativeSingleChoiceCorrectAnswers(nextPublic, nextTeacher, selectedQuestionId, [...selectedIds]);
   });
-  const addOption = () => mutatePublic((next) => next.parts[0].interaction.questions.find((question) => question.id === selectedQuestionId).options.push({ id: createNativeChildId("opt"), text: "" }));
+  const addOption = () => mutatePublic((next) => {
+    const options = next.parts[0].interaction.questions.find((question) => question.id === selectedQuestionId).options;
+    if (options.length < NATIVE_SINGLE_CHOICE_LIMITS.optionsMaximum) options.push({ id: createNativeChildId("opt"), text: "" });
+  });
   const deleteOption = (optionId) => mutatePair((nextPublic, nextTeacher) => removeNativeSingleChoiceOption(nextPublic, nextTeacher, selectedQuestionId, optionId));
-  const moveOption = (optionId, offset) => mutatePublic((next) => {
+  const moveOption = (optionId, offset) => mutatePair((next, nextTeacher) => {
     const list = next.parts[0].interaction.questions.find((question) => question.id === selectedQuestionId).options;
     const index = list.findIndex((option) => option.id === optionId); const target = index + offset;
     if (target >= 0 && target < list.length) [list[index], list[target]] = [list[target], list[index]];
+    alignNativeSingleChoiceAnswers(next, nextTeacher);
   });
 
   const enableVisual = () => {

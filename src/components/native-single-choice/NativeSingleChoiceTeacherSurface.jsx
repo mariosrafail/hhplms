@@ -5,7 +5,7 @@ import { createNativeSingleChoiceTeacherSession, nativeSingleChoiceTeacherPresen
 import { nativeSingleChoiceCorrectOptionIds } from "../../data/native-activities/nativeSingleChoice.js";
 import { selectNativeSingleChoiceResponse } from "../../data/native-activities/nativeSingleChoiceRuntime.js";
 
-function NativeSingleChoiceTeacherSession({ publicDocument, teacherDocument, assetUrl, presentation, audioHotspotPresentation, embeddedCanvas }) {
+function NativeSingleChoiceTeacherSession({ publicDocument, teacherDocument, assetUrl, presentation, audioHotspotPresentation, embeddedCanvas, navigationMode }) {
   const [session, setSession] = useState(createNativeSingleChoiceTeacherSession);
   const [announcement, setAnnouncement] = useState("");
   const lastCommandToken = useRef(presentation?.command?.token);
@@ -42,7 +42,7 @@ function NativeSingleChoiceTeacherSession({ publicDocument, teacherDocument, ass
       onSelect={choose}
       optionStates={session.optionStates}
       disabledQuestionIds={session.solvedQuestionIds}
-      navigationMode={presentation ? "external" : "inline"}
+      navigationMode={navigationMode ?? (presentation ? "external" : "inline")}
       panelIndex={session.panelIndex}
       className="native-single-choice-teacher"
       audioHotspotPresentation={audioHotspotPresentation}
@@ -51,6 +51,6 @@ function NativeSingleChoiceTeacherSession({ publicDocument, teacherDocument, ass
   </>;
 }
 
-export function NativeSingleChoiceTeacherSurface({ publicDocument, teacherDocument, assetUrl = () => "", presentation = null, audioHotspotPresentation = null, embeddedCanvas = false }) {
-  return <NativeSingleChoiceTeacherSession embeddedCanvas={embeddedCanvas} key={publicDocument.activityId} publicDocument={publicDocument} teacherDocument={teacherDocument} assetUrl={assetUrl} presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} />;
+export function NativeSingleChoiceTeacherSurface({ publicDocument, teacherDocument, assetUrl = () => "", presentation = null, audioHotspotPresentation = null, embeddedCanvas = false, navigationMode = null }) {
+  return <NativeSingleChoiceTeacherSession embeddedCanvas={embeddedCanvas} key={publicDocument.activityId} publicDocument={publicDocument} teacherDocument={teacherDocument} assetUrl={assetUrl} presentation={presentation} audioHotspotPresentation={audioHotspotPresentation} navigationMode={navigationMode} />;
 }

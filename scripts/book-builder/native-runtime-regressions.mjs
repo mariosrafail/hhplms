@@ -1,4 +1,7 @@
 import { runRuntimeCorrectionsRegressions } from "./runtime-corrections-regressions.mjs";
+import { runDndTeacherStateRegressions } from './dnd-teacher-state-regressions.mjs';
+import { runFlowBankRegressions } from "./flow-bank-regressions.mjs";
+import { runTenOptionChoiceRegressions } from './ten-option-choice-regressions.mjs';
 import { runOldschoolModesRegressions } from "./oldschool-modes-regressions.mjs";
 import { runOldschoolTypographyRegressions } from "./oldschool-typography-regressions.mjs";
 import { runSharedAuthoringRegressions } from "./native-shared-authoring-regressions.mjs";
@@ -100,5 +103,8 @@ try {
   await runOldschoolTypographyRegressions(browser, output);
   await runOldschoolModesRegressions(browser, output);
   await runRuntimeCorrectionsRegressions(browser, output);
+  await runDndTeacherStateRegressions(browser, output);
+  await runFlowBankRegressions(browser, output);
+  await runTenOptionChoiceRegressions(browser, output);
   console.log("Native runtime browser regressions passed.");
 } finally { await browser.close(); await server.close(); }

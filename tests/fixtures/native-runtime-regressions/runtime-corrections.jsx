@@ -1,6 +1,10 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { multiPartReadablePair, adaptiveBankPair } from "./runtime-corrections-data.js";
+import { secondFlowBankPair } from "./flow-bank-data.js";
+import { tenOptionChoicePair } from '../ten-option-choice.js';
+import { NativeSingleChoiceEditor } from '../../../src/apps/book-builder/hosted/NativeSingleChoiceEditor.jsx';
+import { NativeOldschoolListeningEditor } from '../../../src/apps/book-builder/hosted/NativeOldschoolListeningEditor.jsx';
 import { NativeMultiPartStudentSurface } from "../../../src/components/native-multi-part/NativeMultiPartStudentSurface.jsx";
 import { NativeMultiPartTeacherSurface } from "../../../src/components/native-multi-part/NativeMultiPartTeacherSurface.jsx";
 import { NativeMultiPartEditor } from "../../../src/apps/book-builder/hosted/NativeMultiPartEditor.jsx";
@@ -30,10 +34,14 @@ function App() {
   const changeWorksheet = useCallback((action) => setWorksheet(() => action), []);
   const presentation = useMemo(() => ({ command, onStateChange: setState, onWorksheetActionChange: changeWorksheet }), [command, changeWorksheet]);
   globalThis.corrections = { pair, responses, state, config, incomplete, assetUrl, setPair, send,
-    configure: (values) => { const next = { ...config, ...values, session: config.session + 1 }; globalThis.document.documentElement.dataset.appMode=next.kind === "worksheet" ? "android-teacher-offline" : ""; setConfig(next); setResponses({}); setCommand(null); setState(null); setPair(next.kind === "multi" ? multiPartReadablePair(next.audio) : adaptiveBankPair(next.layout || "text", next.images)); },
+    configure: (values) => { const next = { ...config, ...values, session: config.session + 1 }; globalThis.document.documentElement.dataset.appMode=next.kind === "worksheet" ? "android-teacher-offline" : ""; setConfig(next); setResponses({}); setCommand(null); setState(null); setPair(next.kind === 'ten-choice' ? tenOptionChoicePair(next.choiceKind,next) : next.kind === "flow-bank" ? secondFlowBankPair() : next.kind === "multi" ? multiPartReadablePair(next.audio) : adaptiveBankPair(next.layout || "text", next.images)); },
     setCustom: (custom) => setConfig((old) => ({...old,custom})), setResponses, setScale: (scale) => setConfig((old) => ({ ...old, scale })), setReadOnly: (readOnly) => setConfig((old) => ({ ...old, readOnly })),
   };
   const shell = config.kind === "worksheet";
+  if(config.path==='choice-editor') {
+    const Editor=pub.kind==='oldschool-listening'?NativeOldschoolListeningEditor:pub.kind==='multi-part'?NativeMultiPartEditor:NativeSingleChoiceEditor;
+    return <main key={config.session}><Editor bookSlug="ultimate-b2" componentSlug="ultimate-b2-students-book" activityId={pub.activityId} /></main>;
+  }
   const preview = config.path === "editor";
   let body;
   if (preview) body = <NativeAudioTextHotspotEditor bookSlug="ultimate-b2" componentSlug="ultimate-b2-students-book" activityId={pub.activityId} publicDraft={pub} mutatePublic={(mutator) => setPair((old) => { const next = structuredClone(old); mutator(next.publicDocument); return next; })} previewUrl={assetUrl} onIncompleteChange={setIncomplete} onStatusChange={setMessage} />;
@@ -42,12 +50,12 @@ function App() {
   else if (config.path === "published-teacher") body = <PublishedNativeTeacherActivityRunner entry={{ kind: pub.kind, document: pub }} publication={{ releaseId: "isolated-release", bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" }} presentation={presentation} showMetadataHeader={false} />;
   else if (config.path.startsWith("draft")) body = <HostedNativeDraftActivityRunner activityId={pub.activityId} state={{ kind: "ready", entry: { kind: pub.kind, document: pub }, teacher: { kind: "ready", entry: { document: pair.teacherDocument } } }} showMetadataHeader={false} teacherMode={config.path === "draft-teacher"} presentation={presentation} />;
   else body = <NativeReadableTextPresentation document={pub} assetUrl={assetUrl} presentation={presentation}>{(child, audioHotspotPresentation) => <article className="published-native-activity" data-native-kind={pub.kind}>
-    {config.kind === "multi" ? config.path === "teacher" ? <NativeMultiPartTeacherSurface publicDocument={pub} teacherDocument={pair.teacherDocument} assetUrl={assetUrl} presentation={child} audioHotspotPresentation={audioHotspotPresentation} /> : <NativeMultiPartStudentSurface document={pub} assetUrl={assetUrl} responses={responses} onResponsesChange={setResponses} readOnly={config.readOnly} presentation={child} audioHotspotPresentation={audioHotspotPresentation} />
+    {["multi", "flow-bank"].includes(config.kind) ? config.path === "teacher" ? <NativeMultiPartTeacherSurface publicDocument={pub} teacherDocument={pair.teacherDocument} assetUrl={assetUrl} presentation={child} audioHotspotPresentation={audioHotspotPresentation} /> : <NativeMultiPartStudentSurface document={pub} assetUrl={assetUrl} responses={config.local ? null : responses} onResponsesChange={setResponses} readOnly={config.readOnly} presentation={child} audioHotspotPresentation={audioHotspotPresentation} />
     : config.path === "teacher" ? <NativeDragDropTeacherSurface publicDocument={pub} teacherDocument={pair.teacherDocument} assetUrl={assetUrl} presentation={child} /> : <NativeDragDropStudentSurface document={pub} assetUrl={assetUrl} responses={responses} onResponsesChange={setResponses} readOnly={config.readOnly} resetToken={resetToken} />}
   </article>}</NativeReadableTextPresentation>;
   const ui = config.custom ? { ...canonicalTeacherRuntimeUiAssets, classroom: { ...canonicalTeacherRuntimeUiAssets.classroom, icons: { ...canonicalTeacherRuntimeUiAssets.classroom.icons, videoWorksheet: "/correction-assets/custom-worksheet" } } } : canonicalTeacherRuntimeUiAssets;
   return <><div style={{ display: "flex", gap: 8 }}>{["previous-panel", "next-panel", "toggle-text", "show-next", "show-all", "reset-activity"].map((type) => <button key={type} onClick={() => send(type)}>{type}</button>)}</div>
-    {message ? <p role="status">{message}</p> : null}<main key={config.session} style={{ width: "min(100%, 1024px)", height: preview || config.path === "builder" ? "auto" : shell ? 790 : 700, "--teacher-presentation-screen-padding-bottom":"0px", "--teacher-fixed-classroom-toolbar-height":"0px", "--teacher-presentation-grid-gap":"0px", transform: `scale(${config.scale})`, transformOrigin: "top left", position: "relative" }}>{shell ? <div style={{height:700}}>{body}</div> : body}
+    {message ? <p role="status">{message}</p> : null}<main key={config.session} style={{ width: "min(100%, 1024px)", height: preview || config.path === "builder" ? "auto" : shell ? 790 : config.height || 700, "--teacher-presentation-screen-padding-bottom":"0px", "--teacher-fixed-classroom-toolbar-height":"0px", "--teacher-presentation-grid-gap":"0px", transform: `scale(${config.scale})`, transformOrigin: "top left", position: "relative" }}>{shell ? <div style={{height:700}}>{body}</div> : body}
     {shell ? <TeacherRuntimeUiAssetsProvider value={ui}><TeacherBookNavigation contextActions={[{ id: "video", label: "Video", ariaLabel: "Open Video", iconName: "video", active: state?.view === "video", onClick: () => send("toggle-video") }, ...(worksheet ? [worksheet] : [])]} /></TeacherRuntimeUiAssetsProvider> : null}</main>
   </>;
 }

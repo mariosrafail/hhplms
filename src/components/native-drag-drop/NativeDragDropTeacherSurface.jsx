@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { nativeDragDropMappingWordIds, updateNativeDragDropRevealState } from "../../data/native-activities/nativeDragDrop.js";
+import { nativeDragDropMappingWordIds, normalizeNativeDragDropResponses, updateNativeDragDropRevealState } from "../../data/native-activities/nativeDragDrop.js";
 import { NativeDragDropStudentSurface } from "./NativeDragDropSurface.jsx";
 
 export function NativeDragDropTeacherSurface({ publicDocument, teacherDocument, assetUrl = () => "", presentation = null, embeddedCanvas = null, audioHotspotPresentation = null }) {
@@ -9,9 +9,17 @@ export function NativeDragDropTeacherSurface({ publicDocument, teacherDocument, 
   const wordById = new Map(interaction.words.map((word) => [word.id, word]));
   const wordIdsByTarget = new Map(teacherDocument.parts[0].solution.mappings.map((mapping) => [mapping.targetId, nativeDragDropMappingWordIds(mapping)]));
   const [panelIndex, setPanelIndex] = useState(0);
+  const [responses, setResponses] = useState(() => ({}));
   const [revealed, setRevealed] = useState(() => new Set());
   const [resetToken, setResetToken] = useState(null);
   const lastCommand = useRef(presentation?.command?.token);
+  const hasManualResponses = Object.keys(normalizeNativeDragDropResponses(responses, publicDocument)).length > 0;
+  const onResponsesChange = useCallback((value) => {
+    const next = normalizeNativeDragDropResponses(value, publicDocument);
+    // The owner clears responses with the command; the child's reset notification
+    // also clears transient interaction state and may report the same empty value.
+    setResponses((current) => !Object.keys(current).length && !Object.keys(next).length ? current : next);
+  }, [publicDocument]);
 
   useEffect(() => {
     const command = presentation?.command;
@@ -20,7 +28,10 @@ export function NativeDragDropTeacherSurface({ publicDocument, teacherDocument, 
     if (command.type === "previous-panel") setPanelIndex((current) => Math.max(0, current - 1));
     else if (command.type === "next-panel") setPanelIndex((current) => Math.min(interaction.panels.length - 1, current + 1));
     else {
-      if (command.type === "reset-activity") { setPanelIndex(0); setResetToken(command.token); }
+      if (command.type === "reset-activity") {
+        setPanelIndex(0); setResponses({}); setRevealed(new Set()); setResetToken(command.token);
+        return;
+      }
       if (command.type === "show-next") {
         const nextTargetId = targetIds.find((targetId) => !revealed.has(targetId));
         const nextPanelIndex = interaction.panels.findIndex((entry) => entry.dropTargets.some((target) => target.id === nextTargetId));
@@ -29,11 +40,13 @@ export function NativeDragDropTeacherSurface({ publicDocument, teacherDocument, 
       setRevealed((current) => updateNativeDragDropRevealState(current, targetIds, command.type));
     }
   }, [interaction.panels, presentation?.command, revealed, targetIds.join("\0")]);
-  useEffect(() => presentation?.onStateChange?.({ panelIndex, panelCount: interaction.panels.length, reveal: { supported: true, total: targetIds.length, revealed: revealed.size, pristine: revealed.size === 0 } }), [interaction.panels.length, panelIndex, presentation?.onStateChange, revealed, targetIds.length]);
+  useEffect(() => presentation?.onStateChange?.({ panelIndex, panelCount: interaction.panels.length, reveal: { supported: true, total: targetIds.length, revealed: revealed.size, pristine: panelIndex === 0 && revealed.size === 0 && !hasManualResponses } }), [hasManualResponses, interaction.panels.length, panelIndex, presentation?.onStateChange, revealed, targetIds.length]);
 
   const revealedWords = new Map([...revealed].map((targetId) => [targetId, (wordIdsByTarget.get(targetId) || []).map((wordId) => wordById.get(wordId)).filter(Boolean)]).filter(([, words]) => words.length));
   return <NativeDragDropStudentSurface
     document={publicDocument}
+    responses={responses}
+    onResponsesChange={onResponsesChange}
     embeddedCanvas={embeddedCanvas}
     audioHotspotPresentation={audioHotspotPresentation}
     assetUrl={assetUrl}

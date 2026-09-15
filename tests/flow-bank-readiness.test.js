@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {flowBankReadinessIssues,flowBankStableSignature} from '../scripts/book-builder/flow-bank-readiness-state.mjs';
+const ready=()=>({visible:true,instance:'same',children:Array.from({length:12},(_,i)=>({id:`word-${i}`,contained:true,hit:true,fontSize:17})),empty:'false',activeScale:'0.98',metadataScale:'0.9800',status:'fit',scrollFits:true,flowScrollTop:0,root:{height:540},panel:{y:0,bottom:650},bank:{y:300,bottom:540,width:988,height:240},items:{width:972,height:223},padding:['8px','8px','8px','8px'],source:{width:988,height:1061},responses:{},transitions:[{property:'none',active:0}]});
+const check=s=>flowBankReadinessIssues(s,{count:12,instance:'same',baseline:ready()});
+test('12 hits with stale empty state are not ready',()=>{const s=ready();s.empty='true';assert.ok(check(s).includes('empty'));});
+test('stale fit metadata without an active scale is not ready',()=>{const s=ready();s.activeScale='';assert.ok(check(s).includes('active-scale'));});
+test('fit metadata cannot hide scroll overflow and a clipped word',()=>{const s=ready();s.activeScale='1';s.metadataScale='1';s.scrollFits=false;s.items.scrollHeight=283;s.items.clientHeight=223;s.children[11].hit=false;s.children[11].contained=false;assert.ok(check(s).includes('containment'));assert.ok(check(s).includes('hits'));});
+test('consistent full state passes while dimensions and identity remain required',()=>{assert.deepEqual(check(ready()),[]);const s=ready();s.items.width=988;s.instance='remounted';assert.ok(check(s).includes('items-width'));assert.ok(check(s).includes('instance'));});
+test('stability excludes timestamps but detects changing geometry',()=>{const a=ready(),b=ready();a.time=1;b.time=2;assert.equal(flowBankStableSignature(a),flowBankStableSignature(b));b.bank.width++;assert.notEqual(flowBankStableSignature(a),flowBankStableSignature(b));});
+test('empty readiness requires the 24px return affordance',()=>{const s=ready();s.children=[];s.empty='true';s.activeScale='';s.bank.height=24;assert.deepEqual(flowBankReadinessIssues(s,{count:0,instance:'same'}),[]);s.bank.height=25;assert.ok(flowBankReadinessIssues(s,{count:0,instance:'same'}).includes('empty-height'));});

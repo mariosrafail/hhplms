@@ -1,12 +1,12 @@
 import { exerciseAuthoredSizeSaveReload, exerciseExternalActivityNavigation, exerciseIntegerHotspotCoordinates, openStudentsUnitOnePage } from "./native-authoring-regressions.mjs";
 import { nativeDocumentPair } from "./hosted-native-activity-document-fixtures.mjs";
 import { componentActivityOrderEntries, projectComponentActivityOrder, reorderComponentActivity } from "../../src/data/native-activities/nativeActivityOrder.js";
-
+import { forbiddenLegacyRequestReason } from './forbidden-native-request-path.mjs';
 import { exerciseMarkWordsAuthoring, exerciseMarkWordsHostedViewer } from "./hosted-native-activity-mark-words.mjs";
 import assert from "node:assert/strict"; import { exerciseHostedComposition } from "./hosted-native-composition.mjs";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 import { chromium, expect } from "@playwright/test";
@@ -21,7 +21,6 @@ import { createNativeOpenResponseQuestion } from "../../src/data/native-activiti
 import { normalizeNativeRuntimePublicDocument } from "../../src/data/native-activities/nativeActivityRuntimeValidation.js";
 import { createUltimateB2HostedOpenResponseSeed } from "../../src/data/ultimate-b2/hostedOpenResponseDraft.js";
 import { findStudentsBookImplementation } from "../../src/data/ultimate-b2/studentsBookCatalog.js";
-
 import { localPlaywrightLaunchOptions } from "../android-teacher/playwright-launch-options.mjs";
 import { assertAhemRendering, createVideoCompanionUploader, logicalFontSize, uploadReadableText, verifyReadableTextStartsOffAndBlocksIncompleteSave, waitForHostedViewerFrame } from "./hosted-native-activity-authoring-helpers.mjs";
 import { exerciseCompleteSentencesAuthoring, exerciseCompleteSentencesBulkHotspotImport, handleCompleteSentencesFontRequest } from "./hosted-native-activity-complete-sentences.mjs";
@@ -324,7 +323,7 @@ try {
   const firstPageToggle = page.locator(".activity-tree-page .activity-tree-toggle").first(); if (await firstPageToggle.getAttribute("aria-expanded") === "false") await firstPageToggle.click();
   await page.getByRole("button", { name: new RegExp(legacyActivityId) }).click(); await page.getByRole("heading", { name: "Legacy checksum fixture" }).waitFor(); assert.equal(await page.getByText("builder_content_failed", { exact: true }).count(), 0); assert.equal(await page.getByLabel("Visible instruction").count(), 0); assert.equal(await page.getByRole("button", { name: "Save Draft" }).isDisabled(), true); await page.getByRole("tab", { name: "Local Preview" }).click(); assert.equal(await page.getByText("Deprecated native instruction must stay hidden.", { exact: true }).count(), 0); await page.getByRole("tab", { name: "Content" }).click(); await page.getByLabel("Activity title").fill("Legacy checksum fixture updated"); await page.getByRole("button", { name: "Save Draft" }).click(); await page.getByText("Draft saved.", { exact: true }).waitFor(); assert.equal(nativeDocuments.get(legacyActivityId).publicDocument.metadata.visibleInstructionText, ""); assert.deepEqual(nativeDocuments.get(legacyActivityId).teacherDocument, legacyTeacherBeforeCleanup); await page.getByRole("tab", { name: "Layout" }).click(); await page.locator(".native-or-layers button").filter({ hasText: "Legacy background" }).click(); assert.equal(await page.getByLabel("Lock position and size").isChecked(), false);
   await page.getByRole("button", { name: "Add Activity" }).click(); const addDialog = page.getByRole("dialog", { name: "Add activity" }); await addDialog.waitFor(); assert.equal(await addDialog.evaluate((element) => element.contains(document.activeElement)), true); await page.keyboard.press("Escape"); await addDialog.waitFor({ state: "detached" }); assert.equal(await page.getByRole("button", { name: "Add Activity" }).evaluate((element) => element === document.activeElement), true);
-  const screenshotRoot = path.resolve("test-results/hosted-builder-ui"); await mkdir(screenshotRoot, { recursive: true }); await page.waitForTimeout(250); await page.screenshot({ path: path.join(screenshotRoot, "activity-builder-1440.png"), fullPage: true });
+  const screenshotRoot = path.resolve(process.env.NATIVE_REGRESSION_OUTPUT || "test-results/hosted-builder-ui"); await mkdir(screenshotRoot, { recursive: true }); await page.waitForTimeout(250); await page.screenshot({ path: path.join(screenshotRoot, "activity-builder-1440.png"), fullPage: true });
   await page.getByRole("button", { name: "Add Activity" }).click(); await page.getByRole("radio", { name: /Open Response/ }).check(); await page.getByLabel(/Initial title/).fill("Browser native response"); await page.getByRole("button", { name: "Create activity" }).click();
   const openResponseId = "ultimate-b2-sb-u1-p1-o90"; await page.getByRole("heading", { name: "Browser native response" }).waitFor(); await page.getByText(openResponseId, { exact: true }).first().waitFor(); await page.getByText("Content needs attention", { exact: true }).first().waitFor(); await verifyReadableTextStartsOffAndBlocksIncompleteSave(page);
   assert.equal(await page.getByLabel("Visible instruction").count(), 0); await page.getByLabel("Activity title").fill("Persisted browser response");
@@ -893,6 +892,8 @@ try {
   await exerciseDragDropExtensions(page, { dragDropId, savedDragDrop });
   await page.reload({ waitUntil: "domcontentloaded" });
   const markWordsId = await exerciseMarkWordsAuthoring(page, { screenshotRoot, savedPair: (title) => [...nativeDocuments.values()].find((pair) => pair.publicDocument.metadata.title === title) });
-  await exerciseMarkWordsHostedViewer(page, { activityId: markWordsId, screenshotRoot }); await exerciseHostedComposition(page, { nativeDocuments, imageId, answerBytes: tallReadablePng });
-  assert.equal(requestedPaths.some((value) => /xml|iwb|import\/prepare/i.test(value)), false); process.stdout.write(`Hosted Unit Extra management plus native draft authoring and real Viewer acceptance passed for ${openResponseId}, ${imageId}, ${singleChoiceId}, ${onePanelChoiceId}, ${completeSentencesId}, ${listeningId}, ${oldschoolId}, and ${dragDropId}.\n`);
+  await exerciseMarkWordsHostedViewer(page, { activityId: markWordsId, screenshotRoot }); await exerciseHostedComposition(page, { nativeDocuments, nativeAssets, imageId, answerBytes: tallReadablePng, output: process.env.NATIVE_REGRESSION_OUTPUT || screenshotRoot });
+  const broadLegacyMatches = [...new Set(requestedPaths.filter((value) => /xml|iwb|import\/prepare/i.test(value)))].sort(), semanticLegacyMatches = [...new Set(requestedPaths)].sort().map((pathname) => ({ pathname, reason: forbiddenLegacyRequestReason(pathname) })).filter((entry) => entry.reason);
+  await writeFile(path.join(screenshotRoot, 'request-path-guard.json'), JSON.stringify({ totalRequestCount: requestedPaths.length, broadLegacyMatches, semanticLegacyMatches }, null, 2));
+  assert.equal(semanticLegacyMatches.length, 0, JSON.stringify(semanticLegacyMatches)); process.stdout.write(`Hosted Unit Extra management plus native draft authoring and real Viewer acceptance passed for ${openResponseId}, ${imageId}, ${singleChoiceId}, ${onePanelChoiceId}, ${completeSentencesId}, ${listeningId}, ${oldschoolId}, and ${dragDropId}.\n`);
 } catch (error) { for (const context of browser?.contexts() || []) for (const tab of context.pages()) console.error("Synthetic browser failure:", await tab.locator("body").innerText().catch(() => "unavailable")); throw error; } finally { await browser?.close(); await new Promise((resolve) => server.close(resolve)); }

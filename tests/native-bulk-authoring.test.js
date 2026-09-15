@@ -54,7 +54,7 @@ test("Multiple Choice parser derives single and multiple modes without truncatin
   assert.equal(parsed[1].selectionMode, "multiple");
   assert.deepEqual(parsed[1].options.filter((option) => option.correct).map((option) => option.text), ["right 1", "right 2"]);
   assert.throws(() => parseNativeSingleChoiceBulk("1. Broken\nright\nwrong"), /Question 1, line 1: at least one option must begin with/);
-  assert.throws(() => parseNativeSingleChoiceBulk("1. Too many\n*a\nb\nc\nd\ne\nf\ng"), /line 8: no more than 6 options/);
+  assert.throws(() => parseNativeSingleChoiceBulk("1. Too many\n*a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk"), /line 12: no more than 10 options/);
 });
 
 test("Open Response parser supports prompt continuation and one or two multiline answer blocks", () => {

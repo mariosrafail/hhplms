@@ -63,6 +63,15 @@ button.native-drag-drop-target-text { cursor: pointer; }
 .native-drag-drop[data-layout-mode="text"] .native-drag-drop-target-items { flex-wrap: wrap; align-content: center; gap: 1px; box-sizing: border-box; width: 100%; height: 100%; padding: 1px; overflow: hidden; }
 .native-drag-drop[data-layout-mode="text"] .native-drag-drop-target-text { flex: 0 1 auto; min-width: 1.35em; padding: 1px 2px; border: 1px solid currentColor; border-radius: 4px; background: #fff; white-space: nowrap; }
 
+/* The synchronous fitter must read final bank-box padding/height as well as
+   font, padding and gap geometry on
+   every descendant. Shell reduced-motion rules can give the initial "all"
+   transition property a positive duration, even without authored transitions.
+   The portal drag preview is outside these measured subtrees. */
+.native-drag-drop[data-layout-mode="text"] .native-drag-drop-bank,
+.native-drag-drop[data-layout-mode="text"] :is(.native-drag-drop-bank-items, .native-drag-drop-target-items),
+.native-drag-drop[data-layout-mode="text"] :is(.native-drag-drop-bank-items, .native-drag-drop-target-items) * { transition-property: none; }
+
 .native-drag-drop-bank[data-empty="true"] { padding: 0; }
 .native-drag-drop-return-hint { position: absolute; inset: 0; display: grid; place-items: center; font: 12px/1.2 system-ui, sans-serif; color: #475569; pointer-events: none; }
 button.native-drag-drop-target-text { touch-action: none; cursor: grab; }

@@ -1,14 +1,17 @@
 import { isNativeChildId } from "./nativeChildIdentity.js";
 import { normalizeNativePedagogicalText } from "./nativePedagogicalText.js";
 
+const MAX_QUESTIONS = 20;
+const MAX_OPTIONS = 10;
 export const NATIVE_SINGLE_CHOICE_LIMITS = Object.freeze({
-  questions: 20,
+  questions: MAX_QUESTIONS,
   optionsMinimum: 2,
-  optionsMaximum: 6,
+  optionsMaximum: MAX_OPTIONS,
   promptLength: 2_000,
   optionTextLength: 1_000,
   panels: 8,
-  hotspots: 120,
+  // A visual question requires exactly one hotspot for every option.
+  hotspots: MAX_QUESTIONS * MAX_OPTIONS,
   sourceDimension: 16_384,
 });
 export const NATIVE_SINGLE_CHOICE_SELECTION_MODES = Object.freeze(["single", "multiple"]);

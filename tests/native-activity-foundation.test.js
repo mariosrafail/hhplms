@@ -6,6 +6,7 @@ import { NATIVE_ACTIVITY_KINDS, normalizeNativeActivityPublicDocument, normalize
 import { createEmptyNativeActivityIndex, normalizeNativeActivityIndex, normalizeNativeManagedAssetReference } from "../src/data/native-activities/nativeActivityPublic.js";
 import { ultimateB2NativeActivityAdapter, ultimateB2NativeActivityPlacements } from "../src/data/ultimate-b2/nativeActivityAdapter.js";
 import { createNativeChildId } from "../src/data/native-activities/nativeChildIdentity.js";
+import { NATIVE_SINGLE_CHOICE_LIMITS } from "../src/data/native-activities/nativeSingleChoice.js";
 
 const placement = ultimateB2NativeActivityPlacements[0];
 const activityId = "ultimate-b2-sb-u1-p1-o99";
@@ -54,7 +55,7 @@ test("Single Choice enforces exact question, option, prompt, and option-text lim
   const teacherDocument = kind.createBlankTeacher({ activityId });
   for (let index = 0; index < 20; index += 1) {
     const questionId = createNativeChildId("q");
-    const optionIds = Array.from({ length: 6 }, () => createNativeChildId("opt"));
+    const optionIds = Array.from({ length: NATIVE_SINGLE_CHOICE_LIMITS.optionsMaximum }, () => createNativeChildId("opt"));
     publicDocument.parts[0].interaction.questions.push({ id: questionId, prompt: "p".repeat(2_000), options: optionIds.map((id) => ({ id, text: "o".repeat(1_000) })) });
     teacherDocument.parts[0].solution.correctAnswers.push({ questionId, correctOptionId: optionIds[0] });
   }

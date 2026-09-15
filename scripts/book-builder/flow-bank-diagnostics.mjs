@@ -1,0 +1,26 @@
+import { writeFile } from "node:fs/promises";
+
+export async function captureFlowBankDiagnostic(page, output, checkpoint, { screenshot = true, metadata = {} } = {}) {
+  const snapshot = await page.evaluate(() => {
+    const root = document.querySelector('.native-multi-part-panel--flow .native-drag-drop');
+    if (!root) return { missingRoot:true };
+    const rect = node => { const r=node.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}; };
+    const identity = node => node ? {tag:node.tagName,id:node.id,className:typeof node.className==='string'?node.className:'',attributes:Object.fromEntries([...node.attributes].filter(a=>a.name.startsWith('data-') || ['aria-label','hidden'].includes(a.name)).map(a=>[a.name,a.value]))} : null;
+    const properties = ['overflow-x','overflow-y','display','visibility','pointer-events','position','z-index','transform','transform-origin','contain','clip-path','padding-top','padding-right','padding-bottom','padding-left','border-top-width','border-bottom-width','transition-property','transition-duration','transition-delay','gap','row-gap','column-gap','grid-template-columns','grid-template-rows','flex-direction','flex-wrap','align-items','align-content','justify-content','height','max-height','min-height','font-family','font-size','line-height'];
+    const describe = node => { const css=getComputedStyle(node); return {...identity(node),inlineStyle:node.getAttribute('style'),animations:node.getAnimations?.().map(a=>({type:a.constructor.name,property:a.transitionProperty,currentTime:a.currentTime,keyframes:a.effect?.getKeyframes()})),rect:rect(node),clientWidth:node.clientWidth,clientHeight:node.clientHeight,offsetWidth:node.offsetWidth,offsetHeight:node.offsetHeight,scrollWidth:node.scrollWidth,scrollHeight:node.scrollHeight,scrollLeft:node.scrollLeft,scrollTop:node.scrollTop,css:Object.fromEntries(properties.map(name=>[name,css.getPropertyValue(name)]))}; };
+    const chain = node => { const nodes=[];for(let current=node;current;current=current.parentElement)nodes.push(describe(current));return nodes; };
+    const bank=root.querySelector('.native-drag-drop-bank');const container=bank.querySelector('.native-drag-drop-bank-items');
+    const items=[...container.querySelectorAll('[data-drag-drop-word-id]')].map(node=>{
+      const r=rect(node);const point={x:r.x+r.width/2,y:r.y+r.height/2};const hit=document.elementFromPoint(point.x,point.y);
+      return {wordId:node.dataset.dragDropWordId,label:node.querySelector('.native-drag-drop-short-label')?.textContent,rect:r,point,elementFromPoint:identity(hit),stack:document.elementsFromPoint(point.x,point.y).map(identity),outsideViewport:point.x<0||point.y<0||point.x>=innerWidth||point.y>=innerHeight,hitIsDescendant:node.contains(hit),hit:node===hit||node.contains(hit),ancestors:chain(node)};
+    });
+    const css=getComputedStyle(root);const itemsCss=getComputedStyle(container);
+    return {viewport:{width:innerWidth,height:innerHeight,scrollX,scrollY,devicePixelRatio,visualViewport:visualViewport?{width:visualViewport.width,height:visualViewport.height,offsetLeft:visualViewport.offsetLeft,offsetTop:visualViewport.offsetTop,pageLeft:visualViewport.pageLeft,pageTop:visualViewport.pageTop,scale:visualViewport.scale}:null},items,bank:describe(bank),bankItems:describe(container),root:describe(root),ancestors:chain(container),configuredBankHeight:css.getPropertyValue('--native-drag-drop-bank-height'),runtimeBankHeight:css.getPropertyValue('--native-drag-drop-runtime-bank-height'),textPanelHeight:css.getPropertyValue('--native-drag-drop-text-panel-height'),fitScale:itemsCss.getPropertyValue('--native-drag-drop-bank-fit-scale'),fitStatus:container.dataset.fitStatus,fontStatus:bank.dataset.fontStatus,fontSetStatus:document.fonts.status,stage:describe(root.querySelector('.native-drag-drop-stage')),images:[...root.querySelectorAll('.native-drag-drop-artwork')].map(describe),targets:[...root.querySelectorAll('[data-drag-drop-target-id]')].map(describe),dragPreviews:[...document.querySelectorAll('[data-drag-drop-drag-preview]')].map(describe),returnHints:[...root.querySelectorAll('.native-drag-drop-return-hint')].map(describe),readableOverlays:[...document.querySelectorAll('.native-audio-text-focus')].map(describe),responses:globalThis.corrections?.responses,presentationState:globalThis.corrections?.state,config:globalThis.corrections?.config,bankOrder:items.map(item=>item.wordId),originalMountedInstance:root.__flowBankOriginal===true,styles:[...document.querySelectorAll('style,link[rel=stylesheet]')].map(node=>({tag:node.tagName,href:node.getAttribute('href'),attributes:identity(node).attributes,textLength:node.textContent.length}))};
+  });
+  snapshot.capture = { checkpoint, capturedAt: new Date().toISOString(), ...metadata,
+    png: screenshot ? `${checkpoint}.png` : null,
+    screenshotOmittedReason: screenshot ? null : 'JSON-only capture: assets deliberately held; no font-dependent screenshot before release.' };
+  await writeFile(`${output}/${checkpoint}.json`,JSON.stringify(snapshot,null,2));
+  if (screenshot) await page.screenshot({path:`${output}/${checkpoint}.png`});
+  return snapshot;
+}

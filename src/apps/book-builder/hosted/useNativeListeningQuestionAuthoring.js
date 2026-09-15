@@ -8,7 +8,7 @@ import { mergeNativeManagedAssetReference, removeNativeManagedAssetReferenceIfUn
 import { nativeOldschoolListeningQuestionMode } from "../../../data/native-activities/nativeOldschoolListening.js";
 import { switchNativeOldschoolListeningQuestionMode } from "../../../data/native-activities/nativeOldschoolListeningAuthoring.js";
 import { createNativeOpenResponseQuestion } from "../../../data/native-activities/nativeOpenResponse.js";
-import { createNativeSingleChoiceQuestion, nativeSingleChoiceCorrectOptionIds } from "../../../data/native-activities/nativeSingleChoice.js";
+import { NATIVE_SINGLE_CHOICE_LIMITS, createNativeSingleChoiceQuestion, nativeSingleChoiceCorrectOptionIds } from "../../../data/native-activities/nativeSingleChoice.js";
 import { generateNativeSingleChoiceHotspotImportCandidate } from "../../../data/native-activities/nativeSingleChoiceHotspotBulkAuthoring.js";
 import { alignNativeSingleChoiceAnswers, createNativeSingleChoiceHotspotArea, enableNativeSingleChoiceVisualPresentation, findNextUnusedNativeSingleChoiceBinding, removeNativeSingleChoiceOption, removeNativeSingleChoiceQuestion, removeNativeSingleChoiceVisualPresentation, setNativeSingleChoiceCorrectAnswers, setNativeSingleChoiceHotspotArea } from "../../../data/native-activities/nativeSingleChoiceAuthoring.js";
 import { uploadNativeActivityAsset } from "./builderNativeActivityApi.js";
@@ -89,9 +89,17 @@ export function useNativeListeningQuestionAuthoring({ oldschool, publicDraft, te
   } : null;
 
   const answer = questionMode === "single-choice" ? teacherDraft?.parts[0].solution.correctAnswers.find((entry) => entry.questionId === selectedQuestionId) || null : null;
-  const addOption = () => mutatePublic((next) => next.parts[0].interaction.questions.find((question) => question.id === selectedQuestionId).options.push({ id: createNativeChildId("opt"), text: "" }));
+  const addOption = () => mutatePublic((next) => {
+    const options = next.parts[0].interaction.questions.find((question) => question.id === selectedQuestionId).options;
+    if (options.length < NATIVE_SINGLE_CHOICE_LIMITS.optionsMaximum) options.push({ id: createNativeChildId("opt"), text: "" });
+  });
   const deleteOption = (optionId) => mutatePair((nextPublic, nextTeacher) => mutateProjectedSingleChoice(nextPublic, nextTeacher, (projectedPublic, projectedTeacher) => removeNativeSingleChoiceOption(projectedPublic, projectedTeacher, selectedQuestionId, optionId)));
-  const moveOption = (optionId, offset) => mutatePublic((next) => { const list = next.parts[0].interaction.questions.find((question) => question.id === selectedQuestionId).options; const index = list.findIndex((option) => option.id === optionId); const target = index + offset; if (target >= 0 && target < list.length) [list[index], list[target]] = [list[target], list[index]]; });
+  const moveOption = (optionId, offset) => mutatePair((nextPublic, nextTeacher) => mutateProjectedSingleChoice(nextPublic, nextTeacher, (projectedPublic, projectedTeacher) => {
+    const list = projectedPublic.parts[0].interaction.questions.find((question) => question.id === selectedQuestionId).options;
+    const index = list.findIndex((option) => option.id === optionId); const target = index + offset;
+    if (target >= 0 && target < list.length) [list[index], list[target]] = [list[target], list[index]];
+    alignNativeSingleChoiceAnswers(projectedPublic, projectedTeacher);
+  }));
   const toggleAnswer = (optionId) => mutatePair((nextPublic, nextTeacher) => mutateProjectedSingleChoice(nextPublic, nextTeacher, (projectedPublic, projectedTeacher) => { const currentAnswer = projectedTeacher.parts[0].solution.correctAnswers.find((entry) => entry.questionId === selectedQuestionId); const selectedIds = new Set(nativeSingleChoiceCorrectOptionIds(currentAnswer)); if (selectedIds.has(optionId)) selectedIds.delete(optionId); else selectedIds.add(optionId); setNativeSingleChoiceCorrectAnswers(projectedPublic, projectedTeacher, selectedQuestionId, [...selectedIds]); }));
   const enableVisual = () => { const panelId = createNativeChildId("panel"); mutatePublic((next) => enableNativeSingleChoiceVisualPresentation(next, () => panelId)); setSelectedPanelId(panelId); setSelectedHotspotId(null); };
   const disableVisual = () => { if (!globalThis.confirm("Remove the Multiple Choice visual background and hotspots? Semantic questions and private answers will remain.")) return; mutatePublic(removeNativeSingleChoiceVisualPresentation); setSelectedPanelId(null); setSelectedHotspotId(null); };

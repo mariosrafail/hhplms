@@ -10,6 +10,6 @@ export function NativeOldschoolListeningStudentSurface({ document, assetUrl = ()
   return <NativeOldschoolListeningSurface key={`${document.activityId}:${questionMode}`} publicDocument={document} assetUrl={assetUrl} {...props} renderQuestions={({ audioHotspotPresentation, presentation, resetToken }) => questionMode === "drag-drop"
     ? <NativeDragDropStudentSurface document={questionPublic} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} presentation={presentation} resetToken={resetToken} audioHotspotPresentation={audioHotspotPresentation} />
     : questionMode === "single-choice"
-    ? <NativeSingleChoiceStudentSurface document={questionPublic} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} audioHotspotPresentation={audioHotspotPresentation} />
+    ? <NativeSingleChoiceStudentSurface document={questionPublic} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} audioHotspotPresentation={audioHotspotPresentation} navigationMode="external" />
     : <NativeOpenResponseStudentSurface document={questionPublic} assetUrl={assetUrl} responses={responses} initialResponses={initialResponses} onResponsesChange={onResponsesChange} readOnly={readOnly} audioHotspotPresentation={audioHotspotPresentation} />} />;
 }

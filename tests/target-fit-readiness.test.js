@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { targetFitReadinessIssues,targetFitStableSignature } from '../scripts/book-builder/target-fit-readiness-state.mjs';
+const ready=()=>({targetId:'target-one',parent:{width:120,height:40},items:{width:120,height:40,clientWidth:120,clientHeight:40,scrollWidth:120,scrollHeight:40},status:'fit',activeScale:'.63',metadataScale:'0.6300',children:Array.from({length:12},()=>({contained:true,hit:true,fontSize:12})),transitions:[{property:'none',active:0}]});
+const check=s=>targetFitReadinessIssues(s,{targetId:'target-one',count:12});
+test('pending target is not ready',()=>{const s=ready();s.status='pending';assert.ok(check(s).includes('status'));});
+test('fit target needs an active scale',()=>{const s=ready();s.activeScale='';assert.ok(check(s).includes('active-scale'));});
+test('fit with overflow is not ready',()=>{const s=ready();s.items.scrollHeight=41;assert.ok(check(s).includes('scroll'));});
+test('11 of 12 hits is not ready',()=>{const s=ready();s.children[11].hit=false;assert.ok(check(s).includes('hits'));});
+test('consistent target is valid and stable across timestamps',()=>{const a=ready(),b=ready();a.time=1;b.time=2;assert.deepEqual(check(a),[]);assert.equal(targetFitStableSignature(a),targetFitStableSignature(b));b.items.width--;assert.notEqual(targetFitStableSignature(a),targetFitStableSignature(b));});
+test('target identity, metadata, font and transitions remain required',()=>{const s=ready();s.targetId='other';s.metadataScale='.9';s.children[0].fontSize=7;s.transitions[0].active=1;assert.deepEqual(check(s),['identity','metadata','font-minimum','transitions']);});

@@ -3,8 +3,9 @@ import { expect } from "@playwright/test";
 import { authorHostedSharedCanvas, reviewHostedComposition } from "./hosted-native-shared-canvas.mjs";
 import sharp from "sharp";
 import { normalizeNativeRuntimePublicDocument, normalizeNativeRuntimeTeacherDocument } from "../../src/data/native-activities/nativeActivityRuntimeValidation.js";
+import { exerciseHostedFlowBank } from './hosted-flow-bank-acceptance.mjs';
 
-export async function exerciseHostedComposition(page, { nativeDocuments, imageId, answerBytes }) {
+export async function exerciseHostedComposition(page, { nativeDocuments, nativeAssets, imageId, answerBytes, output }) {
   const save = async (root) => { const response = page.waitForResponse((value) => value.request().method() === "POST" && value.url().endsWith("/save")); await root.getByRole("button", { name: "Save Draft", exact: true }).click(); assert.equal((await response).status(), 200); };
   await page.goto(`${new URL(page.url()).origin}/#/books/ultimate-b2/components/ultimate-b2-students-book/activities`, { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Add Activity", exact: true }).click();
@@ -100,4 +101,5 @@ export async function exerciseHostedComposition(page, { nativeDocuments, imageId
   await page.reload({ waitUntil: "domcontentloaded" }); await page.getByRole("button", { name: new RegExp(imageId) }).click();
   assert.deepEqual(nativeDocuments.get(imageId).teacherDocument.parts[0].solution.sampleAnswer, { enabled: true, image: null });
   await expect(image.getByText("Upload an answer image before publication.", { exact: true })).toBeVisible();
+  await exerciseHostedFlowBank(page, {nativeDocuments,nativeAssets,output});
 }

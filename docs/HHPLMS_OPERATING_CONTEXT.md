@@ -692,3 +692,18 @@ These task receipts precede the final frozen-candidate CI gates. No migration,
 historical compiler change, release rewrite or current-draft assignment fallback
 is introduced. Hosted/staging acceptance is NOT RUN; production operational
 readiness is NOT ESTABLISHED. The ChatGPT Project copy is not synchronized.
+
+### Android CI SDK package compatibility
+
+VerifiedAt: 2026-09-15T17:29:04Z; remote baseline
+`365d089d080c0fd689ceb4dde6d10fb69d5f7607`.
+In GitHub run `34996131667`, `setup-android@v4` at action commit
+`40fd30fb8d7440372e1316f5d1809ec01dcd3699` requested its default `tools` package;
+`sdkmanager tools` failed because that package was unavailable, before APK builds.
+The deprecated `tools` default is no longer usable in the observed 2026-09-15
+environment; [upstream issue #537](https://github.com/android-actions/setup-android/issues/537)
+documents the failure and consumer workaround. hhplms now explicitly supplies
+`packages: "platform-tools"`, retaining command-line tools version `12266719`.
+The next workflow step still installs Android platform 36 and build-tools 36.0.0
+explicitly. Java 21 and all three APK checks remain required. This CI-only
+compatibility change does not change Android application or runtime semantics.

@@ -233,13 +233,16 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
     setUploading(true); setState((current) => ({ ...current, message: "Uploading image…" }));
     try {
       const uploaded = await uploadNativeActivityAsset({ bookSlug, componentSlug, activityId, assetSlot: createNativeChildId("asset"), file });
-      if (interaction.layoutMode === "text" && background && (!Number.isSafeInteger(uploaded.metadata?.width) || !Number.isSafeInteger(uploaded.metadata?.height) || uploaded.metadata.width < 1 || uploaded.metadata.height < 1 || uploaded.metadata.width > NATIVE_DRAG_DROP_LIMITS.surfaceMaximum || uploaded.metadata.height > NATIVE_DRAG_DROP_LIMITS.surfaceMaximum)) throw new Error("Uploaded text image dimensions are unavailable or exceed the supported surface size.");
+      const resizeSurface = !compositeBinding?.fixedPanel && !compositeBinding?.sharedCanvas && (replace
+        ? selectedImage?.id === panel.images[0]?.id && selectedImage?.locked
+        : background);
+      if (resizeSurface && (!Number.isSafeInteger(uploaded.metadata?.width) || !Number.isSafeInteger(uploaded.metadata?.height) || uploaded.metadata.width < 1 || uploaded.metadata.height < 1 || uploaded.metadata.width > NATIVE_DRAG_DROP_LIMITS.surfaceMaximum || uploaded.metadata.height > NATIVE_DRAG_DROP_LIMITS.surfaceMaximum)) throw new Error("Uploaded background dimensions are unavailable or exceed the supported surface size.");
       if (replace && selectedImage) {
         mutatePublic((next) => {
           const nextPanel = next.parts[0].interaction.panels.find((entry) => entry.id === panel.id);
           const nextImage = nextPanel.images.find((entry) => entry.id === selectedImage.id);
           const oldSlot = nextImage.assetSlot; next.assets = mergeNativeManagedAssetReference(next.assets, uploaded.reference); nextImage.assetSlot = uploaded.reference.slot;
-          if (next.parts[0].interaction.layoutMode === "text" && nextPanel.images[0]?.id === nextImage.id && nextImage.locked && Number.isSafeInteger(uploaded.metadata?.width) && Number.isSafeInteger(uploaded.metadata?.height)) {
+          if (resizeSurface) {
             const previous = { ...nextPanel.surface }; const dimensions = { width: uploaded.metadata.width, height: uploaded.metadata.height };
             nextPanel.images.forEach((entry) => { entry.area = scaleArea(entry.area, previous, dimensions); });
             nextPanel.dropTargets.forEach((entry) => { entry.area = scaleArea(entry.area, previous, dimensions); });
@@ -253,14 +256,14 @@ export function NativeDragDropEditor({ compositeBinding = null, bookSlug, compon
         mutatePublic((next) => {
           const nextPanel = next.parts[0].interaction.panels.find((entry) => entry.id === panel.id);
           next.assets = mergeNativeManagedAssetReference(next.assets, uploaded.reference);
-          if (background && next.parts[0].interaction.layoutMode === "text") {
+          if (resizeSurface) {
             const previous = { ...nextPanel.surface }; const dimensions = { width: uploaded.metadata.width, height: uploaded.metadata.height };
             nextPanel.images.forEach((entry) => { entry.area = scaleArea(entry.area, previous, dimensions); });
             nextPanel.dropTargets.forEach((entry) => { entry.area = scaleArea(entry.area, previous, dimensions); });
             resizeNativeDragDropAudioTextHotspots(next, nextPanel.id, previous, dimensions);
             nextPanel.surface = dimensions;
           }
-          const image = { id: imageId, assetSlot: uploaded.reference.slot, area: background ? { x: 0, y: 0, ...nextPanel.surface } : { x: 160, y: 110, width: 360, height: 240 }, order: background ? 0 : nextPanel.images.length, altText: "", decorative: false, fit: "contain", locked: background };
+          const image = { id: imageId, assetSlot: uploaded.reference.slot, area: background ? { x: 0, y: 0, ...nextPanel.surface } : scaleArea({ x: 160, y: 110, width: 360, height: 240 }, NATIVE_DRAG_DROP_DEFAULT_SURFACE, nextPanel.surface), order: background ? 0 : nextPanel.images.length, altText: "", decorative: false, fit: "contain", locked: background };
           if (background) { nextPanel.images.unshift(image); nextPanel.images.forEach((entry, order) => { entry.order = order; }); } else nextPanel.images.push(image);
         });
         setSelection({ kind: "image", id: imageId });

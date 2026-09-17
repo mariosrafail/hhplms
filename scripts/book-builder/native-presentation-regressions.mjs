@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { expect } from "@playwright/test";
 import { childId, presentationPair } from "../../tests/fixtures/native-runtime-regressions/presentation-documents.js";
 import { runSingleChoiceFocusRegressions } from "./native-single-choice-focus-regressions.mjs";
+import { runDndVariableHeightRegressions } from "./native-drag-drop-variable-height-regressions.mjs";
 
 // Only the data providers and unused legacy branches are substituted. The embedded
 // fitter, hosted/published runners, surfaces and shared presentation are real.
@@ -82,6 +83,7 @@ export async function runNativePresentationRegressions(browser, output) {
   try {
     await runSingleChoiceFocusRegressions(browser, server.resolvedUrls.local[0], output);
     await runSingleChoiceFocusRegressions(browser, server.resolvedUrls.local[0], output, { published: true });
+    await runDndVariableHeightRegressions(browser, server.resolvedUrls.local[0], output, { runtimes: ["hosted", "published"] });
     await page.goto(`${server.resolvedUrls.local[0]}tests/fixtures/native-runtime-regressions/presentation.html`);
     await page.locator(".native-drag-drop-phrase").first().waitFor();
     const word = (number) => page.locator(`[data-drag-drop-word-id="${childId("word", number)}"]`);

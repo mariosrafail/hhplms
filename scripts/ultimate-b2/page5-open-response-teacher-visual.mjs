@@ -60,7 +60,7 @@ try {
   for (const label of ["Students Book", "Grammar Book", "Workbook"]) await bookNavigation.getByRole("button", { name: label, exact: true }).click();
   assert.equal(await page.evaluate(() => location.hash), hashBeforeBookSwitches, "Book switches must not invent content routing");
   assert.deepEqual(await bookNavigation.boundingBox(), navigationBoxBefore, "Book-switch clicks must not alter navigation geometry");
-  await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 5" }).first().click();
+  await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 5" }).first().locator(".teacher-unit-page-open").first().click();
   await page.waitForFunction(() => document.querySelector(".teacher-offline-page-image img")?.naturalWidth > 0);
   await page.locator('.teacher-offline-page-hotspot[aria-label="Unit opener · Exercise 1"]').click();
   await page.locator(".teacher-offline-embedded-activity").waitFor();

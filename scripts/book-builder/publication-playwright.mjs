@@ -697,7 +697,7 @@ try {
   await viewer.getByRole("button", { name: "Home", exact: true }).click();
   await viewer.getByRole("button", { name: "Students Book", exact: true }).click();
   await viewer.getByRole("button", { name: /^Open Unit 1:/ }).click();
-  await viewer.locator(".teacher-unit-page-card").first().click();
+  await viewer.locator(".teacher-unit-page-card").first().locator(".teacher-unit-page-open").first().click();
   await viewer.locator(".teacher-offline-page-stage").waitFor();
   lifecycle("open-response-click-start", { attempt: 2 });
   await viewer.getByRole("button", { name: "Native Open Response" }).click();

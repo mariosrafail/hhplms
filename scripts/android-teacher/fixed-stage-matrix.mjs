@@ -276,7 +276,7 @@ try {
       navigation: "[data-teacher-book-navigation]",
       toolbar: ".teacher-offline-unit-overview-screen > .classroom-teaching-toolbar",
     });
-    await page.locator(".teacher-unit-page-card").first().click();
+    await page.locator(".teacher-unit-page-card").first().locator(".teacher-unit-page-open").first().click();
     await page.waitForFunction(() => {
       const image = document.querySelector(".teacher-offline-page-image img");
       return image?.naturalWidth > 0 && image.getBoundingClientRect().width > 0;
@@ -422,7 +422,7 @@ try {
       await page.locator("[data-teacher-book-navigation]").getByRole("button", { name: "Back", exact: true }).click();
       await page.locator(".teacher-offline-unit-overview").waitFor();
       assertBackdrop(await readViewportBackdrop(page), "unit-overview", "Contents return to overview", { classroomImage: true });
-      await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 6-7" }).first().click();
+      await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 6-7" }).first().locator(".teacher-unit-page-open").first().click();
       await page.locator(".teacher-offline-pages-viewer").waitFor();
 
       assert.equal(await page.getByRole("button", { name: "Page activities" }).count(), 0, "obsolete Page activities control stays absent");

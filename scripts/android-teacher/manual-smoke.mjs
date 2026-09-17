@@ -377,12 +377,14 @@ try {
   assert.equal(await page.getByRole("button", { name: "Show classroom tools" }).count(), 0, "Toolbar must never auto-hide behind a reveal button");
 
   await assertCanonicalUnitOverview(page, 1);
-  await page.locator('[data-page-ids="ub2-sb-unit-1-part-9,ub2-sb-unit-1-part-10"]').click();
+  await page.locator('[data-page-ids="ub2-sb-unit-1-part-9,ub2-sb-unit-1-part-10"] button[data-page-id="ub2-sb-unit-1-part-9"]').click();
   await page.locator(".teacher-offline-pages-viewer").waitFor();
+  assert.equal(await page.locator(".teacher-offline-page-stage").getAttribute("data-classroom-surface-id"), "students-book:page:ub2-sb-unit-1-part-9", "Practice child button opens the first real page");
   assert.equal(await page.locator(".legacy-page-heading strong").textContent(), "Practice");
   assert.equal(await page.locator(".legacy-page-location").count(), 0, "Page location pill must be removed");
   await page.locator("[data-teacher-book-navigation]").getByRole("button", { name: "Next page", exact: true }).click();
   assert.equal(await page.locator(".legacy-page-heading strong").textContent(), "Practice");
+  assert.equal(await page.locator(".teacher-offline-page-stage").getAttribute("data-classroom-surface-id"), "students-book:page:ub2-sb-unit-1-part-10", "Next page opens the second real Practice page");
   assert.equal(await page.getByRole("button", { name: "Library" }).count(), 0, "Page viewer must not expose a redundant Library button");
   assert.equal(await page.getByRole("button", { name: "Unit overview" }).count(), 0, "Page viewer must not expose a redundant Unit overview button");
   assert.equal(await page.getByRole("button", { name: "Back to page" }).count(), 0, "Page viewer must reserve Back to page for activities");
@@ -394,23 +396,28 @@ try {
   assert.equal(await page.locator(".teacher-offline-pages-viewer").count(), 0, "Unit switching must not open a page");
   await assertCanonicalUnitOverview(page, 2);
   assert.equal(await page.locator('[data-page-ids="reading-19"] .teacher-unit-page-copy strong').count(), 0, "pg 19 must visually omit Reading");
-  await page.locator('[data-page-ids="reading-20-21"]').click();
+  await page.locator('[data-page-ids="reading-20-21"] button[data-page-id="reading-20-21"]').click();
   assert.equal(await page.locator(".legacy-page-heading strong").textContent(), "Reading");
+  assert.equal(await page.locator(".teacher-offline-page-stage").getAttribute("data-classroom-surface-id"), "students-book:page:reading-20-21", "Reading child button opens the authored spread");
   await returnToOverview(page, 2);
-  await page.locator('[data-page-ids="practice-31,practice-32"]').click();
+  await page.locator('[data-page-ids="practice-31,practice-32"] button[data-page-id="practice-31"]').click();
   assert.equal(await page.locator(".legacy-page-heading strong").textContent(), "Practice 2");
+  assert.equal(await page.locator(".teacher-offline-page-stage").getAttribute("data-classroom-surface-id"), "students-book:page:practice-31", "Practice child button opens the first real page");
   await page.locator("[data-teacher-book-navigation]").getByRole("button", { name: "Next page", exact: true }).click();
   assert.equal(await page.locator(".legacy-page-heading strong").textContent(), "Practice 2");
+  assert.equal(await page.locator(".teacher-offline-page-stage").getAttribute("data-classroom-surface-id"), "students-book:page:practice-32", "Next page opens the second Practice page");
   await returnToOverview(page, 2);
-  await page.locator('[data-page-ids="progress-check-33,progress-check-34"]').click();
+  await page.locator('[data-page-ids="progress-check-33,progress-check-34"] button[data-page-id="progress-check-33"]').click();
   assert.equal(await page.locator(".legacy-page-heading strong").textContent(), "Progress check 1");
+  assert.equal(await page.locator(".teacher-offline-page-stage").getAttribute("data-classroom-surface-id"), "students-book:page:progress-check-33", "Progress check child button opens the first real page");
   await page.locator("[data-teacher-book-navigation]").getByRole("button", { name: "Next page", exact: true }).click();
   assert.equal(await page.locator(".legacy-page-heading strong").textContent(), "Progress check 1");
+  assert.equal(await page.locator(".teacher-offline-page-stage").getAttribute("data-classroom-surface-id"), "students-book:page:progress-check-34", "Next page opens the second Progress check page");
   await returnToOverview(page, 2);
   await setBookLocation(page, { unitNumber: 1, tab: "pages", pageId: "" });
   await assertCanonicalUnitOverview(page, 1);
 
-  await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 5" }).first().click();
+  await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 5" }).first().locator(".teacher-unit-page-open").first().click();
   const toolbarButtons = page.locator(".classroom-teaching-toolbar .legacy-teacher-tool-button");
   assert.deepEqual(await toolbarButtons.evaluateAll((buttons) => buttons.map((button) => button.dataset.teacherTool)), [
     "mouse", "pencil", "marker", "eraser", "clear", "zoom", "hide", "show", "undo",
@@ -622,7 +629,7 @@ try {
   await backToBook(page);
 
   await returnToOverview(page, 1);
-  await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 6-7" }).first().click();
+  await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 6-7" }).first().locator(".teacher-unit-page-open").first().click();
   assert.equal(await page.getByRole("button", { name: "Page activities" }).count(), 0, "obsolete Page activities control stays absent");
   await page.getByRole("button", { name: "Reading · Exercise 1", exact: true }).click();
   const activityVideoButton = page.locator('[data-teacher-book-navigation] button[title="Video"]');

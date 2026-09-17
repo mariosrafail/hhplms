@@ -266,6 +266,8 @@ try {
       return {
         documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         labels: entries.map((entry) => entry.querySelector(".teacher-unit-page-copy b")?.textContent?.trim()),
+        pageIds: entries.map((entry) => entry.dataset.pageIds.split(",")),
+        buttonPageIds: entries.flatMap((entry) => [...entry.querySelectorAll("button[data-page-id]")].map((button) => button.dataset.pageId)),
         rows: entries.map((entry) => Number(entry.dataset.overviewRow)),
         weights: entries.map((entry) => Number(entry.dataset.overviewWeight)),
         spans: entries.map((entry) => Number(entry.dataset.overviewColumnSpan)),
@@ -284,9 +286,23 @@ try {
         toolbar: Boolean(document.querySelector(".teacher-offline-unit-overview-screen .classroom-teaching-toolbar")),
       };
     });
-    assert.deepEqual(unit5Overview.labels, ["pg 65", "pg 66-67", "pg 68-69", "pg 70-71", "pg 72", "pg 73", "pg 74-75", "pg 76", "pg 77", "pg 78"], `${target.name} Unit 5 labels`);
-    assert.deepEqual(unit5Overview.rows, [1, 1, 1, 1, 2, 2, 2, 2, 2, 2], `${target.name} Unit 5 row membership`);
-    assert.deepEqual(unit5Overview.weights, [1, 2, 2, 2, 1, 1, 2, 1, 1, 1], `${target.name} Unit 5 physical weights`);
+    assert.deepEqual(unit5Overview.labels, ["pg 65", "pg 66-67", "pg 68-69", "pg 70-71", "pg 72", "pg 73", "pg 74-75", "pg 76", "pg 77-78"], `${target.name} Unit 5 labels`);
+    assert.deepEqual(unit5Overview.rows, [1, 1, 1, 1, 2, 2, 2, 2, 2], `${target.name} Unit 5 row membership`);
+    assert.deepEqual(unit5Overview.weights, [1, 2, 2, 2, 1, 1, 2, 1, 2], `${target.name} Unit 5 physical weights`);
+    assert.deepEqual(unit5Overview.spans, [3, 7, 7, 7, 4, 3, 7, 3, 7], `${target.name} Unit 5 column spans`);
+    assert.deepEqual(unit5Overview.pageIds, [
+      ["ub2-sb-unit-5-part-1"],
+      ["ub2-sb-unit-5-part-2"],
+      ["ub2-sb-unit-5-part-3"],
+      ["ub2-sb-unit-5-part-4"],
+      ["ub2-sb-unit-5-part-5"],
+      ["ub2-sb-unit-5-part-6"],
+      ["ub2-sb-unit-5-part-7"],
+      ["ub2-sb-unit-5-part-8"],
+      ["ub2-sb-unit-5-part-9", "ub2-sb-unit-5-part-10"],
+    ], `${target.name} Unit 5 grouped page identities`);
+    assert.deepEqual(unit5Overview.pageIds.flat(), Array.from({ length: 10 }, (_, index) => `ub2-sb-unit-5-part-${index + 1}`), `${target.name} Unit 5 preserves all source pages in order`);
+    assert.deepEqual(unit5Overview.buttonPageIds, unit5Overview.pageIds.flat(), `${target.name} Unit 5 has ten independent page buttons in source order`);
     assert.equal(unit5Overview.spans.filter((_, index) => unit5Overview.rows[index] === 1).reduce((sum, span) => sum + span, 0), 24, `${target.name} Unit 5 top columns`);
     assert.equal(unit5Overview.spans.filter((_, index) => unit5Overview.rows[index] === 2).reduce((sum, span) => sum + span, 0), 24, `${target.name} Unit 5 bottom columns`);
     assert.ok(unit5Overview.rowTopSpreads.every((spread) => spread !== null && spread <= 3 * displayScale), `${target.name} Unit 5 visual rows`);
@@ -303,7 +319,7 @@ try {
     }
     await openInternalBookLocation(page, { unitNumber: 2, tab: "pages", pageId: "" });
     await page.getByRole("heading", { name: "Unit 2", exact: true }).waitFor();
-    await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 20-21" }).first().click();
+    await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 20-21" }).first().locator(".teacher-unit-page-open").first().click();
     await page.waitForFunction(() => {
       const image = document.querySelector(".teacher-offline-page-image img");
       return image?.naturalWidth > 0 && image.getBoundingClientRect().width > 0;
@@ -569,7 +585,7 @@ try {
         await openInternalBookLocation(page, { unitNumber: 2, tab: "pages", pageId: "" });
         await page.locator(".teacher-offline-unit-overview").waitFor();
       }
-      await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 20-21" }).first().click();
+      await page.locator(".teacher-unit-page-card").filter({ hasText: "pg 20-21" }).first().locator(".teacher-unit-page-open").first().click();
       await page.waitForFunction(() => {
         const image = document.querySelector(".teacher-offline-page-image img");
         return image?.naturalWidth > 0 && image.getBoundingClientRect().width > 0;

@@ -80,7 +80,7 @@ async function openNormalPage(page, unitNumber) {
   }, unitNumber);
   const pageCard = page.locator(".teacher-unit-page-card").first();
   await pageCard.waitFor();
-  await pageCard.click();
+  await pageCard.locator(".teacher-unit-page-open").first().click();
   await page.locator(".teacher-offline-page-image img").waitFor();
 }
 

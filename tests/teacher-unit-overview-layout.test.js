@@ -10,6 +10,7 @@ import {
 import {
   allocateOverviewColumns,
   buildManagedOverviewEntries,
+  buildGenericOverviewEntries,
   cleanOverviewSectionLabel,
   managedOverviewPageWeight,
   MAX_OVERVIEW_PAGE_WEIGHT,
@@ -54,6 +55,31 @@ const managedStudentUnit = (bookSlug, number, count = 4) => ({
 const componentIdentity = (bookSlug, suffix = "students-book") => ({
   bookSlug,
   componentSlug: `${bookSlug}-${suffix}`,
+});
+
+test("generic and managed overviews group adjacent labelled singles before row allocation", () => {
+  for (const build of [buildGenericOverviewEntries, buildManagedOverviewEntries]) {
+    const source = [60, 61, 62, 63, 65, 66].map((number, index) => ({ id: `real-${index}`, overviewLabel: "Practice 5", printedLabel: `pg ${number}`, imageWidth: 581, imageHeight: 794 }));
+    source[2].overviewLabel = "Reading";
+    source[5].componentSlug = "another-component";
+    const spread = { id: "real-spread", overviewLabel: "Practice 5", printedLabel: "pg 67-68", imageWidth: 1180, imageHeight: 794 };
+    const unknown = { id: "unknown", overviewLabel: "Practice 5" };
+    const unit = { number: 5, pages: [...source, spread, unknown] };
+    const before = structuredClone(unit);
+    const actual = build(unit);
+    assert.deepEqual(actual[0].pageIds, ["real-0", "real-1"]);
+    assert.equal(actual[0].label, "Practice 5");
+    assert.equal(actual[0].pageLabel, "pg 60-61");
+    assert.equal(actual[0].physicalWeight, 2);
+    assert.ok(actual.slice(1).every((entry) => entry.pages.length === 1));
+    assert.deepEqual(actual.flatMap((entry) => entry.pageIds), unit.pages.map((page) => page.id));
+    assert.deepEqual(unit, before);
+    for (const key of ["bookSlug", "componentSlug", "unitId", "unitNumber"]) {
+      const separate = { number: 5, pages: [source[0], { ...source[1], [key]: "different" }] };
+      assert.equal(build(separate).length, 2, key);
+    }
+    assert.equal(build({ number: 5, pages: [{ ...source[0], overviewLabel: "" }, { ...source[1], overviewLabel: "" }] }).length, 2);
+  }
 });
 
 test("Teacher overview page weighting prioritizes canonical numbers and strictly parses printed labels", () => {

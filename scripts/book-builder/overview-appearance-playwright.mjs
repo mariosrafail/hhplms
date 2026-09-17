@@ -14,7 +14,7 @@ await server.listen();
 const browser = await chromium.launch({ headless: true });
 const results = [];
 try {
-  const page = await browser.newPage();
+  const page = await browser.newPage({ hasTouch: true });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }]) {
@@ -51,6 +51,36 @@ try {
     }
   }
   if (phase === "after") {
+    for (const bookSlug of ["ultimate-b2", "ultimate-b1", "ultimate-b1-plus"]) for (const component of ["students-book", "workbook", "grammar-book"]) {
+      if (bookSlug !== "ultimate-b2" && component === "grammar-book") continue;
+      await page.evaluate((input) => window.renderOverview(input), { bookSlug, component, grouped: true });
+      const buttons = page.locator(".teacher-unit-page-open");
+      const ids = await page.evaluate(() => window.overviewPageIds);
+      await expect(buttons).toHaveCount(ids.length);
+      assert.deepEqual(await buttons.evaluateAll((nodes) => nodes.map((node) => node.dataset.pageId)), ids);
+      const group = page.locator(".teacher-unit-page-card").filter({ has: page.locator(".teacher-unit-page-thumb.grouped") }).first();
+      await expect(group.locator(".teacher-unit-page-copy")).toHaveCount(1);
+      await expect(group.locator("button")).toHaveCount(2);
+      if (bookSlug !== "ultimate-b2" || component !== "students-book") {
+        await expect(group.locator("strong")).toHaveText("Practice 5");
+        await expect(group.locator("b")).toHaveText("pg 60-61");
+        await expect(group.locator("button").nth(0)).toHaveAccessibleName("Open Practice 5, pg 60");
+        await expect(group.locator("button").nth(1)).toHaveAccessibleName("Open Practice 5, pg 61");
+        await expect(page.locator('.teacher-unit-page-card').filter({ hasText: "pg 62-63" }).locator("button")).toHaveCount(1);
+      }
+      const selected = [];
+      for (let index = 0; index < ids.length; index++) {
+        const button = buttons.nth(index);
+        for (const action of ["click", "Enter", "Space", "tap"]) {
+          if (action === "click" || action === "tap") await button[action]();
+          else { await button.focus(); await page.keyboard.press(action); }
+          selected.push(ids[index]);
+          assert.deepEqual(await page.evaluate(() => window.selectionEvents), selected, `${bookSlug}/${component}/${action}: exactly one correct navigation`);
+        }
+        if (index < ids.length - 1) { await button.focus(); await page.keyboard.press("Tab"); await expect(buttons.nth(index + 1)).toBeFocused(); }
+      }
+      await page.screenshot({ path: path.join(directory, `${bookSlug}-${component}-independent-thumbnails.png`) });
+    }
     await page.route("**/preview/ui-assets-v2/**", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#315f82"/></svg>' }));
     const toolbarFont = await page.locator(".classroom-teaching-toolbar").evaluate((node) => getComputedStyle(node).fontFamily);
     for (const [bookIndex, bookSlug] of ["ultimate-b1", "ultimate-b1-plus", "ultimate-b2"].entries()) {
@@ -68,7 +98,7 @@ try {
     await page.evaluate(async () => { window.renderOverview({ bookSlug: "ultimate-b1" }); await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))); });
     assert.doesNotMatch(await page.locator(".teacher-unit-page-copy strong").first().evaluate((node) => getComputedStyle(node).fontFamily), /Georgia/);
     const firstId = await page.locator(".teacher-unit-page-card").first().getAttribute("data-page-ids");
-    await page.locator(".teacher-unit-page-card").first().click();
+    await page.locator(".teacher-unit-page-card").first().locator(".teacher-unit-page-open").first().click();
     assert.equal(await page.evaluate(() => window.selectedPage), firstId);
     const fontBytes = Buffer.from(await readFile("tests/fixtures/fonts/Ahem.ttf.base64", "utf8"), "base64");
     const requests = [];

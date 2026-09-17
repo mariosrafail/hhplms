@@ -10,7 +10,6 @@
   grid-template-rows: minmax(0, 1fr);
   width: 100%;
   height: 100%;
-  aspect-ratio: 1024 / 582;
   min-height: 0;
   color: #172033;
   overflow: hidden;
@@ -18,8 +17,11 @@
 
 .native-drag-drop-visual-region { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
 .native-drag-drop-workspace { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
-.native-drag-drop-stage-slot { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+.native-drag-drop-stage-slot { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
 .native-drag-drop-stage { position: relative; box-sizing: border-box; container-type: inline-size; overflow: hidden; width: 100%; height: 100%; border: 1px solid #aeb9c9; border-radius: 12px; background: #f8fafc; touch-action: none; }
+/* Match the bounded Multiple Choice stage. Out-of-flow sizing cannot resize
+   the slot; artwork, targets and readable markers share one logical surface. */
+.native-drag-drop[data-layout-mode="standard"]:not([data-embedded-canvas]) .native-drag-drop-stage { position: absolute; inset: 0; margin: auto; width: auto; height: auto; max-width: 100%; max-height: 100%; border-width: 0; outline: 1px solid #aeb9c9; outline-offset: -1px; }
 .native-drag-drop-artwork { position: absolute; pointer-events: none; }
 .native-drag-drop-artwork img { display: block; width: 100%; height: 100%; }
 .native-drag-drop-image-content { display: inline-flex; flex-direction: column; align-items: center; max-width: 100%; max-height: 100%; min-width: 0; min-height: 0; vertical-align: middle; }

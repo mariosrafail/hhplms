@@ -4,8 +4,10 @@ import sharp from "sharp";
 import { expect } from "@playwright/test";
 import { dragDropImprovementsPair, dndId } from "../../tests/fixtures/native-runtime-regressions/drag-drop-improvements-data.js";
 import { normalizeNativeRuntimePublicDocument, normalizeNativeRuntimeTeacherDocument } from "../../src/data/native-activities/nativeActivityRuntimeValidation.js";
+import { runDndVariableHeightRegressions } from "./native-drag-drop-variable-height-regressions.mjs";
 
 export async function runDragDropImprovementRegressions(browser, baseUrl, output) {
+  await runDndVariableHeightRegressions(browser, baseUrl, output);
   const page = await browser.newPage({ viewport: { width: 1400, height: 950 } });
   const errors = []; page.on("pageerror", (error) => errors.push(error.message));
   const images = {};
@@ -136,6 +138,7 @@ export async function runDragDropImprovementRegressions(browser, baseUrl, output
 
 async function runAuthoring(page, baseUrl, output, images) {
   let pair = dragDropImprovementsPair(); let saves = 0; let slot; let pendingFinalize = null;
+  let uploadDimensions = { width: 120, height: 60 }; let immediateUpload = false; let uploadNumber = 9;
   pair.publicDocument.parts[0].interaction.randomize = true;
   await page.route("**/builder/api/**", async (route) => {
     const url = new URL(route.request().url());
@@ -144,7 +147,7 @@ async function runAuthoring(page, baseUrl, output, images) {
     if (url.pathname.includes("/native-activity-public/")) return route.fulfill({ json: { document: pair.publicDocument, revision: saves + 1 } });
     if (url.pathname.includes("/native-activity-teacher/")) return route.fulfill({ json: { document: pair.teacherDocument, revision: saves + 1 } });
     if (url.pathname.endsWith("/prepare")) { slot = route.request().postDataJSON().assetSlot; return route.fulfill({ json: { uploadId: "fixture-upload", authorization: { url: `${baseUrl}dnd-upload`, headers: {} } } }); }
-    if (url.pathname.endsWith("/finalize")) { pendingFinalize = () => route.fulfill({ json: { reference: { slot, assetId: "10000000-0000-4000-8000-000000000009", checksumSha256: "a".repeat(64), role: "activity_artwork" }, metadata: { width: 120, height: 60 } } }); return; }
+    if (url.pathname.endsWith("/finalize")) { pendingFinalize = () => route.fulfill({ json: { reference: { slot, assetId: `10000000-0000-4000-8000-${String(uploadNumber++).padStart(12, "0")}`, checksumSha256: "a".repeat(64), role: "activity_artwork" }, metadata: uploadDimensions } }); if (immediateUpload) await pendingFinalize(); return; }
     if (url.pathname.endsWith("/save")) {
       const input = route.request().postDataJSON();
       const publicDocument = normalizeNativeRuntimePublicDocument(input.publicDocument, { activityId: pair.publicDocument.activityId, kind: "drag-drop" });
@@ -224,4 +227,46 @@ async function runAuthoring(page, baseUrl, output, images) {
   assert.equal(pair.publicDocument.audioTextHotspots.hotspots.length, 1);
   assert.equal(pair.publicDocument.assets.some((a) => a.slot === "audio"), false);
   assert.equal(pair.publicDocument.audioTextHotspots.hotspots[0].panelId, dndId("panel", 1));
+  immediateUpload = true;
+  const teacherBefore = structuredClone(pair.teacherDocument);
+  const focusBefore = structuredClone(pair.publicDocument.audioTextHotspots.hotspots[0].readableFocusArea);
+  const wordsBefore = structuredClone(pair.publicDocument.parts[0].interaction.words);
+  for (const height of [291, 312, 582]) {
+    await editor.getByRole("tab", { name: "Layout", exact: true }).click();
+    uploadDimensions = { width: 1024, height };
+    const buffer = await sharp({ create: { ...uploadDimensions, channels: 3, background: "#d5eaff" } }).png().toBuffer();
+    const before = structuredClone(pair.publicDocument.parts[0].interaction.panels[0]);
+    if (height === 291) await editor.getByLabel("Add Background", { exact: true }).setInputFiles({ name: `background-${height}.png`, mimeType: "image/png", buffer });
+    else {
+      await editor.locator(".native-drag-drop-authoring-image").first().focus();
+      await page.keyboard.press("Enter");
+      await editor.getByLabel("Replace image", { exact: true }).setInputFiles({ name: `background-${height}.png`, mimeType: "image/png", buffer });
+    }
+    await expect(editor.locator(".native-drag-drop-authoring-stage")).toHaveCSS("aspect-ratio", `1024 / ${height}`);
+    if (height === 291) await editor.getByRole("textbox", { name: "Alt text", exact: true }).fill("Variable-height exercise background");
+    await editor.getByRole("button", { name: "Save Draft", exact: true }).click();
+    await expect.poll(() => pair.publicDocument.parts[0].interaction.panels[0].surface.height).toBe(height);
+    const panel = pair.publicDocument.parts[0].interaction.panels[0];
+    assert.deepEqual(panel.dropTargets.map((target) => target.id), before.dropTargets.map((target) => target.id));
+    for (let i = 0; i < panel.dropTargets.length; i++) {
+      assert.equal(panel.dropTargets[i].area.y, Math.round(before.dropTargets[i].area.y * height / before.surface.height));
+    }
+    assert.deepEqual(pair.teacherDocument, teacherBefore);
+    assert.deepEqual(pair.publicDocument.parts[0].interaction.words, wordsBefore);
+    assert.deepEqual(pair.publicDocument.audioTextHotspots.hotspots[0].readableFocusArea, focusBefore);
+    await page.reload(); await editor.getByRole("tab", { name: "Layout", exact: true }).click();
+    await expect(editor.locator(".native-drag-drop-authoring-stage")).toHaveCSS("aspect-ratio", `1024 / ${height}`);
+    await editor.getByRole("tab", { name: "Local Preview", exact: true }).click();
+    await expect(editor.locator(".native-drag-drop-stage")).toHaveAttribute("data-surface-height", String(height));
+  }
+  await editor.getByRole("tab", { name: "Layout", exact: true }).click();
+  await editor.getByRole("button", { name: "Overlay 1", exact: true }).click();
+  const panelBeforeLayer = structuredClone(pair.publicDocument.parts[0].interaction.panels[0]);
+  uploadDimensions = { width: 150, height: 100 };
+  await editor.getByLabel("Replace image", { exact: true }).setInputFiles({ name: "decoration.png", mimeType: "image/png", buffer: images.overlay });
+  await expect(editor.getByRole("button", { name: "Save Draft", exact: true })).toBeEnabled();
+  const savesBeforeLayer = saves;
+  await editor.getByRole("button", { name: "Save Draft", exact: true }).click(); await expect.poll(() => saves).toBe(savesBeforeLayer + 1);
+  assert.deepEqual(pair.publicDocument.parts[0].interaction.panels[0].surface, panelBeforeLayer.surface);
+  assert.deepEqual(pair.publicDocument.parts[0].interaction.panels[0].dropTargets, panelBeforeLayer.dropTargets);
 }

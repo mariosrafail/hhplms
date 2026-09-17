@@ -170,7 +170,7 @@ async function assertGenericUnitOverview(page, unit, expected, label) {
 }
 
 async function openPage(page, label) {
-  await page.locator(".teacher-unit-page-card").filter({ hasText: label }).first().click();
+  await page.locator(".teacher-unit-page-card").filter({ hasText: label }).first().locator(".teacher-unit-page-open").first().click();
   await waitForPageImage(page);
 }
 

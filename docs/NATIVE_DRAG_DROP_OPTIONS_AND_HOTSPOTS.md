@@ -29,7 +29,7 @@ Standalone Drag & Drop uses the common top-level `readableText` and
 `audioTextHotspots` contracts. Each hotspot references a stable `interaction.panels`
 ID and its `surface`; the authoring canvas renders that panel's image composition.
 Activity marker coordinates are independent from readable source focus/highlight
-coordinates. Text-background resizing scales and bounds the circular marker only.
+coordinates. Background resizing scales and bounds the circular marker only.
 Panel deletion removes its hotspots and releases audio references only when unused.
 Removing Readable Text uses the existing shared cleanup. Optional MP3 assets keep
 the common authorization, MIME and managed asset requirements.
@@ -59,3 +59,19 @@ Regression entry points: `tests/native-drag-drop-options-hotspots.test.js`,
 `test:integration` through `native-composition-persistence.test.js`.
 Execution receipts and screenshots are task artifacts, not proof of hosted
 publication/deployment or production readiness.
+
+Standard and Text background uploads now use validated intrinsic dimensions in
+the existing panel surface. Replacing the first locked background resizes artwork,
+targets and activity-side markers together; decorative layer replacement retains
+the canvas. Embedded fixed-panel/shared-canvas owners retain their surface.
+Standard runtime uses the same bounded, centered aspect-ratio sizing as Multiple
+Choice, with the bank overlaid on that stage. The root also supplies its panel
+ratio to content-sized LMS hosts. Readable focus remains in the shared presenter;
+opening/closing it does not remount the response or Teacher session. No geometry
+is rewritten on load or derived from rendered pixels.
+
+Variable-height browser regressions cover 1024x291, 1024x312 and 1024x582,
+Student/Teacher, direct, hosted-draft and published runners, desktop/small/scaled
+views, actual placements/removals, reveal retention, bounded rectangles and
+settled ResizeObserver callbacks. The authoring fixture exercises background
+upload/replacement, decoration replacement and normalized Save/reload locally.

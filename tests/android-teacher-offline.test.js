@@ -594,7 +594,8 @@ test("teacher app embeds book activities in the mounted page shell with one clas
   assert.match(pages, /<TeacherOfflineUnitOverview[\s\S]*componentIdentity=\{componentIdentity\}/);
   assert.match(overview, /teacher-unit-page-card/);
   assert.match(overview, /buildTeacherUnitOverviewEntries\(\{ unit, selectedBookId, componentIdentity \}\)/);
-  assert.match(overview, /onClick=\{\(\) => onSelectPage\(entry\.pageIds\[0\]\)\}/);
+  assert.match(overview, /onClick=\{\(\) => onSelectPage\(candidate\.id\)\}/);
+  assert.doesNotMatch(overview, /onSelectPage\(entry\.pageIds\[0\]\)/);
   assert.match(overview, /entry\.pages\.map\(\(candidate\) =>/);
   assert.doesNotMatch(overview, /teacher-unit-page-target|navigationTargets|role="group"/);
   assert.doesNotMatch(overview, /activities<\/small>/);

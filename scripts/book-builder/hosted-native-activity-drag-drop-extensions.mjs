@@ -115,7 +115,8 @@ export async function exerciseDragDropExtensions(page, { dragDropId, savedDragDr
     standardLayouts.push(layout);
   }
   for (const layout of standardLayouts.slice(1)) for (const region of ["surface", "visual", "workspace", "stage", "artwork", "target"]) for (const property of ["left", "top", "width", "height"]) assert.ok(Math.abs(layout[region][property] - standardLayouts[0][region][property]) <= 1, JSON.stringify({ region, property, baseline: standardLayouts[0], layout }));
-  assert.ok(standardLayouts.every((layout) => Math.abs(layout.stage.width / layout.stage.height - 1024 / 582) < .02), JSON.stringify(standardLayouts));
+  const expectedAspectRatio = extendedInteraction.panels[0].surface.width / extendedInteraction.panels[0].surface.height;
+  assert.ok(standardLayouts.every((layout) => Math.abs(layout.stage.width / layout.stage.height - expectedAspectRatio) < .02), JSON.stringify(standardLayouts));
   const standardWords = extendedPreview.locator("[data-drag-drop-word-id]");
   const standardWordTexts = await standardWords.evaluateAll((nodes) => nodes.map((node) => node.textContent.trim()));
   const longestStandardWordIndex = standardWordTexts.reduce((longest, text, index, texts) => text.length > texts[longest].length ? index : longest, 0);

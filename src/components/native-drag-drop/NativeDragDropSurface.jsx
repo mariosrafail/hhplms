@@ -25,7 +25,7 @@ const FITTED_CONTENT_TOLERANCE_PX = 1;
 
 function PanelArtwork({ document, panel, assetUrl, textMode, children, embeddedCanvas = null }) {
   const assets = new Map(document.assets.map((asset) => [asset.slot, asset]));
-  return <div className="native-drag-drop-stage-slot" style={textMode ? { aspectRatio: `${panel.surface.width} / ${panel.surface.height}` } : undefined}><div className="native-drag-drop-stage" data-surface-width={panel.surface.width} data-surface-height={panel.surface.height}>
+  return <div className="native-drag-drop-stage-slot" style={textMode ? { aspectRatio: `${panel.surface.width} / ${panel.surface.height}` } : undefined}><div className="native-drag-drop-stage" style={!textMode && !embeddedCanvas ? { aspectRatio: `${panel.surface.width} / ${panel.surface.height}` } : undefined} data-surface-width={panel.surface.width} data-surface-height={panel.surface.height}>
     {(embeddedCanvas ? [] : panel.images).map((image) => {
       const reference = assets.get(image.assetSlot);
       return <div key={image.id} className="native-drag-drop-artwork" style={{ ...logicalAreaStyle(image.area, panel.surface), zIndex: image.order + 1 }}>
@@ -164,9 +164,10 @@ function useAdaptiveBankLayout(ref, { textMode, embeddedCanvas, complete, depend
         const reserve = (bankBounds.right - playerBounds.left) * bank.offsetWidth / bankBounds.width + 8;
         if (reserve > 0 && reserve < bank.offsetWidth) bank.style.paddingRight = `${reserve}px`;
       }
+      const stage = bank.closest(".native-drag-drop-stage");
       const configured = embeddedCanvas
         ? root.clientHeight * embeddedCanvas.bankRegion.height / Number(root.dataset.sourceHeight)
-        : parseFloat(getComputedStyle(root).getPropertyValue("--native-drag-drop-bank-height")) || (textMode ? 180 : root.clientHeight * .2);
+        : parseFloat(getComputedStyle(root).getPropertyValue("--native-drag-drop-bank-height")) || (textMode ? 180 : stage.clientHeight * .2);
       // Measure in the authored budget, independently of the last runtime height.
       // Temporary styles are removed in the same frame; no runtime value is saved.
       bank.style.height = `${configured}px`;
@@ -190,6 +191,7 @@ function useAdaptiveBankLayout(ref, { textMode, embeddedCanvas, complete, depend
     measure();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
     observer?.observe(root);
+    if (!textMode && bank.closest(".native-drag-drop-stage")) observer?.observe(bank.closest(".native-drag-drop-stage"));
     bank.addEventListener("load", schedule, true);
     globalThis.document.fonts?.ready.then(schedule);
     globalThis.document.fonts?.addEventListener("loadingdone", schedule);
@@ -389,6 +391,7 @@ export function NativeDragDropStudentSurface({
   });
   const hotspotButtons = <NativeAudioTextHotspotButtons panelId={panel.id} surface={panel.surface} presentation={audioHotspotPresentation} />;
   const rootStyle = {
+    ...(!textMode && !embeddedCanvas ? { aspectRatio: `${panel.surface.width} / ${panel.surface.height}` } : {}),
     ...(interaction.answerBankHeightPx ? { "--native-drag-drop-bank-height": `${interaction.answerBankHeightPx}px` } : {}),
     ...(interaction.textPanelHeightPx ? { "--native-drag-drop-text-panel-height": `${interaction.textPanelHeightPx}px` } : {}),
   };

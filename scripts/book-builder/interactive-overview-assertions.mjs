@@ -5,14 +5,22 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
   const cards = frame.locator("[data-overview-entry]");
   const images = frame.locator(".teacher-unit-page-thumb img");
   await cards.nth(expected.labels.length - 1).waitFor();
-  await images.nth(expected.labels.length - 1).waitFor();
+  const imageCount = expected.pageIds ? expected.pageIds.flat().length : expected.labels.length;
+  await images.nth(imageCount - 1).waitFor();
   await frame.locator("html").evaluate(async () => {
     if (document.fonts?.ready) await document.fonts.ready;
   });
   await images.evaluateAll(async (nodes, expectedCount) => {
     if (nodes.length !== expectedCount) throw new Error(`Expected ${expectedCount} overview images, found ${nodes.length}`);
     await Promise.all(nodes.map((image) => image.decode()));
-  }, expected.labels.length);
+  }, imageCount);
+
+  await cards.page().mouse.move(0, 0);
+  const hoveredOverviewElements = await frame.locator("html").evaluate(() => [...document.querySelectorAll(
+    "[data-overview-entry]:hover, .teacher-unit-page-open:hover, .teacher-unit-page-thumb:hover",
+  )].map((element) => ({ className: element.className, pageId: element.dataset.pageId, entry: element.dataset.overviewEntry })));
+  assert.deepEqual(hoveredOverviewElements, [], `${label} baseline requires no hovered overview cards, page buttons or thumbnails after neutral pointer move`);
+  console.log(`${label}: neutral pointer baseline PASS; no hovered overview elements`);
 
   const metrics = await frame.locator(".teacher-offline-unit-overview").evaluate((panel) => {
     const entries = [...panel.querySelectorAll("[data-overview-entry]")];
@@ -28,9 +36,28 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
     });
     const maximumOverflow = (overflow) => Math.max(...Object.values(overflow));
     const rectangles = entries.map((entry) => entry.getBoundingClientRect());
-    const imageNodes = entries.map((entry) => entry.querySelector(".teacher-unit-page-thumb img"));
-    const imageRectangles = imageNodes.map((image) => image.getBoundingClientRect());
-    const thumbnailRectangles = entries.map((entry) => entry.querySelector(".teacher-unit-page-thumb").getBoundingClientRect());
+    const imageNodes = entries.flatMap((entry) => [...entry.querySelectorAll(".teacher-unit-page-thumb img")]);
+    const pageImages = imageNodes.map((image) => {
+      const button = image.closest(".teacher-unit-page-open");
+      const thumbnail = image.closest(".teacher-unit-page-thumb");
+      const imageRectangle = rectangle(image);
+      const thumbnailRectangle = rectangle(thumbnail);
+      const containerRectangle = rectangle(button || thumbnail);
+      return {
+        entryIndex: entries.indexOf(image.closest("[data-overview-entry]")),
+        pageId: button?.dataset.pageId || null,
+        rectangle: imageRectangle,
+        containerRectangle,
+        thumbnailRectangle,
+        naturalWidth: image.naturalWidth,
+        naturalHeight: image.naturalHeight,
+        objectFit: getComputedStyle(image).objectFit,
+        containerOverflow: directionalOverflow(imageRectangle, containerRectangle),
+        thumbnailOverflow: directionalOverflow(imageRectangle, thumbnailRectangle),
+      };
+    });
+    const imageEntryIndices = pageImages.map((image) => image.entryIndex);
+    const imageRectangles = pageImages.map((image) => image.rectangle);
     const panelRect = panel.getBoundingClientRect();
     const geometry = entries.map((entry) => {
       const card = rectangle(entry);
@@ -38,8 +65,9 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
         ["copy", entry.querySelector(".teacher-unit-page-copy")],
         ["title", entry.querySelector(".teacher-unit-page-copy strong")],
         ["pageLabel", entry.querySelector(".teacher-unit-page-copy b")],
-        ["thumbnail", entry.querySelector(".teacher-unit-page-thumb")],
-        ["image", entry.querySelector(".teacher-unit-page-thumb img")],
+        ...[...entry.querySelectorAll(".teacher-unit-page-thumb")].map((thumbnail) => ["thumbnail", thumbnail]),
+        ...[...entry.querySelectorAll(".teacher-unit-page-open")].map((button) => ["pageButton", button]),
+        ...[...entry.querySelectorAll(".teacher-unit-page-thumb img")].map((image) => ["image", image]),
       ].filter(([, node]) => node).map(([kind, node]) => {
         const child = rectangle(node);
         const cardOverflow = directionalOverflow(child, card);
@@ -76,6 +104,9 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
       .sort((left, right) => Math.max(right.maximumCardOverflow, right.maximumPanelOverflow) - Math.max(left.maximumCardOverflow, left.maximumPanelOverflow));
     const loadedFontFaces = document.fonts ? [...document.fonts].map((face) => ({ family: face.family, status: face.status, style: face.style, weight: face.weight })) : [];
     return {
+      pageImages,
+      imageEntryIndices,
+      pageIds: entries.map((entry) => [...entry.querySelectorAll(".teacher-unit-page-open")].map((button) => button.dataset.pageId)),
       labels: entries.map((entry) => entry.querySelector(".teacher-unit-page-copy b")?.textContent?.trim()),
       rows: entries.map((entry) => Number(entry.dataset.overviewRow)),
       weights: entries.map((entry) => Number(entry.dataset.overviewWeight)),
@@ -83,8 +114,8 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
       cardWidths: rectangles.map((rectangle) => rectangle.width),
       imageWidths: imageRectangles.map((rectangle) => rectangle.width),
       imageHeights: imageRectangles.map((rectangle) => rectangle.height),
-      naturalWidths: imageNodes.map((image) => image.naturalWidth),
-      naturalHeights: imageNodes.map((image) => image.naturalHeight),
+      naturalWidths: pageImages.map((image) => image.naturalWidth),
+      naturalHeights: pageImages.map((image) => image.naturalHeight),
       rowTopSpreads: [1, 2].map((row) => {
         const tops = rectangles.filter((_, index) => Number(entries[index].dataset.overviewRow) === row).map((rectangle) => rectangle.top);
         return tops.length ? Math.max(...tops) - Math.min(...tops) : null;
@@ -96,12 +127,8 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
         first.left < second.right - 1 && first.right > second.left + 1
         && first.top < second.bottom - 1 && first.bottom > second.top + 1
       ))),
-      imagesContained: imageRectangles.every((rectangle, index) => {
-        const thumbnail = thumbnailRectangles[index];
-        return rectangle.left >= thumbnail.left - 1 && rectangle.right <= thumbnail.right + 1
-          && rectangle.top >= thumbnail.top - 1 && rectangle.bottom <= thumbnail.bottom + 1;
-      }),
-      objectFits: [...panel.querySelectorAll(".teacher-unit-page-thumb img")].map((image) => getComputedStyle(image).objectFit),
+      imagesContained: pageImages.every((image) => maximumOverflow(image.containerOverflow) <= 1 && maximumOverflow(image.thumbnailOverflow) <= 1),
+      objectFits: pageImages.map((image) => image.objectFit),
       thumbnailHeights: [...panel.querySelectorAll(".teacher-unit-page-thumb")].map((thumbnail) => thumbnail.getBoundingClientRect().height),
       titleFontSizes: entries.map((entry) => Number.parseFloat(getComputedStyle(entry.querySelector(".teacher-unit-page-copy strong")).fontSize)),
       pageLabelFontSizes: entries.map((entry) => Number.parseFloat(getComputedStyle(entry.querySelector(".teacher-unit-page-copy b")).fontSize)),
@@ -133,9 +160,11 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
   const childContainmentFailures = metrics.geometry.flatMap(({ entry, children }) => children
     .filter((child) => child.maximumCardOverflow > 1 || child.maximumPanelOverflow > 1)
     .map((child) => ({ entry, ...child })));
-  console.log(`${label} geometry: ${JSON.stringify({ panel: metrics.panelGeometry, fontState: metrics.fontState, maximumOffender: metrics.maximumOffender, childContainmentFailures })}`);
+  console.log(`${label} geometry: ${JSON.stringify({ panel: metrics.panelGeometry, fontState: metrics.fontState, maximumOffender: metrics.maximumOffender, childContainmentFailures, pageImages: metrics.pageImages })}`);
 
   assert.deepEqual(metrics.labels, expected.labels, `${label} labels`);
+  if (expected.pageIds) assert.deepEqual(metrics.pageIds, expected.pageIds, `${label} real page identities and order`);
+  assert.deepEqual(metrics.pageImages.map((image) => image.pageId), metrics.pageIds.flat(), `${label} images follow their independent page buttons`);
   assert.deepEqual(metrics.rows, expected.rows, `${label} rows`);
   assert.deepEqual(metrics.weights, expected.weights, `${label} weights`);
   if (expected.spans) assert.deepEqual(metrics.spans, expected.spans, `${label} column spans`);
@@ -149,11 +178,11 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
   assert.equal(metrics.overlaps, false, `${label} no overlap`);
   assert.equal(metrics.imagesContained, true, `${label} images are not clipped`);
   assert.ok(metrics.objectFits.every((value) => value === "contain"), `${label} object-fit contain`);
-  assert.equal(metrics.objectFits.length, expected.labels.length, `${label} all images rendered`);
+  assert.equal(metrics.objectFits.length, imageCount, `${label} all images rendered`);
   assert.equal(metrics.fontState.status, "loaded", `${label} deterministic font state`);
   if (expected.overviewBook === "workbook" || expected.overviewBook === "grammar-book") {
     assert.deepEqual(childContainmentFailures, [], `${label} managed card children fit their cards and panel`);
-    assert.deepEqual(metrics.naturalWidths.map((width, index) => width > metrics.naturalHeights[index] ? 2 : 1), metrics.weights, `${label} weights follow intrinsic managed page geometry`);
+    assert.deepEqual(metrics.weights.map((_, entryIndex) => metrics.naturalWidths.reduce((sum, width, index) => sum + (metrics.imageEntryIndices[index] === entryIndex ? (width > metrics.naturalHeights[index] ? 2 : 1) : 0), 0)), metrics.weights, `${label} weights follow intrinsic managed page geometry`);
   }
   assert.ok(metrics.panelOverflow <= 1, `${label} panel overflow: ${metrics.panelOverflow}px`);
   assert.ok(metrics.panelVerticalOverflow <= 1, `${label} vertical panel overflow: ${metrics.panelVerticalOverflow}px`);
@@ -161,28 +190,30 @@ export async function assertInteractiveOverview(frame, expected, label, screensh
   assert.ok(metrics.documentVerticalOverflow <= 1, `${label} vertical document overflow`);
 
   if (expected.imageHeightParityTolerance !== undefined) {
-    const singleIndices = metrics.weights.map((weight, index) => weight === 1 ? index : -1).filter((index) => index >= 0);
-    const spreadIndices = metrics.weights.map((weight, index) => weight === 2 ? index : -1).filter((index) => index >= 0);
-    assert.ok(singleIndices.length > 0 && spreadIndices.length > 0, `${label} includes singles and spreads`);
+    const singleIndices = metrics.imageEntryIndices.map((entryIndex, index) => metrics.weights[entryIndex] === 1 ? index : -1).filter((index) => index >= 0);
+    const wideIndices = metrics.imageEntryIndices.map((entryIndex, index) => metrics.weights[entryIndex] === 2 ? index : -1).filter((index) => index >= 0);
+    const spreadIndices = wideIndices.filter((index) => metrics.imageEntryIndices.filter((entryIndex) => entryIndex === metrics.imageEntryIndices[index]).length === 1);
+    assert.ok(singleIndices.length > 0 && wideIndices.length > 0, `${label} includes singles and spread/group cards`);
     const targetHeight = singleIndices.reduce((sum, index) => sum + metrics.imageHeights[index], 0) / singleIndices.length;
-    const maximumHeightDelta = Math.max(...spreadIndices.map((index) => Math.abs(metrics.imageHeights[index] - targetHeight)));
+    const maximumHeightDelta = Math.max(...wideIndices.map((index) => Math.abs(metrics.imageHeights[index] - targetHeight)));
     assert.ok(maximumHeightDelta <= expected.imageHeightParityTolerance, `${label} actual image height parity: ${maximumHeightDelta}px`);
     assert.ok(Math.abs(targetHeight - expected.singleImageHeight) <= expected.imageHeightParityTolerance, `${label} single-page image height remains ${expected.singleImageHeight}px: ${targetHeight}px`);
-    assert.ok(Math.min(...spreadIndices.map((index) => metrics.imageWidths[index])) > Math.max(...singleIndices.map((index) => metrics.imageWidths[index])), `${label} spread images are wider than singles`);
-    assert.ok(Math.min(...spreadIndices.map((index) => metrics.cardWidths[index])) > Math.max(...singleIndices.map((index) => metrics.cardWidths[index])), `${label} spread cards are wider than singles`);
+    if (spreadIndices.length) assert.ok(Math.min(...spreadIndices.map((index) => metrics.imageWidths[index])) > Math.max(...singleIndices.map((index) => metrics.imageWidths[index])), `${label} spread images are wider than singles`);
+    assert.ok(Math.min(...wideIndices.map((index) => metrics.cardWidths[metrics.imageEntryIndices[index]])) > Math.max(...singleIndices.map((index) => metrics.cardWidths[metrics.imageEntryIndices[index]])), `${label} spread/group cards are wider than singles`);
     metrics.singleImageHeight = targetHeight;
     metrics.maximumSpreadHeightDelta = maximumHeightDelta;
   }
 
-  if (expected.verifyNaturalAspectRatio) {
-    const maximumAspectRatioDelta = Math.max(...metrics.imageWidths.map((width, index) => Math.abs(
-      (width / metrics.imageHeights[index]) - (metrics.naturalWidths[index] / metrics.naturalHeights[index]),
+  const ratioImages = metrics.pageImages.filter((image) => expected.verifyNaturalAspectRatio || metrics.pageImages.filter((candidate) => candidate.entryIndex === image.entryIndex).length > 1);
+  if (ratioImages.length) {
+    const maximumAspectRatioDelta = Math.max(...ratioImages.map((image) => Math.abs(
+      (image.rectangle.width / image.rectangle.height) - (image.naturalWidth / image.naturalHeight),
     )));
     assert.ok(maximumAspectRatioDelta <= 0.01, `${label} preserves natural image aspect ratios: ${maximumAspectRatioDelta}`);
     metrics.maximumAspectRatioDelta = maximumAspectRatioDelta;
   }
 
-  console.log(`${label}: ${JSON.stringify(metrics.labels.map((pageLabel, index) => ({ pageLabel, weight: metrics.weights[index], span: metrics.spans[index], cardWidth: metrics.cardWidths[index], imageWidth: metrics.imageWidths[index], imageHeight: metrics.imageHeights[index] })))}; token ${metrics.thumbnailToken}; title ${metrics.titleFontSizes[0]}px; page label ${metrics.pageLabelFontSizes[0]}px`);
+  console.log(`${label}: ${JSON.stringify(metrics.labels.map((pageLabel, index) => ({ pageLabel, weight: metrics.weights[index], span: metrics.spans[index], cardWidth: metrics.cardWidths[index], images: metrics.pageImages.filter((image) => image.entryIndex === index).map((image) => ({ pageId: image.pageId, imageWidth: image.rectangle.width, imageHeight: image.rectangle.height })) })))}; token ${metrics.thumbnailToken}; title ${metrics.titleFontSizes[0]}px; page label ${metrics.pageLabelFontSizes[0]}px; maximum height delta ${metrics.maximumSpreadHeightDelta}; maximum natural ratio delta ${metrics.maximumAspectRatioDelta}`);
 
   if (screenshot.directory && screenshot.fileName) {
     await frame.locator(".teacher-offline-unit-overview-screen").screenshot({ path: path.join(screenshot.directory, screenshot.fileName) });

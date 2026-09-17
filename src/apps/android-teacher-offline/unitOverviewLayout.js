@@ -141,6 +141,28 @@ function decorateRow(entries, row) {
   }));
 }
 
+// Pair only adjacent, explicitly labelled single pages with consecutive printed
+// numbers. A spread is already one navigation target; missing metadata is not
+// evidence that two pages belong together.
+function groupOverviewEntries(entries) {
+  const groups = [];
+  for (const entry of entries) {
+    const previous = groups.at(-1);
+    const left = previous?.pages[0];
+    const right = entry.pages[0];
+    const leftNumbers = printedPageNumbers(left);
+    const rightNumbers = printedPageNumbers(right);
+    const sameScope = ["bookSlug", "componentSlug", "unitId", "unitNumber"].every((key) => left?.[key] === right?.[key]);
+    if (previous?.pages.length === 1 && previous.physicalWeight === 1 && entry.physicalWeight === 1
+      && entry.label && entry.label === previous.label && sameScope
+      && leftNumbers.length === 1 && rightNumbers.length === 1 && rightNumbers[0] === leftNumbers[0] + 1) {
+      groups[groups.length - 1] = { ...previous, pageLabel: `pg ${leftNumbers[0]}-${rightNumbers[0]}`,
+        pages: [left, right], pageIds: [left.id, right.id], physicalWeight: 2 };
+    } else groups.push(entry);
+  }
+  return groups;
+}
+
 export function buildGenericOverviewEntries(unit) {
   const entries = (unit?.pages || []).map((page, index) => ({
     id: `unit-${unit.number}-overview-${page.id}`,
@@ -150,7 +172,7 @@ export function buildGenericOverviewEntries(unit) {
     pages: [page],
     physicalWeight: managedOverviewPageWeight(page),
   }));
-  const rows = splitOverviewEntries(entries);
+  const rows = splitOverviewEntries(groupOverviewEntries(entries));
   return [...decorateRow(rows.top, 1), ...decorateRow(rows.bottom, 2)];
 }
 
@@ -163,6 +185,6 @@ export function buildManagedOverviewEntries(unit) {
     pages: [page],
     physicalWeight: managedOverviewPageWeight(page),
   }));
-  const rows = splitOverviewEntries(entries);
+  const rows = splitOverviewEntries(groupOverviewEntries(entries));
   return [...decorateRow(rows.top, 1), ...decorateRow(rows.bottom, 2)];
 }

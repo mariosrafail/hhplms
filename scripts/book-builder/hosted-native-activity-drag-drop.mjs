@@ -161,6 +161,8 @@ export async function assertPixelIdenticalDragPreview(page, source) {
 }
 
 async function dispatchImmediatePointerSequence(source, target, { cancel = false } = {}) {
+  await source.scrollIntoViewIfNeeded();
+  await target.scrollIntoViewIfNeeded();
   const [sourceBox, targetBox] = await Promise.all([source.boundingBox(), target.boundingBox()]);
   assert.ok(sourceBox && targetBox);
   await source.evaluate((element, payload) => {

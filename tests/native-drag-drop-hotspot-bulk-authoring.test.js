@@ -41,6 +41,18 @@ test("Drag & Drop hotspot scaling is deterministic and clips intersecting rectan
   assert.deepEqual(scaleNativeDragDropHotspotArea({ x: -10, y: 490, width: 30, height: 30 }, { width: 1000, height: 500 }, { width: 800, height: 400 }), { area: { x: 0, y: 392, width: 16, height: 8 }, clipped: true });
 });
 
+for (const height of [291, 312, 582]) test(`Standard SOURCE 1024x${height} retains the uploaded logical surface`, () => {
+  const current = pair();
+  const panel = current.publicDocument.parts[0].interaction.panels[0];
+  panel.surface = { width: 1024, height };
+  panel.images[0].area = { x: 0, y: 0, ...panel.surface };
+  const result = generateNativeDragDropHotspotImportCandidate({ ...current, source: `SOURCE 1024x${height}\nPANEL 1\nTARGET 1 items=1 x=100 y=50 width=200 height=40`, createId: (prefix) => id(prefix, 95) });
+  const saved = JSON.parse(JSON.stringify(result.publicDocument));
+  assert.deepEqual(saved.parts[0].interaction.panels[0].surface, panel.surface);
+  assert.deepEqual(saved.parts[0].interaction.panels[0].dropTargets[0].area, { x: 100, y: 50, width: 200, height: 40 });
+  assert.equal(saved.parts[0].interaction.layoutMode, "standard");
+});
+
 for (const textMode of [false, true]) test(`append atomically adds geometry and private reusable mappings in ${textMode ? "text" : "standard"}`, () => {
   const current = pair({ reusable: true, textMode });
   const before = structuredClone(current);

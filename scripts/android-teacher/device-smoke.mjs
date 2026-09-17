@@ -181,7 +181,7 @@ const scenario = String.raw`
     if (!document.querySelector(".teacher-offline-pages")) await click("Book pages");
     const pages = [...document.querySelectorAll(".teacher-unit-page-card")];
     const started = performance.now();
-    pages[index % pages.length].click();
+    pages[index % pages.length].querySelector(".teacher-unit-page-open").click();
     await waitFor(() => {
       const image = document.querySelector(".teacher-offline-page-image img");
       return image?.complete && image.naturalWidth > 0;
@@ -267,7 +267,7 @@ const viewportScenario = String.raw`
   );
   const targetPage = [...document.querySelectorAll(".teacher-unit-page-card")]
     .find((candidate) => candidate.textContent.includes("pg 20-21"));
-  targetPage?.click();
+  targetPage?.querySelector(".teacher-unit-page-open").click();
   await waitFor(() => document.querySelector(".teacher-offline-page-image img")?.naturalWidth > 0, "hotspot page");
 
   const stage = document.querySelector(".teacher-offline-page-stage");

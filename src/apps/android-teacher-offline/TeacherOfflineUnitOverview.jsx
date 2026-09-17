@@ -7,6 +7,7 @@ import ClassroomToolOverlay from "./ClassroomToolOverlay.jsx";
 import ClassroomToolbar from "./UltimateB2ClassroomToolbar.jsx";
 import TeacherBookNavigation from "./TeacherBookNavigation.jsx";
 import { buildTeacherUnitOverviewEntries } from "./studentsBookOverviewLayout.js";
+import { overviewPrintedLabel } from "./unitOverviewLayout.js";
 
 export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackToLibrary, selectedBookId = "students-book", onBookSwitch, unavailableBookIds, unavailableBookMessages, unavailableBookLabels, componentIdentity }) {
   const { classroom } = useTeacherRuntimeUiAssets();
@@ -35,9 +36,8 @@ export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackT
           <ClassroomStageTransform surfaceKey={surfaceKey}>
           <div className="teacher-unit-overview-grid">
             {entries.length ? entries.map((entry) => (
-              <button
+              <div
                 key={entry.id}
-                type="button"
                 className="teacher-unit-page-card"
                 data-overview-entry={entry.id}
                 data-overview-row={entry.row}
@@ -46,8 +46,6 @@ export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackT
                 data-overview-column-span={entry.columnSpan || undefined}
                 data-page-ids={entry.pageIds.join(",")}
                 style={entry.columnSpan ? { "--overview-column-start": entry.columnStart, "--overview-column-span": entry.columnSpan } : undefined}
-                onClick={() => onSelectPage(entry.pageIds[0])}
-                aria-label={`Open ${entry.label ? `${entry.label}, ` : ""}${entry.pageLabel}`}
               >
                 <span className="teacher-unit-page-copy">
                   {entry.label && <strong>{entry.label}</strong>}
@@ -55,10 +53,14 @@ export default function TeacherOfflineUnitOverview({ unit, onSelectPage, onBackT
                 </span>
                 <span className={`teacher-unit-page-thumb ${entry.pages.length > 1 ? "grouped" : ""}`}>
                   {entry.pages.map((candidate) => (
-                    <img key={candidate.id} src={candidate.images?.[0]} alt="" loading="eager" decoding="async" draggable="false" />
+                    <button key={candidate.id} type="button" className="teacher-unit-page-open" data-page-id={candidate.id}
+                      onClick={() => onSelectPage(candidate.id)}
+                      aria-label={`Open ${entry.label ? `${entry.label}, ` : ""}${overviewPrintedLabel(candidate, unit.pages.indexOf(candidate))}`}>
+                      <img src={candidate.images?.[0]} alt="" loading="eager" decoding="async" draggable="false" />
+                    </button>
                   ))}
                 </span>
-              </button>
+              </div>
             )) : <p className="teacher-unit-overview-empty" role="status">No pages are available for this Unit yet.</p>}
           </div>
           <ClassroomToolOverlay surfaceKey={surfaceKey} />

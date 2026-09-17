@@ -23,7 +23,7 @@ export async function openStudentsUnitOnePage(viewer, navigation = null) {
   const wait = (operation) => navigation ? navigation.wait(operation) : operation; const click = (locator, description) => navigation ? navigation.click(locator, description) : locator.click();
   await wait(viewer.locator(".teacher-offline-library").waitFor()); assert.equal(await wait(viewer.getByRole("button", { name: "Students Book", exact: true }).getAttribute("aria-pressed")), "true");
   await click(viewer.getByRole("button", { name: /^Open Unit 1:/ }), "Open Unit 1"); await wait(viewer.getByRole("heading", { name: "Unit 1", exact: true }).waitFor());
-  await click(viewer.locator(".teacher-unit-page-card").first(), "Student Unit 1 page card"); await wait(viewer.locator(".teacher-offline-page-stage").waitFor());
+  await click(viewer.locator(".teacher-unit-page-open").first(), "Student Unit 1 page card"); await wait(viewer.locator(".teacher-offline-page-stage").waitFor());
 }
 
 export async function exerciseAuthoredSizeSaveReload(page, savedDocument, orderPages) {

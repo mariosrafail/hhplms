@@ -28,8 +28,8 @@
 .native-audio-hotspot-focus-box { border: 2px dashed rgb(23 74 105 / 88%); background: transparent; }
 .native-audio-hotspot-highlight-box { border: 2px solid rgb(var(--native-highlight-color) / 94%); background: rgb(var(--native-highlight-color) / 22%); }
 .native-audio-hotspot-focus-editor.is-drawing :is(.native-audio-hotspot-focus-box, .native-audio-hotspot-highlight-box) { pointer-events: none; }
-.native-audio-hotspot-focus-editor[data-selected-region="highlight"] .studio-selection-frame { background: transparent; border-color: rgb(var(--native-highlight-color)); box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgb(var(--native-highlight-color) / 24%); }
-.native-audio-hotspot-focus-editor[data-selected-region="highlight"] .studio-resize-handle { border-color: rgb(var(--native-highlight-color)); }
+.native-audio-hotspot-focus-editor[data-selected-region^="highlight-"] .studio-selection-frame { background: transparent; border-color: rgb(var(--native-highlight-color)); box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgb(var(--native-highlight-color) / 24%); }
+.native-audio-hotspot-focus-editor[data-selected-region^="highlight-"] .studio-resize-handle { border-color: rgb(var(--native-highlight-color)); }
 .native-audio-hotspot-highlight-colors { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 10px 12px 12px; border: 1px solid #a9bac7; border-radius: 8px; }
 .native-audio-hotspot-highlight-colors legend { padding-inline: 4px; font-weight: 800; }
 .native-audio-hotspot-highlight-colors label { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 9px; border: 1px solid #9aabb7; border-radius: 999px; background: #fff; cursor: pointer; }
@@ -41,3 +41,5 @@
 .native-audio-hotspot-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .native-audio-hotspot-authoring-preview { display: grid; grid-template-rows: minmax(220px, 1fr) minmax(220px, 1fr); gap: 8px; min-height: 460px; padding: 8px; border: 2px solid #2c6d8b; border-radius: 10px; background: #dbe8ef; }
 .native-audio-hotspot-authoring-preview .native-audio-hotspot-authoring-stage { width: auto; height: 100%; margin-inline: auto; }
+
+.native-audio-hotspot-highlight-box[data-selected="true"] { outline: 2px solid #176c91; outline-offset: 2px; }

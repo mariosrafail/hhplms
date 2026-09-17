@@ -1,3 +1,4 @@
+import { exerciseNativeMarkerPersistence } from "./_native-marker-persistence.mjs";
 import { exerciseTenOptionChoicePersistence } from "./_ten-option-choice-persistence.mjs";
 import { exerciseMultiPartReadableAssignment } from "./_multi-part-readable-assignment.mjs";
 import { exerciseOldschoolModesAssignment } from "./_oldschool-modes-assignment.mjs";
@@ -442,6 +443,7 @@ test("published native assignment remains release-pinned through submit, review,
   await exerciseOldschoolTypographyAssignment({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
   await exerciseMultiPartReadableAssignment({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
   await exerciseOldschoolModesAssignment({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
+  await exerciseNativeMarkerPersistence({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
   await exerciseTenOptionChoicePersistence({ pool, sql, scope, builderId, teacher: teacherUser, student: studentUser, classId: classRow.id, insertRelease, publishRelease });
   await t.test("historical Unit Extras endpoints verify unchanged hashes and remain pinned after newer releases", async () => {
     const { verifyHistoricalUnitExtrasPersistence } = await import("./_historical-unit-extras.mjs");

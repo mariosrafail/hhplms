@@ -38,7 +38,7 @@ async function stageGeometry(page, label, record) {
       return Object.fromEntries(["display", "position", "width", "height", "minWidth", "minHeight", "maxWidth", "maxHeight", "gridTemplateRows", "gridTemplateColumns", "gap", "alignSelf", "alignItems", "justifyItems", "inset", "margin", "aspectRatio", "containerType", "overflow"].map((key) => [key, css[key]]));
     };
     const heightChain = Object.fromEntries(Object.entries({ activityView, article, surface, visual, panels: panelList, panel, slot }).map(([key, element]) => [key, { rect: rect(element), computed: computed(element) }]));
-    return { index, mode: panelList.classList.contains("is-show-all") ? "show-all" : "paged", runtimeArticle: article.className, heightChain, source: { width: source.sourceWidth, height: source.sourceHeight }, slot: rect(slot), stage: rect(stage), image: rect(image), imageSource: { width: image.naturalWidth, height: image.naturalHeight }, areas, hotspots, containerType: getComputedStyle(slot).containerType, position: getComputedStyle(stage).position, computed: { visual: computed(visual), panels: computed(panelList), panel: computed(panel), slot: computed(slot), stage: computed(stage) } };
+    return { anchored: stage.hasAttribute("data-hotspot-anchored"), active: stage.querySelector('.native-audio-text-hotspot[aria-pressed="true"]') ? rect(stage.querySelector('.native-audio-text-hotspot[aria-pressed="true"]')) : null, index, mode: panelList.classList.contains("is-show-all") ? "show-all" : "paged", runtimeArticle: article.className, heightChain, source: { width: source.sourceWidth, height: source.sourceHeight }, slot: rect(slot), stage: rect(stage), image: rect(image), imageSource: { width: image.naturalWidth, height: image.naturalHeight }, areas, hotspots, containerType: getComputedStyle(slot).containerType, position: getComputedStyle(stage).position, computed: { visual: computed(visual), panels: computed(panelList), panel: computed(panel), slot: computed(slot), stage: computed(stage) } };
   }));
   record({ label, panels: geometry });
   const near = (a, b, reason) => assert.ok(Math.abs(a - b) <= 1, `${label}: ${reason}: ${a} != ${b}`);
@@ -50,13 +50,18 @@ async function stageGeometry(page, label, record) {
       for (const [child, parent] of [["panels", "visual"], ["slot", "panel"]]) near(chain[child].y + chain[child].height, chain[parent].y + chain[parent].height, `${child} consumes remaining ${parent} height`);
     }
     const aspect = g.source.width / g.source.height;
-    const width = Math.min(g.slot.width, g.slot.height * aspect);
+    const width = g.anchored ? g.slot.width : Math.min(g.slot.width, g.slot.height * aspect);
     assert.ok(width > 0 && g.stage.height > 0, `${label}: empty stage`);
     near(g.stage.width, width, "contain width"); near(g.stage.height, width / aspect, "contain height");
     near(g.stage.width, g.stage.height * aspect, "aspect");
     near(g.stage.x, g.slot.x + (g.slot.width - g.stage.width) / 2, "horizontal centering");
-    near(g.stage.y, g.slot.y + (g.slot.height - g.stage.height) / 2, "vertical centering");
-    assert.ok(g.stage.width <= g.slot.width + 1 && g.stage.height <= g.slot.height + 1, `${label}: stage overflow`);
+    if (g.anchored && g.stage.height > g.slot.height) {
+      assert.ok(g.active && g.active.y >= g.slot.y - 1 && g.active.y + g.active.height <= g.slot.y + g.slot.height + 1, `${label}: active hotspot remains in locked crop`);
+      assert.ok(g.stage.y <= g.slot.y + 1 && g.stage.y + g.stage.height >= g.slot.y + g.slot.height - 1, `${label}: crop remains inside artwork`);
+    } else {
+      near(g.stage.y, g.slot.y + (g.slot.height - g.stage.height) / 2, "vertical centering");
+      assert.ok(g.stage.width <= g.slot.width + 1 && g.stage.height <= g.slot.height + 1, `${label}: stage overflow`);
+    }
     for (const key of ["x", "y", "width", "height"]) near(g.image[key], g.stage[key], `artwork ${key}`);
     assert.deepEqual(g.imageSource, g.source);
     assert.equal(g.containerType, "normal", `${label}: stage must not query a size container`);

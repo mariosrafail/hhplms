@@ -38,7 +38,7 @@
 .native-audio-text-focus-scroll::-webkit-scrollbar { width: 0; height: 0; }
 .native-audio-text-focus-scroll:focus-visible { outline: 3px solid #2783d8; outline-offset: -3px; }
 .native-audio-text-focus[data-focus-layout="natural-width"] .native-audio-text-focus-crop { width: 100%; height: auto; max-height: none; }
-.native-audio-text-hotspot { position: absolute; z-index: 50; box-sizing: border-box; display: grid; place-items: center; padding: 0; overflow: visible; border: 0; border-radius: 50%; background: transparent; box-shadow: 0 2px 7px rgb(0 0 0 / 30%); cursor: pointer; }
+.native-audio-text-hotspot, .native-readable-text-presentation .native-audio-text-hotspot { min-width: 0; min-height: 0; max-width: none; max-height: none; position: absolute; z-index: 50; box-sizing: border-box; display: grid; place-items: center; padding: 0; overflow: visible; border: 0; border-radius: 50%; background: transparent; box-shadow: 0 2px 7px rgb(0 0 0 / 30%); cursor: pointer; }
 .native-audio-text-hotspot img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 .native-audio-text-hotspot:focus-visible { outline: 4px solid #ffdc42; outline-offset: 3px; }
 .native-readable-text-view { position: relative; box-sizing: border-box; width: 100%; height: 100%; min-height: 0; max-height: none; padding: clamp(8px, 1.4vw, 18px); overflow: hidden; background: #e9eef5; border-radius: 12px; }

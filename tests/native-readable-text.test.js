@@ -359,7 +359,7 @@ test("native Readable Text presentation toggles only when available and uses bou
   assert.doesNotMatch(css, /native-audio-text-focus header|native-audio-text-focus audio/);
   assert.match(css, /\.native-readable-text-view[^}]*min-height: 0;[^}]*max-height: none/);
   assert.doesNotMatch(css, /max-height: min\(76vh, 760px\)/);
-  assert.match(focus, /nativeAudioTextReadableHighlightArea\(hotspot\)/);
+  assert.match(focus, /nativeAudioTextReadableHighlights\(hotspot\)/);
   assert.match(focus, /native-audio-text-focus-highlight/);
   assert.match(css, /native-audio-text-focus-highlight[^}]*22%/);
   assert.doesNotMatch(css, /native-audio-text-focus-crop::after/);

@@ -75,7 +75,6 @@ button.native-drag-drop-target-text { cursor: pointer; }
 .native-drag-drop[data-layout-mode="text"] :is(.native-drag-drop-bank-items, .native-drag-drop-target-items) * { transition-property: none; }
 
 .native-drag-drop-bank[data-empty="true"] { padding: 0; }
-.native-drag-drop-return-hint { position: absolute; inset: 0; display: grid; place-items: center; font: 12px/1.2 system-ui, sans-serif; color: #475569; pointer-events: none; }
 button.native-drag-drop-target-text { touch-action: none; cursor: grab; }
 .native-drag-drop[data-layout-mode="text"] .native-drag-drop-workspace { scrollbar-width: none; touch-action: pan-y; }
 .native-drag-drop[data-layout-mode="text"] .native-drag-drop-workspace::-webkit-scrollbar { width: 0; height: 0; }

@@ -1,3 +1,4 @@
+import { validateMarkWordsSelectionMarkers } from "../../../src/data/native-activities/nativeMarkWordsMarkers.js";
 import { isMarkWordsVisual, markWordsResponseGroups, markWordsAnswerGroups } from "../../../src/data/native-activities/nativeMarkWordsVisualTargets.js";
 export function normalizeMarkWordsResponse(publicDocument, envelope) {
   const version = "native-response.v1";
@@ -5,14 +6,18 @@ export function normalizeMarkWordsResponse(publicDocument, envelope) {
   if (!Array.isArray(envelope.items) || envelope.items.length > 50 || JSON.stringify(envelope).length > 100_000) return { error: "response exceeds native response limits" };
   const items = markWordsResponseGroups(publicDocument.parts[0].interaction);
   const values = new Map();
+  const markers = new Map();
   for (const response of envelope.items) {
-    if (!response || typeof response !== "object" || Array.isArray(response) || Object.keys(response).sort().join(",") !== "id,value" || typeof response.id !== "string") return { error: "Each response item must contain exactly a string id and value" };
+    if (!response || typeof response !== "object" || Array.isArray(response) || Object.keys(response).sort().join(",") !== (Object.hasOwn(response, "markers") ? "id,markers,value" : "id,value") || typeof response.id !== "string") return { error: "Each response item must contain exactly a string id and value" };
     const item = items.find((entry) => entry.id === response.id);
     if (!item || values.has(response.id)) return { error: "Unknown or duplicate passage ID" };
     if (!Array.isArray(response.value) || response.value.length > item.options.length || response.value.some((id) => typeof id !== "string" || !item.options.includes(id)) || new Set(response.value).size !== response.value.length) return { error: "Select unique word occurrences belonging to this passage" };
+    if (Object.hasOwn(response, "markers")) {
+      try { markers.set(item.id, validateMarkWordsSelectionMarkers(publicDocument.parts[0].interaction, item.id, response.value, response.markers)); } catch (error) { return { error: error.message }; }
+    }
     values.set(item.id, item.options.filter((id) => response.value.includes(id)));
   }
-  return { schemaVersion: version, payload: { schemaVersion: version, kind: "mark-the-words", items: items.filter((item) => values.has(item.id)).map((item) => ({ id: item.id, value: values.get(item.id) })) } };
+  return { schemaVersion: version, payload: { schemaVersion: version, kind: "mark-the-words", items: items.filter((item) => values.has(item.id)).map((item) => ({ id: item.id, value: values.get(item.id), ...(markers.has(item.id) ? { markers: markers.get(item.id) } : {}) })) } };
 }
 
 function exactSet(selected, expected) { return expected.length > 0 && selected.length === expected.length && selected.every((id) => expected.includes(id)); }

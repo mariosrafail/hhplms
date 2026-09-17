@@ -1,3 +1,4 @@
+import { createLegacyNativeMarkWordsInteraction } from "../../../src/data/native-activities/nativeMarkWords.js";
 import "../../../src/data/native-activities/nativeOpenResponse.js";
 import { createMultiPartSection } from "../../../src/apps/book-builder/hosted/nativeMultiPartAuthoring.js";
 import { normalizeNativeMultiPartInteraction, validateNativeMultiPartTopology } from "../../../src/data/native-activities/nativeMultiPart.js";
@@ -34,7 +35,7 @@ for (const [index, kind] of ["open-response", "complete-sentences", "mark-the-wo
   if (kind === "image") value.images = [{ id: id("img", 1), assetSlot: "shared", area: { x: 0, y: 0, ...canvas.surface }, order: 0, decorative: true, altText: "", fit: "contain", locked: true }];
   if (kind === "mark-the-words") {
     let sequence = 100;
-    const candidate = generateNativeMarkWordsBulkCandidate({ source: "1. We *study* together.", publicDocument: { ...publicDocument, kind, parts: [{ id: "part-1", interaction: value }], assets: [] }, teacherDocument: { ...teacherDocument, kind, parts: [{ id: "part-1", solution: added.privateSection.solution }] }, createId: (prefix) => id(prefix, ++sequence) });
+    const candidate = generateNativeMarkWordsBulkCandidate({ source: "1. We *study* together.", publicDocument: { ...publicDocument, kind, parts: [{ id: "part-1", interaction: createLegacyNativeMarkWordsInteraction() }], assets: [] }, teacherDocument: { ...teacherDocument, kind, parts: [{ id: "part-1", solution: { kind, answers: [] } }] }, createId: (prefix) => id(prefix, ++sequence) });
     added.section.interaction = candidate.publicDocument.parts[0].interaction; added.privateSection.solution = candidate.teacherDocument.parts[0].solution;
   }
   publicDocument.parts[0].interaction.sections.push(added.section); teacherDocument.parts[0].solution.sections.push(added.privateSection);

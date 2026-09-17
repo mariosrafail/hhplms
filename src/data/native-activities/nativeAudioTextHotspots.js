@@ -27,12 +27,25 @@ export function nativeAudioTextHighlightColor(value) {
 }
 
 export function nativeAudioTextReadableHighlightArea(hotspot) {
+  if (Object.hasOwn(hotspot || {}, "readableHighlights")) return hotspot.readableHighlights[0]?.area || null;
   if (hotspot && Object.hasOwn(hotspot, "readableHighlightArea")) return hotspot.readableHighlightArea;
   const focus = hotspot?.readableFocusArea;
   if (!focus) return null;
   const insetX = Math.min(Math.max(1, Math.round(focus.width * 0.04)), Math.max(0, Math.floor((focus.width - 1) / 2)));
   const insetY = Math.min(Math.max(1, Math.round(focus.height * 0.08)), Math.max(0, Math.floor((focus.height - 1) / 2)));
   return { x: focus.x + insetX, y: focus.y + insetY, width: focus.width - insetX * 2, height: focus.height - insetY * 2 };
+}
+
+// Legacy documents retain their serialized shape until their regions are edited.
+export function nativeAudioTextReadableHighlights(hotspot) {
+  if (Object.hasOwn(hotspot || {}, "readableHighlights")) return hotspot.readableHighlights;
+  const area = nativeAudioTextReadableHighlightArea(hotspot);
+  return area ? [{ id: `highlight-${hotspot.id?.slice(4) || "00000000000040008000000000000000"}`, area }] : [];
+}
+
+export function resizeNativeAudioTextHotspot(area, diameter, bounds) {
+  const size = Math.min(bounds.width, bounds.height, NATIVE_AUDIO_TEXT_HOTSPOT_LIMITS.maximumSize, Math.max(NATIVE_AUDIO_TEXT_HOTSPOT_LIMITS.minimumSize, Math.round(diameter)));
+  return { x: Math.max(0, Math.min(bounds.width - size, area.x + (area.width - size) / 2)), y: Math.max(0, Math.min(bounds.height - size, area.y + (area.height - size) / 2)), width: size, height: size };
 }
 
 function object(value, label) {
@@ -128,8 +141,10 @@ export function normalizeNativeAudioTextHotspots(input, publicDocument) {
       const label = `Native audio/text hotspots[${index}]`;
       const hasHighlightColor = Object.hasOwn(entry, "highlightColor");
       const hasReadableHighlightArea = Object.hasOwn(entry, "readableHighlightArea");
+      const hasHighlights = Object.hasOwn(entry, "readableHighlights");
+      if (hasHighlights && hasReadableHighlightArea) throw new Error("Use one readable highlight representation.");
       const hasFocusLayout = Object.hasOwn(entry, "focusLayout");
-      exactKeys(entry, ["id", "panelId", "activityArea", "readableFocusArea", ...(hasReadableHighlightArea ? ["readableHighlightArea"] : []), "audioAssetSlot", "label", ...(hasHighlightColor ? ["highlightColor"] : []), ...(hasFocusLayout ? ["focusLayout"] : [])], label);
+      exactKeys(entry, ["id", "panelId", "activityArea", "readableFocusArea", ...(hasReadableHighlightArea ? ["readableHighlightArea"] : []), ...(hasHighlights ? ["readableHighlights"] : []), "audioAssetSlot", "label", ...(hasHighlightColor ? ["highlightColor"] : []), ...(hasFocusLayout ? ["focusLayout"] : [])], label);
       if (!isNativeChildId(entry.id, "aud") || ids.has(entry.id)) throw new Error(`${label}.id is invalid or duplicate.`);
       ids.add(entry.id);
       if (entry.panelId !== null && typeof entry.panelId !== "string") throw new Error(`${label}.panelId is invalid.`);
@@ -166,6 +181,18 @@ export function normalizeNativeAudioTextHotspots(input, publicDocument) {
         label: entry.label.trim(),
       };
       if (hasReadableHighlightArea) normalized.readableHighlightArea = normalizedHighlightArea;
+      if (hasHighlights) {
+        if (!Array.isArray(entry.readableHighlights) || entry.readableHighlights.length > 64) throw new Error("Readable highlights exceed limits.");
+        const highlightIds = new Set();
+        normalized.readableHighlights = entry.readableHighlights.map((highlight) => {
+          exactKeys(highlight, ["id", "area"], "Readable highlight");
+          if (!isNativeChildId(highlight.id, "highlight") || highlightIds.has(highlight.id)) throw new Error("Invalid or duplicate highlight identity.");
+          highlightIds.add(highlight.id);
+          const rect = area(highlight.area, "Readable highlight area", readableBounds);
+          if (rect.x < normalizedFocusArea.x || rect.y < normalizedFocusArea.y || rect.x + rect.width > normalizedFocusArea.x + normalizedFocusArea.width || rect.y + rect.height > normalizedFocusArea.y + normalizedFocusArea.height) throw new Error("Readable highlight must stay inside readableFocusArea.");
+          return { id: highlight.id, area: rect };
+        });
+      }
       if (hasHighlightColor) normalized.highlightColor = entry.highlightColor;
       return normalized;
     }),

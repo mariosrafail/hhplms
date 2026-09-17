@@ -42,11 +42,11 @@ export async function runRuntimeCorrectionsRegressions(browser, output) {
     await page.goto(`${server.resolvedUrls.local[0]}tests/fixtures/native-runtime-regressions/runtime-corrections.html`);
     for (const width of [1440, 760]) for (const layout of ["standard", "text"]) for (const images of [false, true]) {
       await page.setViewportSize({ width, height:1000 }); await configure({ kind:"dnd", path:"student", layout, images, scale:1 });
-      await expect(word(12)).toBeVisible(); assert.equal(await page.evaluate(()=>corrections.state?.readableTextAvailable),false); await expect.poll(async () => (await geometry()).bankHeight).toBe(240);
+      await expect(word(12)).toBeVisible(); await expect.poll(() => page.evaluate(()=>corrections.state?.readableTextAvailable)).toBe(false); await expect.poll(async () => (await geometry()).bankHeight).toBe(240);
       const records = [await geometry()]; await page.screenshot({path:`${output}/adaptive-full-${layout}-${images}-${width}.png`}); const target = page.locator("[data-drag-drop-target-id]").first(); const bank = page.locator(".native-drag-drop-bank");
       await drag(word(1), target); await expect(word(1)).toHaveCount(0);
       for (let n=2;n<=12;n++) { await word(n).click(); await target.focus(); await page.keyboard.press("Enter"); await expect(word(n)).toHaveCount(0); if ([4,10,12].includes(n)) { await expect.poll(async () => (await geometry()).items).toBe(12-n); records.push(await geometry()); } }
-      await expect.poll(async () => (await geometry()).bankHeight).toBe(24); records.push(await geometry()); await page.screenshot({path:`${output}/adaptive-empty-${layout}-${images}-${width}.png`});
+      await expect.poll(async () => (await geometry()).bankHeight).toBe(24); await expect(page.getByText("Drag an answer here to return it", { exact: true })).toHaveCount(0); records.push(await geometry()); await page.screenshot({path:`${output}/adaptive-empty-${layout}-${images}-${width}.png`});
       for (const record of records) for (const field of ["image","target","stage"]) for (const dimension of ["width","height","x","y"]) assert.ok(Math.abs(record[field][dimension]-records[0][field][dimension])<1, JSON.stringify({width,layout,images,field,dimension,records}));
       assert.ok(records.at(-1).bank.height < records[0].bank.height);
       if (layout === "text") for(const record of records) assert.ok(Math.abs(record.viewport.y+record.viewport.height-record.bank.y)<1,"no spacer between viewport and bank");

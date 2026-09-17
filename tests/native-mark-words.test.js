@@ -11,16 +11,16 @@ import { nativeAssignmentCapability, containsClientTeacherMaterial } from "../ne
 import { buildNativeFinalSubmission } from "../src/components/lms/student/runtime/studentSubmissionContract.js";
 import { ULTIMATE_B2_PUBLICATION_V2_COMPATIBILITY_VARIANTS, reconstructUltimateB2PublicationV2Compatibility, ultimateB2PublicationV2Compatibility } from "../netlify-sites/ultimate-b2-builder/server/_builder-publication-compiler-v2.js";
 import { compilePublicationV2Fixture } from "./fixtures/publication-v2.js";
-import { markWordsFixtureId } from "./fixtures/native-mark-words.js";
+import { markWordsFixtureId, legacyMarkWordsPair } from "./fixtures/native-mark-words.js";
 import { nativeActivityUsesManagedAssetSlot, removeNativeManagedAssetReferenceIfUnused } from "../src/data/native-activities/nativeActivityPublic.js";
 
 const kind = resolveNativeActivityKind("mark-the-words");
 function blank() { return { publicDocument: kind.createBlankPublic({ activityId: "mark-words-fixture", title: "Mark the Words", placement: { pageId: "ub2-sb-unit-1-part-1" } }), teacherDocument: kind.createBlankTeacher({ activityId: "mark-words-fixture" }) }; }
-function fixture() { return generateNativeMarkWordsBulkCandidate({ ...blank(), source: "1. I *watch* films while my watch *charges*.\n2. They *have been working* all morning." }); }
+function fixture() { return generateNativeMarkWordsBulkCandidate({ ...legacyMarkWordsPair(blank()), source: "1. I *watch* films while my watch *charges*.\n2. They *have been working* all morning." }); }
 
 test("Mark the Words blank creation keeps one part and reports actionable incomplete readiness", () => {
   const pair = blank(); assert.equal(kind.validatePair(pair.publicDocument, pair.teacherDocument), true);
-  assert.deepEqual(kind.assessReadiness(pair.publicDocument, pair.teacherDocument), { ready: false, issues: ["Add at least one exercise passage."] });
+  assert.deepEqual(kind.assessReadiness(pair.publicDocument, pair.teacherDocument), { ready: false, issues: ["Draw at least one visual target."] });
   pair.publicDocument.parts.push(structuredClone(pair.publicDocument.parts[0])); assert.throws(() => kind.normalizePublic(pair.publicDocument), /exactly one Part/);
 });
 
@@ -175,7 +175,7 @@ test("managed typography keeps a live font reference and rejects missing or wron
 
 test("bounded maximum text and word responses fit existing native request ceilings", () => {
   const source = Array.from({ length: 4 }, (_, index) => `${index + 1}. *${Array(200).fill("word").join(" ")}*`).join("\n");
-  const pair = generateNativeMarkWordsBulkCandidate({ ...blank(), source });
+  const pair = generateNativeMarkWordsBulkCandidate({ ...legacyMarkWordsPair(blank()), source });
   assert.equal(pair.publicDocument.parts[0].interaction.items.flatMap((item) => item.words).length, 800);
   const response = { schemaVersion: "native-response.v1", items: pair.teacherDocument.parts[0].solution.answers.map((answer) => ({ id: answer.itemId, value: answer.correctWordIds })) };
   assert.ok(Buffer.byteLength(JSON.stringify(response)) < 100_000);

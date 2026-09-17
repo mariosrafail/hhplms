@@ -1,3 +1,6 @@
+import { NativeMarkWordsMarkerControls } from "./NativeMarkWordsMarkerControls.jsx";
+import { NativeMarkWordsMarker } from "../../../components/native-mark-words/NativeMarkWordsMarker.jsx";
+import { DEFAULT_MARK_WORDS_MARKER, markWordsMarkerArea, markWordsTargetMarker, normalizeMarkWordsMarker } from "../../../data/native-activities/nativeMarkWordsMarkers.js";
 import { isMarkWordsVisual, createEmptyMarkWordsVisualInteraction, createEmptyMarkWordsVisualSolution } from "../../../data/native-activities/nativeMarkWordsVisualTargets.js";
 import { alignVisualTargetAnswers, addVisualTarget, removeVisualTarget, setVisualTargetCorrect } from "../../../data/native-activities/nativeMarkWordsVisualAuthoring.js";
 import { useEffect, useRef, useState } from "react";
@@ -26,14 +29,17 @@ function Canvas({ panel, url, graphicUrl, selected, field, drawing, onSelect, on
     onPointerMove={(event) => { const current = drag.current; if (!current || current.pointerId !== event.pointerId) return; const point = bounds(event); const x = Math.max(0, Math.round(Math.min(current.start.x, point.x))); const y = Math.max(0, Math.round(Math.min(current.start.y, point.y))); current.area = { x, y, width: Math.max(1, Math.min(stage.width - x, Math.round(Math.abs(point.x - current.start.x)))), height: Math.max(1, Math.min(stage.height - y, Math.round(Math.abs(point.y - current.start.y)))) }; setDraft(current.area); }}
     onPointerUp={finish} onPointerCancel={(event) => finish(event, true)}>
     {url ? <img src={url} alt="Panel background" draggable={false} /> : <p>Upload a panel background.</p>}
-    {panel.hotspots.map((hotspot, index) => <span key={hotspot.id}><button type="button" className="native-mark-words-authoring-hit" style={{ ...logicalAreaStyle(hotspot.area, stage), pointerEvents: drawing ? "none" : undefined }} onPointerDown={(event) => event.stopPropagation()} onClick={() => onSelect(hotspot.id)} aria-label={`Word hotspot ${index + 1}`}>{index + 1}</button><span className="native-mark-words-authoring-mark" style={logicalAreaStyle(hotspot.markArea, stage)}>{hotspot.graphicAssetSlot ? <img src={graphicUrl(hotspot.graphicAssetSlot)} alt="Selected graphic" draggable={false} style={{ width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none" }} /> : null}</span></span>)}
+    {panel.hotspots.map((hotspot, index) => <span key={hotspot.id}><button type="button" className="native-mark-words-authoring-hit" style={{ ...logicalAreaStyle(hotspot.area, stage), pointerEvents: drawing ? "none" : undefined }} onPointerDown={(event) => event.stopPropagation()} onClick={() => onSelect(hotspot.id)} aria-label={`Word hotspot ${index + 1}`}>{index + 1}</button><NativeMarkWordsMarker hotspot={hotspot} stage={stage} graphicUrl={graphicUrl} /></span>)}
     {draft ? <span className="native-mark-words-authoring-hit" style={{ ...logicalAreaStyle(draft, stage), pointerEvents: "none" }} /> : null}
     {selected && !drawing ? <StageSelectionFrame geometry={selected[field]} stage={stage} label={field === "area" ? "Click area" : "Marking area"} minWidth={1} minHeight={1} onChange={onChange} onDelete={onDelete} onClear={() => onSelect(null)} /> : null}
   </div>;
 }
 
-export function NativeMarkWordsVisualEditor({ bookSlug, componentSlug, activityId, publicDraft, teacherDraft, mutatePair, sharedCanvas = false, mutatePublic, assetUrl, onMessage, onUploading, isActive }) {
+export function NativeMarkWordsVisualEditor({ bookSlug, componentSlug, activityId, publicDraft, teacherDraft, mutatePair, sharedCanvas = false, drawingDefaults = null, onDrawingDefaultsChange = null, mutatePublic, assetUrl, onMessage, onUploading, isActive }) {
   const [panelId, setPanelId] = useState(null); const [hotspotId, setHotspotId] = useState(null); const [field, setField] = useState("area");
+  const [localDefaults, setLocalDefaults] = useState(() => { const { id, ...marker } = publicDraft.parts[0].interaction.presentation.markerPresets?.at(-1) || DEFAULT_MARK_WORDS_MARKER; return { correct: true, marker }; });
+  const defaults = drawingDefaults || localDefaults;
+  const setDefaults = (value) => { const next = typeof value === "function" ? value(defaults) : value; if (onDrawingDefaultsChange) onDrawingDefaultsChange(next); else setLocalDefaults(next); };
   const [zoom, setZoom] = useState(1); const [drawing, setDrawing] = useState(false); const [fonts, setFonts] = useState([]);
   useEffect(() => { const controller = new AbortController(); getBuilderFontLibrary({ bookSlug, componentSlug }, { signal: controller.signal }).then((value) => { if (!controller.signal.aborted) setFonts(value); }).catch((error) => { if (!controller.signal.aborted) onMessage(error.message); }); return () => controller.abort(); }, [bookSlug, componentSlug]);
   const interaction = publicDraft.parts[0].interaction; const presentation = interaction.presentation; const panels = presentation.panels;
@@ -71,7 +77,7 @@ export function NativeMarkWordsVisualEditor({ bookSlug, componentSlug, activityI
     finally { if (isActive()) onUploading(false); }
   };
   const createHotspot = (area) => {
-    if (visual) { mutatePair((pub, teacher) => setHotspotId(addVisualTarget(pub, teacher, panel.id, area))); return; }
+    if (visual) { try { normalizeMarkWordsMarker(defaults.marker, publicDraft.assets); } catch (error) { onMessage(error.message); return; } mutatePair((pub, teacher) => { rememberPreset(pub, defaults.marker); setHotspotId(addVisualTarget(pub, teacher, panel.id, area, createNativeChildId, defaults)); }); return; }
     if (!next) { setDrawing(false); return; }
     const hotspot = { id: createNativeChildId("hot"), ...next, area: { ...area }, markArea: { ...area } };
     mutatePublic((doc) => doc.parts[0].interaction.presentation.panels.find((entry) => entry.id === panel.id).hotspots.push(hotspot));
@@ -83,25 +89,60 @@ export function NativeMarkWordsVisualEditor({ bookSlug, componentSlug, activityI
     const area = Object.fromEntries(Object.entries(raw).map(([key, value]) => [key, Math.round(value)]));
     if (field === "area" && area.width === hotspot.area.width && area.height === hotspot.area.height) { hotspot.markArea.x += area.x - hotspot.area.x; hotspot.markArea.y += area.y - hotspot.area.y; }
     hotspot[field] = area;
+    if (hotspot.marker) {
+      if (field === "markArea") hotspot.marker.alignment = "manual";
+      else if (hotspot.marker.alignment === "bottom") hotspot.markArea = markWordsMarkerArea(area, hotspot.marker);
+    }
   });
-  const setGraphic = (slot, reference = null) => mutatePublic((pub) => {
+  const rememberPreset = (pub, marker) => {
+    normalizeMarkWordsMarker(marker, pub.assets);
+    const list = pub.parts[0].interaction.presentation.markerPresets ||= [];
+    if (!list.some(({ id, ...style }) => JSON.stringify(style) === JSON.stringify(marker))) {
+      if (list.length >= 32) throw new Error("The marker palette supports at most 32 presets.");
+      list.push({ id: createNativeChildId("marker"), ...marker });
+    }
+  };
+  const changeDefaultMarker = (marker) => {
+    setDefaults((current) => ({ ...current, marker }));
+    if (marker.kind !== "graphic" || marker.graphicAssetSlot) mutatePublic((pub) => rememberPreset(pub, marker));
+  };
+  const changeSelectedMarker = (marker, reference = null) => mutatePublic((pub) => {
     const target = pub.parts[0].interaction.presentation.panels.find((entry) => entry.id === panel.id)?.hotspots.find((entry) => entry.id === selected.id);
     if (!target) return;
-    const previous = target.graphicAssetSlot;
     if (reference) pub.assets = mergeNativeManagedAssetReference(pub.assets, reference);
-    target.graphicAssetSlot = slot;
-    if (previous) removeNativeManagedAssetReferenceIfUnused(pub, previous);
+    if (marker.kind === "graphic" && !marker.graphicAssetSlot) { onMessage("Select or upload a graphic before applying Graphic."); return; }
+    rememberPreset(pub, marker);
+    target.marker = marker; target.graphicAssetSlot = marker.graphicAssetSlot;
+    if (marker.alignment === "bottom") target.markArea = markWordsMarkerArea(target.area, marker);
   });
-  const uploadGraphic = async (file) => {
-    if (!file || !selected) return;
+  const uploadGraphic = async (file, forDefault = true) => {
+    if (!file) return;
+    const ownerPanelId = panel?.id; const ownerTargetId = selected?.id;
+    const initialMarker = forDefault ? defaults.marker : markWordsTargetMarker(selected);
     onUploading(true);
-    try { const result = await uploadNativeActivityAsset({ bookSlug, componentSlug, activityId, assetSlot: createNativeChildId("asset"), file }); if (isActive()) setGraphic(result.reference.slot, result.reference); }
-    catch (error) { if (isActive()) onMessage(error.message); }
+    try {
+      const result = await uploadNativeActivityAsset({ bookSlug, componentSlug, activityId, assetSlot: createNativeChildId("asset"), file });
+      if (!isActive()) return;
+      const marker = { ...initialMarker, kind: "graphic", graphicAssetSlot: result.reference.slot };
+      mutatePublic((pub) => {
+        const owner = pub.parts[0].interaction.presentation.panels.find((entry) => entry.id === ownerPanelId);
+        if (!owner) throw new Error("Panel was removed during upload.");
+        const target = forDefault ? null : owner.hotspots.find((entry) => entry.id === ownerTargetId);
+        if (!forDefault && !target) throw new Error("Target was removed during upload.");
+        pub.assets = mergeNativeManagedAssetReference(pub.assets, result.reference);
+        rememberPreset(pub, marker);
+        if (target) { target.marker = marker; target.graphicAssetSlot = marker.graphicAssetSlot; if (marker.alignment === "bottom") target.markArea = markWordsMarkerArea(target.area, marker); }
+      });
+      if (forDefault) setDefaults((current) => ({ ...current, marker }));
+    } catch (error) { if (isActive()) onMessage(error.message); }
     finally { if (isActive()) onUploading(false); }
   };
+  const graphicSlots = new Set([...(presentation.markerPresets || []).map((marker) => marker.graphicAssetSlot), ...panels.flatMap((entry) => entry.hotspots.map((hotspot) => hotspot.graphicAssetSlot))].filter(Boolean));
+  const graphics = publicDraft.assets.filter((asset) => graphicSlots.has(asset.slot));
   const mapped = new Set(panels.flatMap((entry) => entry.hotspots.map((hotspot) => hotspot.wordId)));
   const nextItem = (interaction.items || []).find((item) => item.id === next?.itemId); const nextWord = nextItem?.words.find((word) => word.id === next?.wordId);
   return <section className="studio-content-panel">
+    {visual ? <StudioField label="Activity title"><input maxLength={300} value={publicDraft.metadata.title} onChange={(event) => mutatePublic((doc) => { doc.metadata.title = event.target.value; })} /></StudioField> : null}
     {!visual && !interaction.items.length && !panels.length ? <StudioButton onClick={() => mutatePair((pub, teacher) => { pub.parts[0].interaction = createEmptyMarkWordsVisualInteraction(); teacher.parts[0].solution = createEmptyMarkWordsVisualSolution(); })}>Create image targets without passage</StudioButton> : null}
     {!visual ? <div className="studio-form-grid"><StudioField label="Presentation"><select aria-label="Presentation" value={presentation.kind} onChange={(event) => mutatePublic((doc) => { doc.parts[0].interaction.presentation.kind = event.target.value; })}><option value="text">Real text</option><option value="image-hotspot">Publisher image with word hotspots</option></select></StudioField>
       <StudioField label="Marking style"><select aria-label="Marking style" value={presentation.marking} onChange={(event) => mutatePublic((doc) => { doc.parts[0].interaction.presentation.marking = event.target.value; })}><option value="underline">Underline</option><option value="highlight">Highlight</option></select></StudioField>
@@ -109,7 +150,7 @@ export function NativeMarkWordsVisualEditor({ bookSlug, componentSlug, activityI
       <StudioField label="Text color"><input type="color" value={presentation.textStyle.color} onChange={(event) => changeStyle("color", event.target.value)} /></StudioField>
       <StudioField label="Line spacing (%)"><input type="number" min={120} max={240} value={presentation.textStyle.lineSpacing} onChange={(event) => changeStyle("lineSpacing", Number(event.target.value))} /></StudioField>
       <NativeActivityFontControls {...{ bookSlug, componentSlug, fonts }} selectedSlot={presentation.textStyle.fontAssetSlot} onSelect={setFont} onUploaded={(font) => setFonts((current) => [...current.filter((entry) => entry.assetId !== font.assetId), font])} onMessage={onMessage} label="Passage font" onUploadStateChange={onUploading} />
-    </div> : <p>Upload an image, draw clickable targets, then choose each target answer and graphic. Click and graphic areas are edited separately in image coordinates.</p>}
+    </div> : <p>Upload a background, choose drawing defaults, then draw targets. Each target keeps its own answer and marker.</p>}
     {presentation.kind !== "text" ? <>
       {!visual ? <p>Draw around each printed word. Enlarge its click area separately when needed; the marking area sets the underline position. All words in a passage must stay on one panel.</p> : null}
       <StudioButton onClick={addPanel} disabled={sharedCanvas || panels.length >= NATIVE_MARK_WORDS_LIMITS.panels}>Add panel</StudioButton>
@@ -118,6 +159,7 @@ export function NativeMarkWordsVisualEditor({ bookSlug, componentSlug, activityI
         <label className="studio-upload-action">{panel.backgroundAssetSlot ? "Replace background" : "Upload background"}<input disabled={sharedCanvas} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { upload(event.target.files?.[0]); event.target.value = ""; }} /></label>
         {[-1, 1].map((offset) => <StudioButton key={offset} disabled={panels.indexOf(panel) + offset < 0 || panels.indexOf(panel) + offset >= panels.length} onClick={() => mutatePair((doc, teacher) => { const list = doc.parts[0].interaction.presentation.panels; const index = list.findIndex((entry) => entry.id === panel.id); [list[index], list[index + offset]] = [list[index + offset], list[index]]; if (visual) alignVisualTargetAnswers(doc, teacher); })}>Move panel {offset < 0 ? "up" : "down"}</StudioButton>)}
         <StudioButton disabled={sharedCanvas} onClick={() => { if (!globalThis.confirm("Delete this panel and its word hotspots? Passage text and answers remain.")) return; mutatePair((doc, teacher) => { if (visual) { for (const hotspot of [...panel.hotspots]) removeVisualTarget(doc, teacher, panel.id, hotspot.id); } doc.parts[0].interaction.presentation.panels = doc.parts[0].interaction.presentation.panels.filter((entry) => entry.id !== panel.id); if (visual) alignVisualTargetAnswers(doc, teacher); if (panel.backgroundAssetSlot) removeNativeManagedAssetReferenceIfUnused(doc, panel.backgroundAssetSlot); }); setPanelId(null); setHotspotId(null); setDrawing(false); }}>Delete panel</StudioButton>
+        {visual ? <><label>New target answer<select aria-label="New target answer" value={defaults.correct ? "correct" : "incorrect"} onChange={(event) => setDefaults((current) => ({ ...current, correct: event.target.value === "correct" }))}><option value="correct">Correct</option><option value="incorrect">Incorrect</option></select></label><NativeMarkWordsMarkerControls label="Drawing marker" marker={defaults.marker} onChange={changeDefaultMarker} graphics={graphics} onUpload={uploadGraphic} /></> : null}
         <p role="status">{visual ? `${interaction.targets.length} authored targets` : nextWord ? `Next unmapped: passage ${interaction.items.indexOf(nextItem) + 1}, word ${nextItem.words.indexOf(nextWord) + 1}: ${nextItem.text.slice(nextWord.start, nextWord.end)}` : "No unmapped word is available on this panel."}</p>
         <StudioButton selected={drawing} disabled={!panel.backgroundAssetSlot || (!visual && !next && !drawing)} onClick={() => setDrawing(!drawing)}>{drawing ? "Finish drawing" : visual ? "Draw target" : "Draw next word hotspot"}</StudioButton>
         <StudioCanvasToolbar zoom={zoom} onZoomChange={setZoom} />
@@ -125,8 +167,7 @@ export function NativeMarkWordsVisualEditor({ bookSlug, componentSlug, activityI
         {selected && visual ? <div className="studio-form-grid">
           <StudioField label="Target label"><input value={interaction.targets.find((target) => target.id === selected.targetId)?.label || ""} onChange={(event) => mutatePublic((pub) => { pub.parts[0].interaction.targets.find((target) => target.id === selected.targetId).label = event.target.value; })} /></StudioField>
           <StudioField label="Answer"><select aria-label="Answer" value={teacherDraft.parts[0].solution.answers.find((answer) => answer.panelId === panel.id)?.correctTargetIds.includes(selected.targetId) ? "correct" : "incorrect"} onChange={(event) => mutatePair((pub, teacher) => setVisualTargetCorrect(pub, teacher, panel.id, selected.targetId, event.target.value === "correct"))}><option value="incorrect">Incorrect</option><option value="correct">Correct</option></select></StudioField>
-          <StudioField label="Selected graphic"><select aria-label="Selected graphic" value={selected.graphicAssetSlot || ""} onChange={(event) => setGraphic(event.target.value || null)}><option value="">No graphic</option>{publicDraft.assets.filter((asset) => asset.role === "activity_artwork" && !panels.some((entry) => entry.backgroundAssetSlot === asset.slot)).map((asset, index) => <option key={asset.slot} value={asset.slot}>Graphic {index + 1}</option>)}</select></StudioField>
-          <label className="studio-upload-action">Upload graphic<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { uploadGraphic(event.target.files?.[0]); event.target.value = ""; }} /></label>
+          <NativeMarkWordsMarkerControls label="Selected marker" marker={markWordsTargetMarker(selected)} onChange={changeSelectedMarker} graphics={graphics} onUpload={(file) => uploadGraphic(file, false)} />
         </div> : null}
         {selected ? <><StudioField label="Geometry to edit"><select aria-label="Geometry to edit" value={field} onChange={(event) => { setField(event.target.value); setDrawing(false); }}><option value="area">Click area</option><option value="markArea">Marking area</option></select></StudioField><StageGeometryControls area={selected[field]} stage={stage} minWidth={1} minHeight={1} label={field === "area" ? "Click area" : "Marking area"} onChange={changeGeometry} /><StudioButton onClick={removeHotspot}>Remove word hotspot</StudioButton></> : null}
       </> : null}

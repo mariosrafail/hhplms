@@ -1,3 +1,4 @@
+import { legacyMarkWordsPair } from "../fixtures/native-mark-words.js";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import test from "node:test";
@@ -662,7 +663,7 @@ test("isolated PostgreSQL persists Mark the Words pairs and immutable revisions 
   const created = JSON.parse(createdResponse.body); assert.equal(JSON.parse((await handler(request)).body).activityId, created.activityId);
   const load = async (role) => (await pool.query("select payload from builder_component_documents where document_type=$1 and document_key=$2", [`native_activity_${role}`, created.activityId])).rows[0].payload;
   const { generateNativeMarkWordsBulkCandidate } = await import("../../src/data/native-activities/nativeMarkWordsBulkAuthoring.js");
-  const pair = generateNativeMarkWordsBulkCandidate({ source: "1. I *watch* my watch.", publicDocument: await load("public"), teacherDocument: await load("teacher") });
+  const pair = generateNativeMarkWordsBulkCandidate({ source: "1. I *watch* my watch.", ...legacyMarkWordsPair({ publicDocument: await load("public"), teacherDocument: await load("teacher") }) });
   const body = { publicDocument: pair.publicDocument, teacherDocument: pair.teacherDocument, expectedPublicRevision: 1, expectedTeacherRevision: 1, clientMutationId: randomUUID() };
   const saved = await handler(pairEvent(created.activityId, body)); assert.equal(saved.statusCode, 200, saved.body);
   assert.equal(JSON.parse((await handler(pairEvent(created.activityId, body))).body).idempotent, true);

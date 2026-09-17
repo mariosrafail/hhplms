@@ -1,3 +1,4 @@
+import { runNativeMarkerCandidateRegressions } from "./native-marker-candidate-regressions.mjs";
 import { runRuntimeCorrectionsRegressions } from "./runtime-corrections-regressions.mjs";
 import { runDndTeacherStateRegressions } from './dnd-teacher-state-regressions.mjs';
 import { runFlowBankRegressions } from "./flow-bank-regressions.mjs";
@@ -92,6 +93,7 @@ try {
     entry.before.textRects.forEach((rect, index) => assert.ok(Math.abs(rect.height - entry.during.textRects[index].height) < 1 && Math.abs(rect.width - entry.during.textRects[index].width) < 1, JSON.stringify(entry)));
   }
   for (const entry of evidence.filter((item) => item.kind === "listening")) assert.ok(entry.visible && entry.top > 0, JSON.stringify(entry));
+  await runNativeMarkerCandidateRegressions(browser, server.resolvedUrls.local[0], output);
   await runNativePresentationRegressions(browser, output);
   await runHistoricalFocusRegressions(browser, output);
   await runNativeDragImageRegressions(browser, server.resolvedUrls.local[0], output);

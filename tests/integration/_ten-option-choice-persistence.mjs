@@ -16,7 +16,7 @@ import { getPublishedBookActivity, getStudentAssignmentDetail } from "../../netl
 const identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" };
 const privateFields = /"correctAnswers"|"correctOptionIds?"|"modelAnswers"|"mappings"/;
 
-function compilePair(pair, assetRows) {
+export function compilePair(pair, assetRows) {
   const sources = createPublicationV2FixtureSources();
   const { activityId, kind, placement } = pair.publicDocument;
   const source = payload => ({ payload, revision: 1, sha256: builderDocumentSha256(payload) });

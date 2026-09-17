@@ -1,3 +1,4 @@
+import { legacyMarkWordsPair } from "./fixtures/native-mark-words.js";
 import { studentsBookPageSql, currentStudentsBookSources, canonicalStudentsBookPages } from "./fixtures/students-book-current.js";
 import assert from "node:assert/strict";
 import { generateNativeMarkWordsBulkCandidate } from "../src/data/native-activities/nativeMarkWordsBulkAuthoring.js";
@@ -875,7 +876,7 @@ test("Mark the Words handler creates, saves, replays and rejects stale or leakin
   const creation = request({ body: { kind: "mark-the-words", pageId, title: "Mark the Words", clientMutationId: randomUUID() } });
   const first = await handler(creation); assert.equal(first.statusCode, 200);
   const created = JSON.parse(first.body); assert.equal(JSON.parse((await handler(creation)).body).activityId, created.activityId);
-  const pair = generateNativeMarkWordsBulkCandidate({ source: "1. I *watch* my watch.", publicDocument: documents.get(`native_activity_public:${created.activityId}`).document, teacherDocument: documents.get(`native_activity_teacher:${created.activityId}`).document });
+  const pair = generateNativeMarkWordsBulkCandidate({ source: "1. I *watch* my watch.", ...legacyMarkWordsPair({ publicDocument: documents.get(`native_activity_public:${created.activityId}`).document, teacherDocument: documents.get(`native_activity_teacher:${created.activityId}`).document }) });
   const path = `/builder/api/native-activities/books/ultimate-b2/components/ultimate-b2-students-book/activities/${created.activityId}/save`;
   const body = { publicDocument: pair.publicDocument, teacherDocument: pair.teacherDocument, expectedPublicRevision: 1, expectedTeacherRevision: 1, clientMutationId: randomUUID() };
   const saved = await handler(request({ path, body })); assert.equal(saved.statusCode, 200, saved.body);

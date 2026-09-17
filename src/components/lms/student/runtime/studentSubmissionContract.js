@@ -24,7 +24,7 @@ export function buildNativeFinalSubmission({ assignmentId, target, responses = {
       schemaVersion: target?.capability?.responseSchemaVersion,
       items: questions
         .filter((question) => !["single-choice", "drag-drop"].includes(responseKind) || responses[question.id])
-        .map((question) => ({ id: question.id, value: responses[question.id] || (target?.nativeKind === "mark-the-words" ? [] : "") })),
+        .map((question) => ({ id: question.id, value: responses[question.id] || (target?.nativeKind === "mark-the-words" ? [] : ""), ...(target?.nativeKind === "mark-the-words" && responses.markers?.[question.id] ? { markers: responses.markers[question.id] } : {}) })),
     },
   };
 }
@@ -35,5 +35,7 @@ export function isDuplicateFinalSubmission(error) {
 
 export function restoreNativeSubmissionResponses(payload) {
   if (payload?.schemaVersion === "native-multi-response.v1") return Object.fromEntries((payload.sections || []).map((section) => [section.id, restoreNativeSubmissionResponses(section.response)]));
-  return Object.fromEntries((payload?.items || []).map((item) => [item.id, item.value]));
+  const result = Object.fromEntries((payload?.items || []).map((item) => [item.id, item.value]));
+  for (const item of payload?.items || []) if (item.markers) { result.markers ||= {}; result.markers[item.id] = item.markers; }
+  return result;
 }

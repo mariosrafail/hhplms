@@ -11,7 +11,7 @@ export async function runSharedFiveRegressions(browser, baseUrl, output) {
   await page.route("**/graphic.png", (route) => route.fulfill({ contentType: "image/png", body: graphic }));
   await page.route("**/fonts", (route) => route.fulfill({ json: { fonts: [] } }));
   await page.route("**/assets/*/preview", (route) => route.fulfill({ contentType: "image/png", body: background }));
-  const marker = page.locator(".native-mark-words-graphic");
+  const marker = page.locator(".native-mark-words-stage .native-mark-words-graphic");
   const correct = page.getByRole("button", { name: "Correct target", exact: true });
   const wrong = page.getByRole("button", { name: "Wrong no graphic", exact: true });
   try {
@@ -19,11 +19,12 @@ export async function runSharedFiveRegressions(browser, baseUrl, output) {
     await expect(correct).toBeVisible(); assert.deepEqual(errors, []);
     await expect(marker).toHaveCount(0);
     await expect(page.locator(".native-multi-part-background")).toHaveCount(1);
-    await expect(page.locator(".native-multi-part-section img:not(.native-drag-drop-word img)")).toHaveCount(0);
+    await expect(page.locator(".native-multi-part-section img:not(.native-drag-drop-word img, .native-mark-words-palette img)")).toHaveCount(0);
     const chrome = await correct.evaluate((node) => { const s = getComputedStyle(node); return [s.borderTopWidth, s.backgroundColor, s.boxShadow, s.paddingTop]; });
     assert.deepEqual(chrome, ["0px", "rgba(0, 0, 0, 0)", "none", "0px"]);
     await wrong.tap(); assert.equal(await wrong.evaluate((node) => getComputedStyle(node).webkitTapHighlightColor), "rgba(0, 0, 0, 0)"); await expect(wrong).toHaveAttribute("aria-pressed", "true"); await expect(marker).toHaveCount(0);
     assert.equal(Object.keys(await page.evaluate(() => fiveFixture.responses)).length, 1);
+    await page.getByRole("button", { name: "Marker 2: graphic" }).click();
     await correct.focus(); await page.keyboard.press("Enter"); await expect(marker).toHaveCount(1);
     for (const width of [1200, 600, 1000]) {
       await page.setViewportSize({ width, height: 900 });
@@ -64,18 +65,19 @@ export async function runSharedFiveRegressions(browser, baseUrl, output) {
     await page.evaluate(() => document.exitFullscreen());
     await page.evaluate(() => { fiveFixture.setStandalone(true); fiveFixture.setTeacher(false); fiveFixture.setResponses({}); });
     await wrong.click(); await expect(wrong).toHaveAttribute("aria-pressed", "true"); await expect(marker).toHaveCount(0);
+    await page.getByRole("button", { name: "Marker 2: graphic" }).click();
     await correct.click(); await expect(marker).toHaveCount(1);
     await page.evaluate(() => fiveFixture.setEditor(true));
     await expect(page.getByRole("button", { name: "Word hotspot 1", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Word hotspot 1", exact: true }).click();
     await page.getByLabel("Target label", { exact: true }).fill("Repeated label");
     await page.getByLabel("Answer", { exact: true }).selectOption("incorrect");
-    await page.getByLabel("Selected graphic", { exact: true }).selectOption("");
+    await page.getByLabel("Selected marker type", { exact: true }).selectOption("underline");
     await expect.poll(() => page.evaluate(() => fiveFixture.pair.publicDocument.parts[0].interaction.targets[0].label)).toBe("Repeated label");
     await page.evaluate(() => fiveFixture.setEditor(false)); await page.evaluate(() => fiveFixture.setEditor(true));
     await page.getByRole("button", { name: "Word hotspot 1", exact: true }).click();
     await expect(page.getByLabel("Target label", { exact: true })).toHaveValue("Repeated label");
-    await expect(page.getByLabel("Selected graphic", { exact: true })).toHaveValue("");
+    await expect(page.getByLabel("Selected marker type", { exact: true })).toHaveValue("underline");
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
 }

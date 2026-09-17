@@ -41,12 +41,15 @@ export async function runDndVariableHeightRegressions(browser, baseUrl, output, 
           : node.dataset.dragDropTargetId ? panel.dropTargets.find((t) => t.id === node.dataset.dragDropTargetId).area : dnd.pair.publicDocument.audioTextHotspots.hotspots[0].activityArea;
         return { box: rect(node), expected: { x: origin.x + area.x / panel.surface.width * logical.width * scale, y: origin.y + area.y / panel.surface.height * logical.height * scale, width: area.width / panel.surface.width * logical.width * scale, height: area.height / panel.surface.height * logical.height * scale } };
       });
-      return { stage: stageBox, slot: rect(stage.parentElement), bank: rect(stage.querySelector(".native-drag-drop-bank")), surface: panel.surface, regions };
+      return { anchored: stage.hasAttribute("data-hotspot-anchored"), active: stage.querySelector('.native-audio-text-hotspot[aria-pressed="true"]') ? rect(stage.querySelector('.native-audio-text-hotspot[aria-pressed="true"]')) : null, viewport: rect(stage.closest(".native-readable-text-activity-view") || stage.parentElement), stage: stageBox, slot: rect(stage.parentElement), bank: rect(stage.querySelector(".native-drag-drop-bank")), surface: panel.surface, regions };
     });
     measurements.push({ mode, ...value });
     assert.ok(Math.abs(value.stage.width / value.stage.height - value.surface.width / value.surface.height) < .02, JSON.stringify(value));
     assert.ok(Math.abs(value.stage.width / value.surface.width - value.stage.height / value.surface.height) < .001, `${mode}: uniform source scaling`);
-    for (const outer of [value.slot]) assert.ok(value.stage.x >= outer.x - 1 && value.stage.y >= outer.y - 1 && value.stage.right <= outer.right + 1 && value.stage.bottom <= outer.bottom + 1);
+    if (value.anchored) {
+      assert.ok(value.active && value.active.y >= value.viewport.y - 1 && value.active.bottom <= value.viewport.bottom + 1, `${mode}: active hotspot remains visible`);
+      assert.ok(value.stage.width >= value.slot.width - 2, `${mode}: preserve full-width crop`);
+    } else for (const outer of [value.slot]) assert.ok(value.stage.x >= outer.x - 1 && value.stage.y >= outer.y - 1 && value.stage.right <= outer.right + 1 && value.stage.bottom <= outer.bottom + 1);
     assert.ok(value.bank.height > 0 && value.bank.bottom <= value.stage.bottom + 1);
     for (const region of value.regions) for (const key of ["x", "y", "width", "height"]) assert.ok(Math.abs(region.box[key] - region.expected[key]) < 1.2, `${mode} ${key}: ${JSON.stringify(region)}`);
   };
@@ -68,17 +71,18 @@ export async function runDndVariableHeightRegressions(browser, baseUrl, output, 
         await measure(`${height}/${teacher}/${viewport.width}/${viewport.scale}/normal`);
         await marker().click(); await expect(page.locator(".native-audio-text-focus")).toBeVisible();
         await measure(`${height}/${teacher}/${viewport.width}/${viewport.scale}/split`);
+        await marker().click(); await expect(page.locator(".native-audio-text-focus")).toHaveCount(0);
         if (teacher) { await target().click(); await expect(target()).toHaveAttribute("data-revealed", "true"); }
         else {
           await word().click(); await target().click();
           await expect(target()).toHaveAttribute("data-occupied", "true");
         }
-        await page.keyboard.press("Escape"); await expect(page.locator(".native-audio-text-focus")).toHaveCount(0);
+        await marker().click(); await page.keyboard.press("Escape"); await expect(page.locator(".native-audio-text-focus")).toHaveCount(0);
         await expect(target()).toHaveAttribute(teacher ? "data-revealed" : "data-occupied", "true");
         await measure(`${height}/${teacher}/${viewport.width}/${viewport.scale}/returned`);
         if (!teacher) {
           await target().getByRole("button", { name: /^Remove/ }).click();
-          await marker().click();
+          // Return to the full activity before dragging to targets outside the locked crop.
           const source = await word().boundingBox(); const destination = await target().boundingBox();
           await page.mouse.move(source.x + source.width / 2, source.y + source.height / 2); await page.mouse.down();
           await page.mouse.move(destination.x + destination.width / 2, destination.y + destination.height / 2, { steps: 8 }); await page.mouse.up();

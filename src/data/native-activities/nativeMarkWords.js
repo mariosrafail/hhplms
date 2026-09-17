@@ -1,4 +1,4 @@
-import { isMarkWordsVisual, MARK_WORDS_VISUAL_VERSION, normalizeMarkWordsVisualInteraction, normalizeMarkWordsVisualSolution, validateMarkWordsVisualTopology } from "./nativeMarkWordsVisualTargets.js";
+import { createEmptyMarkWordsVisualInteraction, isMarkWordsVisual, MARK_WORDS_VISUAL_VERSION, normalizeMarkWordsVisualInteraction, normalizeMarkWordsVisualSolution, validateMarkWordsVisualTopology } from "./nativeMarkWordsVisualTargets.js";
 import { isNativeChildId } from "./nativeChildIdentity.js";
 import { normalizeNativeLineEndings } from "./nativePedagogicalText.js";
 import { validateNativeActivityDocumentPair } from "./nativeActivityTeacher.js";
@@ -47,7 +47,9 @@ function overlaps(a, b) {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
-export function createEmptyNativeMarkWordsInteraction() {
+export const createEmptyNativeMarkWordsInteraction = createEmptyMarkWordsVisualInteraction;
+
+export function createLegacyNativeMarkWordsInteraction() {
   return { kind: "mark-the-words", items: [], presentation: { kind: "text", marking: "underline", textStyle: { fontAssetSlot: null, fontSize: 24, color: "#12304b", lineSpacing: 160 }, panels: [] } };
 }
 
@@ -169,6 +171,6 @@ export function assessNativeMarkWordsReadiness(publicDocument, teacherDocument) 
 
 export function nativeMarkWordsAssetRequirements(document) {
   const presentation = document.parts[0].interaction.presentation;
-  if (isMarkWordsVisual(document.parts[0].interaction)) return [...presentation.panels.filter((panel) => panel.backgroundAssetSlot).map((panel) => ({ slot: panel.backgroundAssetSlot, width: panel.sourceWidth, height: panel.sourceHeight })), ...[...new Set(presentation.panels.flatMap((panel) => panel.hotspots.map((hotspot) => hotspot.graphicAssetSlot)).filter(Boolean))].map((slot) => ({ slot, mediaTypes: ["image/png", "image/jpeg", "image/webp"], label: "Target graphic" }))];
+  if (isMarkWordsVisual(document.parts[0].interaction)) return [...presentation.panels.filter((panel) => panel.backgroundAssetSlot).map((panel) => ({ slot: panel.backgroundAssetSlot, width: panel.sourceWidth, height: panel.sourceHeight })), ...[...new Set([...presentation.panels.flatMap((panel) => panel.hotspots.map((hotspot) => hotspot.graphicAssetSlot)), ...(presentation.markerPresets || []).map((marker) => marker.graphicAssetSlot)].filter(Boolean))].map((slot) => ({ slot, mediaTypes: ["image/png", "image/jpeg", "image/webp"], label: "Target graphic" }))];
   return [...presentation.panels.filter((panel) => panel.backgroundAssetSlot).map((panel) => ({ slot: panel.backgroundAssetSlot, width: panel.sourceWidth, height: panel.sourceHeight })), ...(presentation.textStyle.fontAssetSlot ? [{ slot: presentation.textStyle.fontAssetSlot, mediaType: "font/ttf", label: "Passage font" }] : [])];
 }

@@ -1,3 +1,4 @@
+import { useNativeHotspotAnchor } from "./useNativeHotspotAnchor.js";
 import { useEffect, useRef } from "react";
 
 import audioHotspotActive from "../../assets/native-activities/audio-text-hotspot-active.svg";
@@ -5,7 +6,7 @@ import audioHotspotPressed from "../../assets/native-activities/audio-text-hotsp
 import readableHotspotActive from "../../assets/native-activities/readable-text-hotspot-active.svg";
 import readableHotspotPressed from "../../assets/native-activities/readable-text-hotspot-pressed.svg";
 import { logicalAreaStyle } from "../builder-studio/stageGeometry.js";
-import { nativeAudioTextFocusLayout, nativeAudioTextHighlightColor, nativeAudioTextReadableHighlightArea } from "../../data/native-activities/nativeAudioTextHotspots.js";
+import { nativeAudioTextFocusLayout, nativeAudioTextHighlightColor, nativeAudioTextReadableHighlights } from "../../data/native-activities/nativeAudioTextHotspots.js";
 import { pauseSiblingNativeMedia } from "./nativeMediaArbitration.js";
 import { NativeVerticalScrollViewport } from "./NativeVerticalScrollViewport.jsx";
 
@@ -17,8 +18,9 @@ export function nativeAudioTextHotspotArtwork(hotspot) {
 }
 
 export function NativeAudioTextHotspotButtons({ panelId = null, surface, presentation = null }) {
+  const anchorRef = useNativeHotspotAnchor(surface, presentation, panelId);
   if (!presentation || !surface) return null;
-  return presentation.hotspots.filter((hotspot) => hotspot.panelId === panelId).map((hotspot) => {
+  return <><span ref={anchorRef} hidden />{presentation.hotspots.filter((hotspot) => hotspot.panelId === panelId).map((hotspot) => {
     const active = presentation.activeHotspotId === hotspot.id;
     const artwork = nativeAudioTextHotspotArtwork(hotspot);
     return <button
@@ -32,7 +34,7 @@ export function NativeAudioTextHotspotButtons({ panelId = null, surface, present
       onKeyDown={(event) => { if (["Enter", " "].includes(event.key)) event.stopPropagation(); }}
       onClick={(event) => { event.stopPropagation(); presentation.onToggle(hotspot.id); }}
     ><img src={active ? artwork.pressed : artwork.active} alt="" /></button>;
-  });
+  })}</>;
 }
 
 export function NativeAudioTextFocusContent({ document, hotspot, assetUrl, autoPlay = false }) {
@@ -49,13 +51,7 @@ export function NativeAudioTextFocusContent({ document, hotspot, assetUrl, autoP
   if (!hotspot || !readableReference) return null;
   const focus = hotspot.readableFocusArea;
   const focusLayout = nativeAudioTextFocusLayout(hotspot);
-  const highlight = nativeAudioTextReadableHighlightArea(hotspot);
-  const highlightStyle = highlight ? {
-    left: `${(highlight.x - focus.x) / focus.width * 100}%`,
-    top: `${(highlight.y - focus.y) / focus.height * 100}%`,
-    width: `${highlight.width / focus.width * 100}%`,
-    height: `${highlight.height / focus.height * 100}%`,
-  } : null;
+  const highlights = nativeAudioTextReadableHighlights(hotspot);
   const crop = <div
       className="native-audio-text-focus-crop"
       data-highlight-color={nativeAudioTextHighlightColor(hotspot.highlightColor)}
@@ -64,7 +60,7 @@ export function NativeAudioTextFocusContent({ document, hotspot, assetUrl, autoP
       <svg viewBox={`${focus.x} ${focus.y} ${focus.width} ${focus.height}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`${document.readableText.altText}: ${hotspot.label}`}>
         <image href={assetUrl(readableReference.assetId)} x="0" y="0" width={document.readableText.sourceWidth} height={document.readableText.sourceHeight} preserveAspectRatio="xMidYMid meet" />
       </svg>
-      {highlightStyle ? <span className="native-audio-text-focus-highlight" style={highlightStyle} aria-hidden="true" /> : null}
+      {highlights.map(({ id, area }) => <span key={id} data-highlight-id={id} className="native-audio-text-focus-highlight" style={{ left: `${(area.x - focus.x) / focus.width * 100}%`, top: `${(area.y - focus.y) / focus.height * 100}%`, width: `${area.width / focus.width * 100}%`, height: `${area.height / focus.height * 100}%` }} aria-hidden="true" />)}
     </div>;
   return <section className="native-audio-text-focus" data-focus-layout={focusLayout} aria-label={`Focused readable text: ${hotspot.label}`}>
     {focusLayout === "natural-width" ? <NativeVerticalScrollViewport id={`${document.activityId}-${hotspot.id}-focus-scroll`} className="native-audio-text-focus-scroll" ariaLabel="Focused readable text vertical scroll" resetKey={hotspot.id}>{crop}</NativeVerticalScrollViewport> : crop}

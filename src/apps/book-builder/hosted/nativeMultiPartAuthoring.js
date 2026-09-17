@@ -3,7 +3,6 @@ import { createEmptyMarkWordsVisualInteraction, createEmptyMarkWordsVisualSoluti
 import { nativeOpenResponsePanels } from "../../../data/native-activities/nativeOpenResponse.js";
 import { createNativeChildId } from "../../../data/native-activities/nativeChildIdentity.js";
 import { createEmptyNativeDragDropInteraction } from "../../../data/native-activities/nativeDragDrop.js";
-import { createEmptyNativeMarkWordsInteraction } from "../../../data/native-activities/nativeMarkWords.js";
 import { nativeMultiPartAssetSlots, projectNativeMultiPartChild } from "../../../data/native-activities/nativeMultiPart.js";
 
 export const SHARED_CANVAS_AUTHORING_IMAGE_ID = "img-00000000000000000000000000000000";
@@ -15,7 +14,7 @@ export function createMultiPartSection(kind, panel) {
     "single-choice": () => ({ interaction: { kind, questions: [], ...(panel.layout === "canvas" ? { presentation: { kind: "image-hotspot", panels: [visualPanel()] } } : {}) }, solution: { kind, correctAnswers: [] } }),
     "complete-sentences": () => ({ interaction: { kind, items: [], presentation: { kind: "image-hotspot", answerStyle: { ...NATIVE_COMPLETE_SENTENCES_DEFAULT_ANSWER_STYLE }, panels: [visualPanel()] } }, solution: { kind, answers: [] } }),
     "open-response": () => ({ interaction: { kind, surface, artwork: [], questions: [] }, solution: { kind, modelAnswers: [] } }),
-    "mark-the-words": () => ({ interaction: panel.layout === "canvas" ? { ...createEmptyMarkWordsVisualInteraction(), presentation: { kind: "visual-target", panels: [visualPanel()] } } : createEmptyNativeMarkWordsInteraction(), solution: panel.layout === "canvas" ? { ...createEmptyMarkWordsVisualSolution(), answers: [] } : { kind, answers: [] } }),
+    "mark-the-words": () => ({ interaction: panel.layout === "canvas" ? { ...createEmptyMarkWordsVisualInteraction(), presentation: { kind: "visual-target", panels: [visualPanel()] } } : createEmptyMarkWordsVisualInteraction(), solution: panel.layout === "canvas" ? { ...createEmptyMarkWordsVisualSolution(), answers: [] } : createEmptyMarkWordsVisualSolution() }),
     image: () => ({ interaction: { kind, surface, images: [] }, solution: { kind } }),
   };
   const { interaction, solution } = blanks[kind]();

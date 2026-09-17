@@ -1,3 +1,4 @@
+import { normalizeMarkWordsMarker } from "./nativeMarkWordsMarkers.js";
 import { isNativeChildId } from "./nativeChildIdentity.js";
 import { normalizeNativePedagogicalText } from "./nativePedagogicalText.js";
 
@@ -28,7 +29,14 @@ export function normalizeMarkWordsVisualInteraction(input, { assets = [] } = {})
     exact(target, ["id", "label"]); identity(target.id, "target", seen);
     return { id: target.id, label: normalizeNativePedagogicalText(target.label, "Target label", 300) };
   });
-  exact(input.presentation, ["kind", "panels"]);
+  const hasPresets = Object.hasOwn(input.presentation, "markerPresets");
+  exact(input.presentation, ["kind", "panels", ...(hasPresets ? ["markerPresets"] : [])]);
+  let markerPresets;
+  if (hasPresets) {
+    if (!Array.isArray(input.presentation.markerPresets) || input.presentation.markerPresets.length > 32) throw new Error("Marker palette exceeds limits.");
+    const ids = new Set();
+    markerPresets = input.presentation.markerPresets.map((preset) => { const normalized = normalizeMarkWordsMarker(preset, assets, { preset: true }); if (ids.has(preset.id)) throw new Error("Duplicate marker preset."); ids.add(preset.id); return normalized; });
+  }
   if (!isMarkWordsVisual(input) || !Array.isArray(input.presentation.panels) || input.presentation.panels.length > 8) throw new Error("Visual target panels are invalid.");
   const mapped = new Set();
   const panels = input.presentation.panels.map((panel) => {
@@ -37,7 +45,8 @@ export function normalizeMarkWordsVisualInteraction(input, { assets = [] } = {})
     if (panel.backgroundAssetSlot !== "" && !assets.some((asset) => asset.slot === panel.backgroundAssetSlot && asset.role === "activity_artwork")) throw new Error("Visual background must reference managed artwork.");
     if (!Array.isArray(panel.hotspots) || panel.hotspots.length > 800) throw new Error("Visual hotspots exceed limits.");
     const hotspots = panel.hotspots.map((hotspot) => {
-      exact(hotspot, ["id", "targetId", "area", "markArea", "graphicAssetSlot"]); identity(hotspot.id, "hot", seen);
+      exact(hotspot, ["id", "targetId", "area", "markArea", "graphicAssetSlot", ...(Object.hasOwn(hotspot, "marker") ? ["marker"] : [])]);
+      if (Object.hasOwn(hotspot, "marker")) { normalizeMarkWordsMarker(hotspot.marker, assets); if (hotspot.marker.graphicAssetSlot !== hotspot.graphicAssetSlot) throw new Error("Marker graphic binding mismatch."); } identity(hotspot.id, "hot", seen);
       if (!targets.some((target) => target.id === hotspot.targetId) || mapped.has(hotspot.targetId)) throw new Error("Visual hotspot must bind one unique target.");
       mapped.add(hotspot.targetId);
       if (hotspot.graphicAssetSlot !== null && !assets.some((asset) => asset.slot === hotspot.graphicAssetSlot && asset.role === "activity_artwork")) throw new Error("Visual graphic must reference managed artwork or No graphic.");
@@ -50,7 +59,7 @@ export function normalizeMarkWordsVisualInteraction(input, { assets = [] } = {})
     return { ...panel, hotspots };
   });
   if (mapped.size !== targets.length) throw new Error("Every visual target must have a hotspot.");
-  return { kind: input.kind, schemaVersion: MARK_WORDS_VISUAL_VERSION, targets, presentation: { kind: "visual-target", panels } };
+  return { kind: input.kind, schemaVersion: MARK_WORDS_VISUAL_VERSION, targets, presentation: { kind: "visual-target", panels, ...(hasPresets ? { markerPresets } : {}) } };
 }
 export function normalizeMarkWordsVisualSolution(input) {
   exact(input, ["kind", "schemaVersion", "answers"]);

@@ -707,3 +707,19 @@ documents the failure and consumer workaround. hhplms now explicitly supplies
 The next workflow step still installs Android platform 36 and build-tools 36.0.0
 explicitly. Java 21 and all three APK checks remain required. This CI-only
 compatibility change does not change Android application or runtime semantics.
+
+
+### Readable regions and image-only Mark the Words (local candidate)
+
+VerifiedAt: 2026-09-17; fresh remote baseline `febd2a1e046a59550aaf8bafd1af99823171aed5`.
+New Mark the Words creation is image-only. Optional stable marker presets and
+per-selection presentation metadata preserve exact selected-ID grading and
+private Teacher correctness. Readable hotspots support an explicit array of
+stable inner regions, a bounded diameter control and common owner-stage crop
+anchoring. Legacy text, highlight absence/null and array-only response readers
+remain supported without historical release rewrites. See
+[NATIVE_MARKERS_AND_READABLE_FOCUS.md](NATIVE_MARKERS_AND_READABLE_FOCUS.md) for the
+contracts, asset dependencies and regression entry points. No migration or
+provider/shared-data mutation is introduced. Hosted acceptance and production
+readiness are not established by local disposable tests; the Project copy is not
+synchronized.

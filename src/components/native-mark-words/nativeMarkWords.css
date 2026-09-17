@@ -27,9 +27,22 @@
 .native-mark-words-authoring-mark { position: absolute; border-bottom: 2px solid #d14500; pointer-events: none; }
 
 .native-mark-words-graphic { position: absolute; display: block; pointer-events: none; padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; min-width: 0; min-height: 0; max-width: none; max-height: none; object-fit: fill; }
-.native-mark-words-hit, .native-mark-words-hit:hover, .native-mark-words-hit:active { appearance: none; -webkit-tap-highlight-color: transparent; background: transparent; border: 0; box-shadow: none; min-width: 0; min-height: 0; }
+.native-mark-words .native-mark-words-hit, .native-mark-words .native-mark-words-hit:hover, .native-mark-words .native-mark-words-hit:active { appearance: none; -webkit-tap-highlight-color: transparent; border-radius: 0; padding: 0; margin: 0; background: transparent; border: 0; box-shadow: none; min-width: 0; min-height: 0; }
 .native-mark-words-hit::before, .native-mark-words-hit::after { content: none; }
 .native-mark-words[data-embedded-canvas], .native-mark-words[data-embedded-canvas] .native-mark-words-stage-slot, .native-mark-words[data-embedded-canvas] .native-mark-words-stage { width: 100%; height: 100%; padding: 0; margin: 0; border: 0; overflow: hidden; aspect-ratio: auto !important; pointer-events: none; }
 .native-mark-words[data-embedded-canvas] .native-mark-words-hit { pointer-events: auto; }
 
 .teacher-offline-embedded-activity .native-mark-words[data-embedded-canvas] .native-mark-words-stage { width: 100%; }
+
+.native-mark-words-marker { position: absolute; pointer-events: none; overflow: visible; }
+.native-mark-words-palette { display: flex; flex-wrap: nowrap; gap: 8px; padding: 4px; overflow-x: auto; }
+.native-mark-words-palette button { border: 2px solid transparent; border-radius: 4px; }
+.native-mark-words-palette button[aria-pressed="true"] { border-color: #075eb5; }
+.native-mark-words-palette-preview { display: inline-block; position: relative; width: 64px; height: 24px; }
+
+.native-mark-words-session { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+.native-mark-words-session > .native-mark-words-palette { flex: none; }
+.native-mark-words-session > .native-mark-words { flex: 1; min-height: 0; box-sizing: border-box; }
+.native-mark-words-session[data-embedded-canvas] { position: relative; pointer-events: none; }
+.native-mark-words-session[data-embedded-canvas] > .native-mark-words-palette { position: absolute; top: 0; right: 0; z-index: 60; max-width: 65%; pointer-events: auto; }
+.native-readable-text-activity-view.is-audio-focus .native-mark-words-stage-slot { overflow: hidden; }

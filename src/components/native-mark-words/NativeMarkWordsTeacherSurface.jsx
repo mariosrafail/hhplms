@@ -30,6 +30,7 @@ function TeacherSession({ publicDocument, teacherDocument, assetUrl, presentatio
     {!presentation ? <div role="group" aria-label="Teacher presentation"><button type="button" onClick={showNext}>Reveal next</button><button type="button" onClick={() => setRevealed(items.map((item) => item.id))}>Reveal all</button><button type="button" onClick={reset}>Hide / reset</button></div> : null}
     <NativeMarkWordsPresentation audioHotspotPresentation={audioHotspotPresentation} document={publicDocument} assetUrl={assetUrl} embeddedCanvas={embeddedCanvas} responses={responses} panelIndex={panelIndex} onPanelChange={setPanelIndex} externalNavigation={Boolean(presentation)} onToggle={(itemId, targetId) => {
       if (!visual) return setRevealed((current) => current.includes(itemId) ? current.filter((id) => id !== itemId) : [...current, itemId]);
+      if (!correct.get(itemId)?.includes(targetId)) return;
       const active = responses[itemId]?.includes(targetId);
       setRevealed((current) => current.filter((id) => id !== targetId));
       setSelected((current) => ({ ...current, [itemId]: active ? (current[itemId] || []).filter((id) => id !== targetId) : [...(current[itemId] || []), targetId] }));

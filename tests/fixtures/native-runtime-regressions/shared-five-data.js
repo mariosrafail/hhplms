@@ -37,6 +37,7 @@ for (const kind of ["open-response", "complete-sentences", "mark-the-words"]) {
       addVisualTarget(pair.publicDocument, pair.teacherDocument, child.presentation.panels[0].id, { x: 40 + index * 210, y: 350, width: 150, height: 40 });
       const hotspot = child.presentation.panels[0].hotspots[index];
       child.targets[index].label = ["Correct target", "Wrong graphic", "Wrong no graphic"][index];
+      delete hotspot.marker; // Historical manual graphic fixture.
       hotspot.graphicAssetSlot = index === 2 ? null : "graphic";
       hotspot.markArea = { x: hotspot.area.x, y: 397, width: 120, height: 3 };
       if (!index) setVisualTargetCorrect(pair.publicDocument, pair.teacherDocument, child.presentation.panels[0].id, hotspot.targetId, true);

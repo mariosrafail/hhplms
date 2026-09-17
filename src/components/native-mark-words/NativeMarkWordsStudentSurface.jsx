@@ -1,6 +1,8 @@
+import { NativeMarkWordsMarker } from "./NativeMarkWordsMarker.jsx";
+import { markWordsMarkerPresets } from "../../data/native-activities/nativeMarkWordsMarkers.js";
 import { NativeAudioTextHotspotButtons } from "../native-readable-text/NativeAudioTextHotspots.jsx";
 import { isMarkWordsVisual } from "../../data/native-activities/nativeMarkWordsVisualTargets.js";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { logicalAreaStyle } from "../builder-studio/stageGeometry.js";
 import { useNativeActivityFonts } from "../native-activity-assets/useNativeActivityFonts.js";
 import { nativeActivityFontFamily } from "../../data/native-activities/nativeActivityFont.js";
@@ -36,6 +38,7 @@ export function NativeMarkWordsPresentation({ document, assetUrl = () => "", res
   const { panels, textStyle = {}, marking } = presentation;
   const panelIndex = Math.max(0, Math.min(panels.length - 1, externalPanelIndex ?? localPanel));
   const panel = panels[panelIndex];
+  useEffect(() => { if (panel) audioHotspotPresentation?.onPanelChange?.(panel.id); }, [panel?.id]);
   const changePanel = (next) => { setLocalPanel(next); onPanelChange?.(next); };
   const reference = panel && document.assets.find((asset) => asset.slot === panel.backgroundAssetSlot);
   const stage = panel ? { width: panel.sourceWidth, height: panel.sourceHeight } : null;
@@ -48,8 +51,8 @@ export function NativeMarkWordsPresentation({ document, assetUrl = () => "", res
           if (visualTargets) {
             const target = document.parts[0].interaction.targets.find((entry) => entry.id === hotspot.targetId);
             const selected = (responses[panel.id] || []).includes(target.id);
-            const graphic = document.assets.find((asset) => asset.slot === hotspot.graphicAssetSlot);
-            return <Fragment key={hotspot.id}>{selected && graphic ? <img className="native-mark-words-graphic" src={assetUrl(graphic.assetId)} alt="" aria-hidden="true" style={logicalAreaStyle(hotspot.markArea, stage)} /> : null}<WordButton item={{ id: panel.id }} word={{ id: target.id }} label={target.label || `Target ${panel.hotspots.indexOf(hotspot) + 1}`} {...{ selected, readOnly, onToggle }} visual style={logicalAreaStyle(hotspot.area, stage)} /></Fragment>;
+            const preset = markWordsMarkerPresets(document.parts[0].interaction).find((entry) => entry.id === responses.markers?.[panel.id]?.[target.id]);
+            return <Fragment key={hotspot.id}>{selected ? <NativeMarkWordsMarker hotspot={hotspot} stage={stage} marker={preset} graphicUrl={(slot) => assetUrl(document.assets.find((asset) => asset.slot === slot)?.assetId)} /> : null}<WordButton item={{ id: panel.id }} word={{ id: target.id }} label={target.label || `Target ${panel.hotspots.indexOf(hotspot) + 1}`} {...{ selected, readOnly, onToggle }} visual style={logicalAreaStyle(hotspot.area, stage)} /></Fragment>;
           }
           const itemNumber = items.findIndex((item) => item.id === hotspot.itemId) + 1; const item = items[itemNumber - 1];
           const position = item.words.findIndex((word) => word.id === hotspot.wordId); const word = item.words[position];
@@ -63,15 +66,20 @@ export function NativeMarkWordsPresentation({ document, assetUrl = () => "", res
 }
 
 function StudentSession({ document, assetUrl, responses: controlled = null, initialResponses = null, onResponsesChange = null, readOnly = false, embeddedCanvas = false, audioHotspotPresentation = null }) {
+  const presets = markWordsMarkerPresets(document.parts[0].interaction);
+  const [activeMarker, setActiveMarker] = useState(presets[0]?.id);
   const [local, setLocal] = useState(() => restoreNativeMarkWordsResponses(document, initialResponses));
   const responses = restoreNativeMarkWordsResponses(document, controlled ?? local);
   const onToggle = (itemId, wordId) => {
     if (readOnly) return;
-    const next = toggleNativeMarkWordsResponse(document, responses, itemId, wordId);
+    const next = toggleNativeMarkWordsResponse(document, responses, itemId, wordId, activeMarker);
     if (controlled === null) setLocal(next);
     onResponsesChange?.(next);
   };
-  return <NativeMarkWordsPresentation {...{ document, assetUrl, responses, readOnly, onToggle, embeddedCanvas, audioHotspotPresentation }} />;
+  return <div className="native-mark-words-session" data-embedded-canvas={embeddedCanvas || undefined}>
+    {isMarkWordsVisual(document.parts[0].interaction) && !readOnly ? <div className="native-mark-words-palette" role="group" aria-label="Marker palette">{presets.map((preset, index) => <button type="button" key={preset.id} aria-label={`Marker ${index + 1}: ${preset.kind}`} aria-pressed={activeMarker === preset.id} onClick={() => setActiveMarker(preset.id)}><span className="native-mark-words-palette-preview"><NativeMarkWordsMarker hotspot={{ area: { x: 2, y: 2, width: 60, height: 20 }, markArea: { x: 2, y: 19, width: 60, height: 3 } }} stage={{ width: 64, height: 24 }} marker={preset} graphicUrl={(slot) => assetUrl(document.assets.find((asset) => asset.slot === slot)?.assetId)} /></span>{preset.kind}</button>)}</div> : null}
+    <NativeMarkWordsPresentation {...{ document, assetUrl, responses, readOnly, onToggle, embeddedCanvas, audioHotspotPresentation }} />
+  </div>;
 }
 
 export function NativeMarkWordsStudentSurface({ identity = "", ...props }) {

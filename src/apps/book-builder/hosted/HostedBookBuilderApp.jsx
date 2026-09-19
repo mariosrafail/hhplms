@@ -14,6 +14,7 @@ import { HostedPackageReview } from "./HostedPackageReview.jsx";
 import { HostedBuilderReviewPage } from "./HostedBuilderReviewPage.jsx";
 import { hostedBuilderHash, parseHostedBuilderHash } from "./hostedBuilderRouter.js";
 import { HostedBuilderRouteTransition } from "./HostedBuilderRouteTransition.jsx";
+import { HostedEditionSelection } from "./HostedEditionWorkspace.jsx";
 import "./hostedBuilder.css";
 import "./hostedBuilderModern.css";
 
@@ -163,7 +164,7 @@ export function HostedBookBuilderApp() {
   if (route.kind === "not-found") return <HostedBuilderRouteTransition routeKey="not-found"><NotFound /></HostedBuilderRouteTransition>;
   const book = findHostedBuilderBook(route.bookSlug);
   if (!book) return <NotFound />;
-  return <PackageExperience book={book} route={route} />;
+  return <HostedEditionSelection key={book.slug} book={book} canSelect={route.kind === "book"}><PackageExperience book={book} route={route} /></HostedEditionSelection>;
 }
 
 export default HostedBookBuilderApp;

@@ -2,11 +2,13 @@ import { json, requestsHiddenPhaseOneComponent, requireResourceRole, verifyPacka
 import { getActiveComponentRelease, getPublishedNativeTeacherAnswer, getPublishedNativeTeacherDocument, getPublishedReleaseAsset } from "./publication-actions.js";
 import { listPublishedBooks, getPublishedBookActivity, getStudentAssignmentDetail } from "./published-book-actions.js";
 import { getPublishedPageImage } from "./published-page-image.js";
+import { readPublishedEdition } from "./edition-read.js";
 
 // Called only after requireAuth. Historical assignment detail resolves its own
 // identity and access; ordinary book discovery retains the LMS visibility gate.
 async function readPublishedBookRoute(sql, currentUser, event, query, context) {
   if (!["GET", "HEAD"].includes(event.httpMethod)) return null;
+  if (query.action === "edition-release" && event.httpMethod === "GET") return readPublishedEdition(sql, currentUser, query);
   if (query.action === "published-page-image") {
     if (query.bookSlug !== "ultimate-b2" || query.componentSlug !== "ultimate-b2-students-book") return json(404, { error: "Page not found" });
     const accessError = await verifyPackageAccess(sql, currentUser, { packageSlug: query.bookSlug });

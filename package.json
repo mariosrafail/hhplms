@@ -10,6 +10,7 @@
     "dev:netlify": "node scripts/run-netlify-dev.mjs",
     "test": "node --test",
     "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js",
+    "test:builder:content-editions": "cross-env CONTENT_EDITION_BROWSER=1 node --test tests/integration/content-editions-persistence.test.js",
     "test:integration:cleanup": "node scripts/cleanup-integration-schemas.mjs",
     "test:e2e": "playwright test",
     "pilot:demo:seed": "node scripts/seed-local-pilot.mjs",

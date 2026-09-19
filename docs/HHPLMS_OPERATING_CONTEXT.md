@@ -1,5 +1,23 @@
 # HHPLMS — Operating Context & Engineering Map
 
+## Context delta — Content editions foundation
+
+`verifiedAt: 2026-09-19` · source: `src/data/contentEditions.js`,
+`database/066_content_editions.sql`, Builder `_builder-edition-*` / `_builder-editions.js`,
+LMS `_book-content/edition-read.js`, and [the contract](CONTENT_EDITIONS_FOUNDATION.md).
+Inspection baseline: `origin/dev` `7bdc71e1158180da96dc5e854ce31e7eeb07014c`.
+The B2-only opt-in registry adds explicit Greek/International source ownership,
+revisioned shared/edition-only inputs and separate immutable edition releases/heads.
+Existing unclassified content, historical compilers, assignments and B1/B1+ stay
+on their existing paths. Migration 066 is feature-optional for legacy runtime
+readiness and does not seed associations or grants. The new LMS read requires
+both book entitlement and an explicit school/user/book/edition allow-list.
+The same Builder includes edition selection, source capture/association and
+immutable review through the shared activity runner. CI adds the disposable-DB
+content-edition browser gate. Word List and two edition APK exports remain
+deferred. This delta records repository contracts, not hosted/production
+acceptance; no ChatGPT Project-copy synchronization is claimed.
+
 **Έκδοση:** 2026-09-11.v2
 
 **Repository baseline που ελέγχθηκε:** `88fafccb7f13a84da32aef732ef063516db5a164`

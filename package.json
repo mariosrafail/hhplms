@@ -159,6 +159,7 @@
     "ultimate-b2:project:page5": "node scripts/ultimate-b2/project-page5-runtime.mjs",
     "test:builder:wordlists": "cross-env WORDLIST_BROWSER=1 node --test tests/integration/content-editions-persistence.test.js",
     "test:wordlists:worker": "node scripts/wordlists/worker-acceptance.mjs",
+    "test:wordlists:classroom": "cross-env WORDLIST_CLASSROOM_BROWSER=1 node --test tests/integration/content-editions-persistence.test.js",
     "wordlists:extract": "python scripts/wordlists/extract.py",
     "wordlists:validate": "node scripts/wordlists/validate.mjs"
   },

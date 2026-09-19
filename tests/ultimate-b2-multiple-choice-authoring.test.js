@@ -67,7 +67,7 @@ test("Object 3 runtime and builder expose bounded navigation, feedback, area edi
   const [runtime, runtimeCss, pages, navigation, embedded, activityBuilder, registry, builder, entry] = await Promise.all([
     readFile("src/components/lms/activities/ultimate-b2/TeacherLegacyMultipleChoiceActivity.jsx", "utf8"),
     readFile("src/components/lms/activities/ultimate-b2/teacherLegacyMultipleChoiceActivity.css", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherBookNavigationCore.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineEmbeddedActivity.jsx", "utf8"),
     readFile("src/apps/ultimate-b2-builder/UltimateB2ActivityBuilder.jsx", "utf8"),

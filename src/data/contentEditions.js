@@ -12,7 +12,7 @@ export const contentEditionBooks = Object.freeze({
     editions: Object.freeze(["international", "greek"]),
     components: b2Components,
     uiOwnerComponentSlug: "ultimate-b2-students-book",
-    wordListOperational: false,
+    wordListOperational: true,
   }),
 });
 export const editionLabels = Object.freeze({ international: "International", greek: "Greek" });

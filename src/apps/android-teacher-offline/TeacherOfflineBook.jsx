@@ -22,6 +22,7 @@ export default function TeacherOfflineBook({
   hotspotProvider,
   runtimeContext,
   componentIdentity,
+  classroom = null,
 }) {
   const runtimeUiAssets = useTeacherRuntimeUiAssets();
   const availableUnitNumbers = (pageUnits || [])
@@ -48,6 +49,7 @@ export default function TeacherOfflineBook({
     >
       {tab === "pages" ? (
         <TeacherOfflinePages
+          classroom={classroom}
           unit={pageUnits.find((candidate) => Number(candidate.number) === unitNumber)}
           selectedPageId={location.pageId}
           onSelectPage={(pageId, options) => update({ pageId }, options)}

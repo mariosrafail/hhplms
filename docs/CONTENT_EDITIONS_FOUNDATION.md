@@ -161,14 +161,15 @@ reads are restricted to the public manifest. Asset fields are `assetSha256`,
 This opt-in read path does not change existing LMS discovery or assignment
 creation: old assignments continue through their original pinned release path.
 
-## Word List extension contract (Task 2 data; Task 3 UI deferred)
+## Word List extension contract (Task 2 data and Task 3 shared UI)
 
 Task 2 implements the separate versioned data/import/publication extension in
 [WORD_LIST_CONTRACT.md](WORD_LIST_CONTRACT.md). The following requirements remain
 its compatibility foundation. `wordListOperational` denotes interactive
 launcher readiness, not availability of the new data APIs.
 
-`wordListOperational` is false. Keep one canonical imported Word List source
+`wordListOperational` is true for the shared interactive capability; real
+mapping readiness remains independent. Keep one canonical imported Word List source
 with explicit available languages (`en`, `el`), provenance, an import revision
 and integrity hash. Greek text being present cannot identify its edition.
 An English-only projection must remove Greek translation content from its
@@ -192,7 +193,7 @@ The importer should produce validated portable data plus separate audio, then
 use the authorized source persistence/association boundary. No local SWF path,
 preview token, signed URL or credentials belong in durable JSON or packs.
 
-Milestone 3 acceptance (do not add partial controls in milestone 1):
+Milestone 3 shared classroom behavior:
 
 - Artwork `navibar_vocabulary_active`, `navibar_vocabulary_disabled`,
   `navibar_vocabulary_pressed` maps to existing canonical IDs
@@ -232,4 +233,7 @@ R2 sync/CORS operation or deployment is implied. Production operational
 readiness and the publisher's real Greek content are not established.
 The Task 2 portable schema and conservative cross-component audio policy are
 documented in WORD_LIST_CONTRACT.md. The importer and versioned data APIs are
-present; the interactive Vocabulary launcher/modal remains deferred.
+present together with the shared in-frame Vocabulary UI and bounded saved-draft,
+immutable candidate and entitled published adapters. Source: Task 3 on local
+Task 2 parent `29372dc0893a55e4672ef9022bbc5716112555b2`; verifiedAt: 2026-09-19.
+The 104 SB and 50 WB unresolved real groups remain unresolved.

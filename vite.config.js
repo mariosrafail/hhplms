@@ -209,6 +209,10 @@ export default defineConfig(({ mode }) => {
     ].filter(Boolean),
     resolve: {
       alias: [
+        ...(!isTeacherRuntime && !isHostedInteractiveReview ? [{
+          find: /^.*\/ultimateB2AuthoredAssetUrls\.js$/,
+          replacement: path.resolve(process.cwd(), "src/data/ultimate-b2/ultimateB2ClassroomVisualAssetUrls.js"),
+        }] : []),
         {
           find: "virtual:ultimate-b2-page-assets",
           replacement: ultimateB2PageAssets,

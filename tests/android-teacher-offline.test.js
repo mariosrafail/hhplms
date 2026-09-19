@@ -302,7 +302,7 @@ test("Teacher book screens use one canonical navigation row with code-controlled
     readFile("src/apps/android-teacher-offline/TeacherBookNavigationCore.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherShellChrome.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineBook.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineUnitOverview.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineMedia.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/teacherFixedStage.css", "utf8"),
@@ -323,7 +323,7 @@ test("Teacher book screens use one canonical navigation row with code-controlled
   assert.match(navigationCore, /contextActions = null/);
   assert.match(navigationCore, /internalNavigation = null/);
   assert.match(navigationCore, /aria-pressed=\{typeof action\.active === "boolean" \? action\.active : undefined\}/);
-  assert.match(navigationCore, /disabled=\{Boolean\(action\.disabled\)\}/);
+  assert.match(navigationCore, /disabled=\{Boolean\(action\.disabled \|\| modalActionId && modalActionId !== action\.id\)\}/);
   assert.match(navigationCore, /action\.activeIconName/);
   assert.match(navigationCore, /renderContextIcon\?\.\(action\)/);
   assert.match(navigationCore, /Previous activity part/);
@@ -373,7 +373,7 @@ test("Teacher book screens use one canonical navigation row with code-controlled
 test("contextual activity video overlay keeps captions reliable in Android WebView", async () => {
   const [overlay, embedded, player, css] = await Promise.all([
     readFile("src/apps/android-teacher-offline/TeacherOfflineActivityVideoOverlay.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflineEmbeddedActivity.jsx", "utf8"),
+    Promise.all([readFile("src/apps/android-teacher-offline/TeacherOfflineEmbeddedActivity.jsx", "utf8"), readFile("src/apps/android-teacher-offline/EmbeddedActivityFrame.jsx", "utf8")]).then((sources) => sources.join("\n")),
     readFile("src/components/lms/activities/ultimate-b2/NormalizedStudentsBookActivity.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/teacherOfflinePageViewer.css", "utf8"),
   ]);
@@ -386,8 +386,8 @@ test("contextual activity video overlay keeps captions reliable in Android WebVi
   assert.match(overlay, /Video position/);
   assert.match(overlay, /Video volume/);
   assert.match(overlay, /aria-label="Close video"/);
-  assert.match(embedded, /videoOpen && <TeacherOfflineActivityVideoOverlay/);
-  assert.ok(embedded.lastIndexOf("TeacherOfflineActivityVideoOverlay") > embedded.indexOf("teacher-offline-embedded-activity-content"));
+  assert.match(embedded, /overlay=\{props.videoOpen \? <TeacherOfflineActivityVideoOverlay/);
+  assert.ok(embedded.lastIndexOf("{overlay}") > embedded.indexOf("teacher-offline-embedded-activity-content"));
   assert.match(player, /onTimeUpdate/);
   assert.match(player, /controlsList="nofullscreen nodownload noremoteplayback"/);
   assert.match(player, /kind="captions"/);
@@ -548,8 +548,8 @@ test("teacher app embeds book activities in the mounted page shell with one clas
   const [app, book, pages, embedded, activityLocation, overview, presentation, media, library, unitMetadata, toolbar, overlay, toolsContext, renderer, provider, storage, entry, networkGuard, pageViewerStyles, classroomToolStyles] = await Promise.all([
     readFile("src/apps/android-teacher-offline/TeacherOfflineApp.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineBook.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflineEmbeddedActivity.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
+    Promise.all([readFile("src/apps/android-teacher-offline/TeacherOfflineEmbeddedActivity.jsx", "utf8"), readFile("src/apps/android-teacher-offline/EmbeddedActivityFrame.jsx", "utf8")]).then((sources) => sources.join("\n")),
     readFile("src/apps/android-teacher-offline/teacherOfflineActivityLocation.js", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineUnitOverview.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflinePresentation.jsx", "utf8"),
@@ -572,7 +572,8 @@ test("teacher app embeds book activities in the mounted page shell with one clas
   assert.match(app, /window\.history\.pushState\(pageState[\s\S]*window\.history\.pushState\(activityState/);
   assert.match(app, /activityId=\{navigation\.activityId \|\| ""\}/);
   assert.match(book, /activeActivity=\{activeActivity\}/);
-  assert.match(pages, /TeacherOfflineEmbeddedActivity/);
+  assert.match(pages, /<ActivityRenderer/);
+  assert.match(await readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"), /ActivityRenderer=\{TeacherOfflineEmbeddedActivity\}/);
   assert.match(pages, /\$\{selectedBookId\}:activity:\$\{embeddedActivityId\}/);
   assert.match(pages, /activityActive \? \{\} : \{[\s\S]*onPointerDown/);
   assert.match(pages, /event\.target\.closest\?\.\("\.teacher-offline-page-hotspot"\)/);

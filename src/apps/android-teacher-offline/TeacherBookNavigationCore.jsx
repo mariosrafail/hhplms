@@ -1,6 +1,7 @@
 const noOp = () => {};
 
 export default function TeacherBookNavigationCore({
+  modalActionId = null,
   renderIcon,
   renderContextIcon = null,
   onHome,
@@ -24,13 +25,13 @@ export default function TeacherBookNavigationCore({
   const actions = contextActions || (contextAction ? [contextAction] : []);
   return (
     <nav className="teacher-book-navigation" aria-label="Book navigation" data-teacher-book-navigation="">
-      <button type="button" onClick={onHome} aria-label="Home" title="Home">{renderIcon("home")}</button>
-      <button type="button" onClick={onBack} aria-label="Back" title="Back">{renderIcon("back")}</button>
-      <button type="button" disabled={previousDisabled} onClick={onPrevious} aria-label={`Previous ${navigationMode}`} title={`Previous ${navigationMode}`}>{renderIcon("previous")}</button>
-      <button type="button" disabled={nextDisabled} onClick={onNext} aria-label={`Next ${navigationMode}`} title={`Next ${navigationMode}`}>{renderIcon("next")}</button>
+      <button type="button" disabled={Boolean(modalActionId)} onClick={onHome} aria-label="Home" title="Home">{renderIcon("home")}</button>
+      <button type="button" disabled={Boolean(modalActionId)} onClick={onBack} aria-label="Back" title="Back">{renderIcon("back")}</button>
+      <button type="button" disabled={previousDisabled || Boolean(modalActionId)} onClick={onPrevious} aria-label={`Previous ${navigationMode}`} title={`Previous ${navigationMode}`}>{renderIcon("previous")}</button>
+      <button type="button" disabled={nextDisabled || Boolean(modalActionId)} onClick={onNext} aria-label={`Next ${navigationMode}`} title={`Next ${navigationMode}`}>{renderIcon("next")}</button>
       {internalNavigation && <>
-        <button type="button" className="teacher-book-navigation-internal" disabled={internalNavigation.previousDisabled} onClick={internalNavigation.onPrevious} aria-label="Previous activity part" title="Previous activity part">{renderIcon(internalNavigation.previousDisabled ? "previousInternalDisabled" : "previousInternal")}</button>
-        <button type="button" className="teacher-book-navigation-internal" disabled={internalNavigation.nextDisabled} onClick={internalNavigation.onNext} aria-label="Next activity part" title="Next activity part">{renderIcon(internalNavigation.nextDisabled ? "nextInternalDisabled" : "nextInternal")}</button>
+        <button type="button" className="teacher-book-navigation-internal" disabled={internalNavigation.previousDisabled || Boolean(modalActionId)} onClick={internalNavigation.onPrevious} aria-label="Previous activity part" title="Previous activity part">{renderIcon(internalNavigation.previousDisabled ? "previousInternalDisabled" : "previousInternal")}</button>
+        <button type="button" className="teacher-book-navigation-internal" disabled={internalNavigation.nextDisabled || Boolean(modalActionId)} onClick={internalNavigation.onNext} aria-label="Next activity part" title="Next activity part">{renderIcon(internalNavigation.nextDisabled ? "nextInternalDisabled" : "nextInternal")}</button>
       </>}
       {actions.map((action) => (
         <button
@@ -38,7 +39,7 @@ export default function TeacherBookNavigationCore({
           type="button"
           className={`teacher-book-navigation-context teacher-book-navigation-context--${action.id}`}
           data-teacher-control-id={action.controlId}
-          disabled={Boolean(action.disabled)}
+          disabled={Boolean(action.disabled || modalActionId && modalActionId !== action.id)}
           onClick={action.onClick}
           aria-label={action.ariaLabel || action.label}
           aria-pressed={typeof action.active === "boolean" ? action.active : undefined}
@@ -55,7 +56,7 @@ export default function TeacherBookNavigationCore({
           aria-label={unavailable ? unavailableBookLabels.get(item.id) || `${item.label} unavailable in this release` : item.label}
           aria-current={!unavailable && selectedBookId === item.id ? "page" : undefined}
           title={unavailable ? unavailableBookMessages.get(item.id) || `${item.label} was not included in this release.` : item.label}
-          disabled={unavailable}
+          disabled={unavailable || Boolean(modalActionId)}
           onClick={() => { if (!unavailable) onBookSwitch(item.id); }}
         >{renderBookSwitch?.(item)}</button>
       ); })}

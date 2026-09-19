@@ -115,7 +115,7 @@ test("Shared video runtime owns captions and fullscreen while the worksheet stay
     readFile(new URL("../src/components/native-video/nativeVideo.css", import.meta.url), "utf8"),
     readFile(new URL("../src/components/native-readable-text/NativeReadableTextPresentation.jsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/native-video/NativeVideoWorksheetAction.jsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/apps/android-teacher-offline/TeacherOfflinePages.jsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/apps/android-teacher-offline/TeacherClassroomPages.jsx", import.meta.url), "utf8"),
   ]);
   assert.match(player, /shellRef\.current\.requestFullscreen/);
   assert.doesNotMatch(player, /videoRef\.current\.requestFullscreen/);

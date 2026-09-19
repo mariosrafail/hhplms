@@ -5,7 +5,7 @@ import { publishedManagedUiFixture } from "../fixtures/published-managed-ui.js";
 import { builderDocumentSha256 } from "../../netlify-sites/ultimate-b2-builder/server/_builder-content-security.js";
 
 export async function changeBrowserUiDraft(pool, actor, book, media, variant) {
-  const slug = `${book}-students-book`, fixture = await publishedManagedUiFixture(slug, variant);
+  const slug = `${book}-students-book`, fixture = await publishedManagedUiFixture(slug, variant, { vocabulary: true });
   for (const [key, bytes] of fixture.objects) media.set(key, bytes);
   const revision = (await pool.query("select revision from builder_component_documents where book_component_id=(select id from book_components where slug=$1) and document_type='teacher_ui' and document_key='default'", [slug])).rows[0].revision;
   const saved = (await pool.query("select outcome from save_builder_component_document($1,$2,'teacher_ui','default','1.0',$3,$4::jsonb,$5,$6,$7)", [book, slug, revision, JSON.stringify(fixture.payload), builderDocumentSha256(fixture.payload), actor, randomUUID()])).rows[0];

@@ -9,6 +9,7 @@ import { editionSourceAssetIds, validateEditionSourceAssets, prepareEditionAsset
 import { createBookAssetStorage } from "../../../lib/book-assets/storage.js";
 import { createCloudflareR2ReleaseStorage } from "../../../lib/book-assets/cloudflare-r2-release-storage.js";
 import { nativeTeacherAnswerImages } from "../../../src/data/native-activities/nativeImageSampleAnswer.js";
+import { normalizeHostedTeacherUiPreview } from "../../../src/data/ultimate-b2/hostedTeacherUiDocument.js";
 
 export function parseBuilderEditionRoute(event) {
   const match = String(event.path || "").match(/^(?:\/builder\/api\/publication|\/\.netlify\/functions\/builder-publication)\/editions\/books\/([a-z0-9-]+)\/editions\/([a-z0-9-]+)(?:\/(capture|save-source|associate|prepare|publish|releases)(?:\/([a-f0-9-]+))?)?\/?$/);
@@ -34,7 +35,7 @@ export function editionReadiness(status) {
       : { componentSlug, ready: false, code: "edition_required_source_missing", editionId: status.edition.editionId };
   });
 }
-export async function editionReleaseRead(release, query, storage, { teacher = false } = {}) {
+export async function editionReleaseRead(release, query, storage, { teacher = false, canonicalFetcher = null } = {}) {
   if (!query.componentSlug) return json(200, editionReleasePublicEnvelope(release));
   requireEditionComponent(release.composition.edition.bookSlug, query.componentSlug);
   const member = release.members.find((entry) => entry.reference.componentSlug === query.componentSlug);
@@ -49,7 +50,7 @@ export async function editionReleaseRead(release, query, storage, { teacher = fa
   }
   if (query.assetSha256) {
     const asset = await readEditionAsset(storage, release, { componentSlug: query.componentSlug, role: query.assetRole,
-      sha256: query.assetSha256, extension: query.extension, teacher });
+      sha256: query.assetSha256, extension: query.extension, teacher, canonicalFetcher });
     return { statusCode: 200, headers: { "Content-Type": asset.mediaType, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" },
       body: Buffer.from(asset.bytes).toString("base64"), isBase64Encoded: true };
   }
@@ -59,6 +60,25 @@ export async function editionReleaseRead(release, query, storage, { teacher = fa
     return entry ? json(200, { edition: release.composition.edition, releaseId: release.id, document: entry.document }) : json(404, { error: "edition_activity_missing" });
   }
   return json(200, { edition: release.composition.edition, releaseId: release.id, source: member.reference, projection: member.content.publicProjection });
+}
+// Classroom UI is a narrowly projected snapshot of the book's existing SB UI
+// owner. It never exposes answers or consults the current UI Controller draft.
+export async function editionClassroomUiRead(release, query, storage) {
+  const edition = release.composition.edition;
+  const owner = release.members.find((entry) => entry.reference.componentSlug === `${edition.bookSlug}-students-book`);
+  if (!owner) throw new ContentEditionError("edition_ui_owner_missing");
+  if (query.uiOwnerSha256 && query.uiOwnerSha256 !== owner.reference.sha256) throw new ContentEditionError("edition_ui_owner_changed");
+  const ui = normalizeHostedTeacherUiPreview(owner.content.teacherProjection.ui, { packageId: owner.reference.componentSlug });
+  if (query.uiBindingId || query.uiFont === "1") {
+    const binding = query.uiFont === "1" ? ui.overviewCaptionFontAsset : ui.assets[query.uiBindingId];
+    if (!binding) return json(404, { error: "edition_ui_asset_missing" });
+    const asset = await readEditionAsset(storage, release, { componentSlug: owner.reference.componentSlug,
+      role: query.uiFont === "1" ? "activity_font" : "teacher_ui", sha256: binding.sha256 || binding.checksumSha256,
+      extension: query.uiFont === "1" ? "ttf" : binding.extension, teacher: true });
+    return { statusCode: 200, headers: { "Content-Type": asset.mediaType, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" },
+      body: Buffer.from(asset.bytes).toString("base64"), isBase64Encoded: true };
+  }
+  return json(200, { edition, releaseId: release.id, ownerSource: owner.reference, ui });
 }
 export function createBuilderEditionHandler(overrides = {}) {
   const deps = { getDatabase: getBuilderSql, authorize: requireBuilderUser, ready: editionDatabaseReady,

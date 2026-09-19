@@ -4,6 +4,7 @@ import TeacherBookNavigationCore from "./TeacherBookNavigationCore.jsx";
 const noOp = () => {};
 
 export default function TeacherBookNavigation({
+  modalActionId = null,
   onHome,
   onBack,
   onPrevious = noOp,
@@ -22,6 +23,7 @@ export default function TeacherBookNavigation({
 }) {
   const runtimeUiAssets = useTeacherRuntimeUiAssets();
   return <TeacherBookNavigationCore
+    modalActionId={modalActionId}
     navigationMode={navigationMode}
     {...{ onHome, onBack, onPrevious, onNext, previousDisabled, nextDisabled, contextAction, contextActions, internalNavigation, selectedBookId, onBookSwitch, unavailableBookIds, unavailableBookMessages, unavailableBookLabels }}
     bookSwitches={runtimeUiAssets.classroom.bookSwitches}

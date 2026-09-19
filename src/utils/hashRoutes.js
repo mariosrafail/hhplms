@@ -554,6 +554,9 @@ export function parseHashRoute(hash = "") {
   const rawHashView = cleanHash(hash);
   const hashView = rawHashView ? withLeadingSlash(rawHashView) : "/";
   const legacyHashView = rawHashView || "home";
+  const editionClassroom = hashView.match(/^\/editions\/(ultimate-b2)\/(greek|international)\/releases\/([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\/components\/(ultimate-b2-(?:students-book|workbook|grammar-book))$/);
+  if (editionClassroom) return baseRoute(rawHashView, { view: "edition-classroom", role: "authenticated",
+    editionContext: { kind: "published", bookSlug: editionClassroom[1], editionId: editionClassroom[2], releaseId: editionClassroom[3], componentSlug: editionClassroom[4] } });
 
   const accountMatch = rawHashView.match(/^\/?(accept-invitation|reset-password|account-security)(?:\?(.*))?$/);
   if (accountMatch) {

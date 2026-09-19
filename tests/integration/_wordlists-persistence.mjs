@@ -34,7 +34,14 @@ export async function exerciseWordListPersistence({ pool, sql, actor, packageId 
   };
   const before = await snapshot();
   assert(before.book_content_source_revisions.some((row) => JSON.stringify(row.record).includes("PUBLISHED_BOOK_PRIVATE_TEACHER_SENTINEL")));
-  const assertPreserved = async () => assert.deepEqual(await snapshot(), before, "Existing SB/WB content, Teacher docs, pages, hotspots/order and pinned v1 releases/assignments must be byte-identical");
+  const assertPreserved = async ({ allowAddedSourceRevisions = false } = {}) => {
+    const after = await snapshot();
+    if (allowAddedSourceRevisions) {
+      after.book_content_source_revisions = after.book_content_source_revisions.filter((row) => before.book_content_source_revisions.some((original) => original.source_id === row.source_id && original.revision === row.revision));
+      after.builder_component_documents = after.builder_component_documents.filter((row) => before.builder_component_documents.some((original) => original.id === row.id));
+    }
+    assert.deepEqual(after, before, "Existing SB/WB content, Teacher docs, pages, hotspots/order and pinned v1 releases/assignments must be byte-identical");
+  };
   const sources = (await loadEditionStatus(sql, "ultimate-b2", "international")).sources;
   const sessions = [];
   const begin = async (component, { dataset = lexicalFixture(), mappings, expectedRevision, sourceId, edition = "international" } = {}) => {
@@ -129,6 +136,11 @@ export async function exerciseWordListPersistence({ pool, sql, actor, packageId 
   if (process.env.WORDLIST_ACCEPTANCE_DIR) {
     const { exerciseFullWordListSource } = await import("./_wordlists-full-source.mjs");
     await exerciseFullWordListSource({ directory: process.env.WORDLIST_ACCEPTANCE_DIR, sql, call, sources, assertPreserved });
+  }
+  if (process.env.WORDLIST_CLASSROOM_BROWSER === "1") {
+    const { exerciseWordListClassroomBrowser } = await import("./_wordlist-classroom-browser.mjs");
+    await exerciseWordListClassroomBrowser({ sql, pool, actor, token, storage });
+    await assertPreserved({ allowAddedSourceRevisions: true });
   }
   console.log("Word List PostgreSQL: imports/reimport/CAS/replay/ownership/readiness/projections/entitled audio and unchanged authored content passed.");
 }

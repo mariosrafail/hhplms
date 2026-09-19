@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { componentGroups, portableDiff, WORDLIST_LIMITS } from "../../../data/wordlists/portable.js";
 import { readWordListZip, validateWordListFiles } from "../../../data/wordlists/archive.js";
 import { loadWordList, wordListAudioUrl } from "../../../data/wordlists/loader.js";
+const EditionClassroom = lazy(() => import("../../../components/wordlists/EditionClassroom.jsx").then((module) => ({ default: module.EditionClassroom })));
 
 async function api(url, options = {}) {
   const response = await fetch(url, { credentials: "same-origin", cache: "no-store", ...options });
@@ -11,6 +12,7 @@ const post = (url, body, signal) => api(url, { method: "POST", signal, headers: 
 export function HostedWordListWorkspace({ bookSlug, editionId, componentSlug, busy, setBusy, setDirty }) {
   const [status, setStatus] = useState(null); const [preview, setPreview] = useState(null); const [error, setError] = useState("");
   const [progress, setProgress] = useState(""); const [review, setReview] = useState(null);
+  const [classroom, setClassroom] = useState(null);
   const selected = useRef({ package: null, audio: [] }); const run = useRef(null); const alive = useRef(true); const pending = useRef(null);
   const validationSequence = useRef(0);
   const base = `/builder/api/publication/wordlists/books/${bookSlug}/editions/${editionId}`;
@@ -104,6 +106,7 @@ export function HostedWordListWorkspace({ bookSlug, editionId, componentSlug, bu
         <label>Separate audio files<input aria-label="Separate audio files" type="file" accept=".mp3" multiple onChange={(event) => { selected.current.audio = [...event.target.files]; validate(); }} /></label>
         <p>Selecting files validates locally. Upload starts only after confirmation.</p>
         {status.record && <><button onClick={editSaved}>Edit saved Word List mappings</button>
+          <button disabled={Boolean(preview)} onClick={() => setClassroom({ kind: "draft", bookSlug, editionId, componentSlug, targetSource: status.target.reference })}>Open saved draft classroom</button>
           <button onClick={() => openReview({ kind: "draft", bookSlug, editionId, componentSlug })}>Review Word List draft</button></>}
       </fieldset>
       {preview && <fieldset disabled={busy}><legend>Review import and mappings</legend>
@@ -133,9 +136,11 @@ export function HostedWordListWorkspace({ bookSlug, editionId, componentSlug, bu
         <button onClick={() => publication("prepare", { expectedRevision: status.selectionRevision })}>Prepare edition with Word Lists</button>
         {status.releases.map((release) => <div key={release.id}><span>v2 release {release.number}{status.publishedReleaseId === release.id ? " · Published" : " · Candidate"}</span>
           <button onClick={() => openReview({ kind: "candidate", bookSlug, editionId, componentSlug, releaseId: release.id })}>Review immutable Word List {release.number}</button>
+          <button onClick={() => setClassroom({ kind: "candidate", bookSlug, editionId, componentSlug, releaseId: release.id })}>Open classroom candidate {release.number}</button>
           <button onClick={() => publication("publish", { expectedRevision: status.headRevision, releaseId: release.id })}>Publish Word List edition {release.number}</button>
         </div>)}
       </fieldset>
+      {classroom && <Suspense fallback={<p role="status">Loading classroom…</p>}><EditionClassroom context={classroom} teacherMode onClose={() => setClassroom(null)} /></Suspense>}
       {review && <section aria-label="Word List data review"><h4>{review.context.kind} · {review.state}</h4>
         <div style={{ maxHeight: "20rem", overflow: "auto" }}><table><tbody>{review.wordlist?.entries.map((entry) => <tr key={entry.id}>
           <td>{entry.displayNumber}</td><td>{String(entry.english.word)}</td><td>{entry.translations.el || ""}</td>

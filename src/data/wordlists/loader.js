@@ -1,7 +1,11 @@
-// Task 3 shared loader. No second lexicon or mutable fallback is needed.
+import { validateWordListContext, validateRuntimeWordList } from "./runtime.js";
+import { shaPattern, reject } from "./portable.js";
+export { validateWordListContext, validateRuntimeWordList } from "./runtime.js";
 export function wordListUrl(context, parameters = {}) {
+  validateWordListContext(context);
   const { kind, bookSlug, editionId, componentSlug, releaseId } = context;
-  const params = new URLSearchParams({ componentSlug, ...parameters });
+  const target = context.targetSource;
+  const params = new URLSearchParams({ componentSlug, ...(kind === "draft" && target ? { sourceId: target.sourceId, sourceRevision: String(target.revision), sourceSha256: target.sha256 } : {}), ...parameters });
   if (kind === "published") return `/.netlify/functions/book-content?${new URLSearchParams({ action: "edition-release", contract: "edition-release.v2", bookSlug, editionId, releaseId, ...Object.fromEntries(params) })}`;
   const base = `/builder/api/publication/wordlists/books/${encodeURIComponent(bookSlug)}/editions/${encodeURIComponent(editionId)}`;
   if (kind === "draft") return `${base}/components/${encodeURIComponent(componentSlug)}/draft?${params}`;
@@ -10,22 +14,14 @@ export function wordListUrl(context, parameters = {}) {
 }
 export async function loadWordList(context, { signal } = {}) {
   const response = await fetch(wordListUrl(context), { signal, credentials: "same-origin", cache: "no-store" });
-  if ([403, 404, 409].includes(response.status)) return { state: "unavailable", wordlist: null };
+  if ([401, 403, 404, 409].includes(response.status)) return { state: "unavailable", wordlist: null };
   if (!response.ok) throw new Error("wordlist_load_failed");
   const result = await response.json(); const wordlist = result.wordlist;
-  if (result.edition.bookSlug !== context.bookSlug || result.edition.editionId !== context.editionId
+  if (result.edition?.bookSlug !== context.bookSlug || result.edition?.editionId !== context.editionId
     || context.kind !== "draft" && result.releaseId !== context.releaseId
-    || wordlist.targetSource.componentSlug !== context.componentSlug) throw new Error("wordlist_context_mismatch");
+    || wordlist?.targetSource?.componentSlug !== context.componentSlug) throw new Error("wordlist_context_mismatch");
+  validateRuntimeWordList(wordlist, context);
   return { state: wordlist.entries.length ? "ready" : "empty", wordlist };
 }
-export function wordListForPages(wordlist, pageIds) {
-  const groups = new Set(wordlist.mappings.filter((mapping) => mapping.pageIds.some((id) => pageIds.includes(id))).map((mapping) => mapping.group));
-  return wordlist.entries.filter((entry) => entry.groups.some((group) => groups.has(group)));
-}
-export const wordListAudioUrl = (context, sha256) => wordListUrl(context, { audioSha256: sha256 });
-export function wordListPageCapability({ wordlist, componentSlug, pageIds, surface }) {
-  if (!wordlist || !["page", "activity"].includes(surface) || !/-(students-book|workbook)$/.test(componentSlug)
-    || wordlist.targetSource.componentSlug !== componentSlug || !pageIds?.length) return { available: false, state: "unavailable" };
-  const entries = wordListForPages(wordlist, pageIds);
-  return { available: entries.length > 0, state: entries.length ? "ready" : "empty" };
-}
+export const wordListAudioUrl = (context, sha256) => { if (!shaPattern.test(sha256)) reject("wordlist_audio_invalid"); return wordListUrl(context, { audioSha256: sha256 }); };
+export { wordListForPages, wordListPageCapability } from "./pageScope.js";

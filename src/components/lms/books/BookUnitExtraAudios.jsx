@@ -5,7 +5,7 @@ import { publishedUnitExtraAudioUrl, usePublishedComponentRelease } from "virtua
 import { unitExtraAudiosForPage } from "../../../data/ultimate-b2/unitExtras.js";
 import "./BookUnitExtraAudios.css";
 
-export function BookUnitExtraAudiosForPublication({ publication, unitNumber, pageId, hidden = false }) {
+export function BookUnitExtraAudiosForPublication({ publication, unitNumber, pageId, hidden = false, assetUrl = publishedUnitExtraAudioUrl }) {
   const audios = useMemo(() => unitExtraAudiosForPage(publication, { unitNumber, pageId }), [pageId, publication, unitNumber]);
   const [activeId, setActiveId] = useState("");
   const audioRef = useRef(null);
@@ -21,7 +21,7 @@ export function BookUnitExtraAudiosForPublication({ publication, unitNumber, pag
   return <section className="book-page-extra-audios" aria-label="Extra Audio">
     <header><Music aria-hidden="true" /><strong>{active.title}</strong></header>
     {audios.length > 1 ? <label><span>Audio track</span><select value={active.id} onChange={(event) => { audioRef.current?.pause(); setActiveId(event.target.value); }} aria-label="Extra Audio track">{audios.map((entry) => <option key={entry.id} value={entry.id}>{entry.title}</option>)}</select></label> : null}
-    {active.readiness === "missing-media" ? <p role="status">Not ready: MP3 required</p> : <audio ref={audioRef} controls preload="metadata" src={publishedUnitExtraAudioUrl(publication, active.audio.asset)} aria-label={`${active.title} Extra Audio player`} />}
+    {active.readiness === "missing-media" ? <p role="status">Not ready: MP3 required</p> : <audio ref={audioRef} controls preload="metadata" src={assetUrl(publication, active.audio.asset)} aria-label={`${active.title} Extra Audio player`} />}
   </section>;
 }
 

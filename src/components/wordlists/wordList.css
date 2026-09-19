@@ -1,0 +1,36 @@
+.word-list-overlay { position:absolute; inset:12px; z-index:80; display:flex; flex-direction:column; min-width:0; border:1px solid #c9d5e2; border-radius:18px; background:#fff; box-shadow:0 18px 50px #19395733; color:#183349; font-family:Arial,sans-serif; text-align:left; overflow:hidden; }
+/* Keep the absolute overlay's scroll box alive while hidden. A close can occur
+   before a queued scroll event; native scroll state needs no asynchronous copy. */
+.word-list-overlay[hidden] { display:flex; visibility:hidden; pointer-events:none; }
+.word-list-title { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 22px; background:#eff5fa; border-bottom:1px solid #d8e3eb; flex:none; }
+.word-list-title h2 { margin:0; font-size:24px; line-height:1.25; color:#183349; }
+.word-list-title p { margin:5px 0 0; font-size:13px; color:#526b7e; }
+.word-list-overlay button { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; min-width:44px; min-height:44px; padding:8px; border:1px solid transparent; border-radius:10px; background:transparent; color:#245571; cursor:pointer; font:inherit; box-shadow:none; }
+.word-list-overlay button:hover { background:#e8f1f8; }
+.word-list-overlay button:focus-visible, .teacher-book-navigation button:focus-visible { outline:3px solid #157dc4; outline-offset:2px; }
+.word-list-overlay button svg { width:22px; height:22px; }
+.word-list-scroll { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-gutter:stable; touch-action:pan-y; }
+.word-list-columns { --word-list-grid: minmax(0,1fr) minmax(0,1fr); padding:0 18px 16px; }
+.word-list-columns--english { --word-list-grid:minmax(0,1fr); }
+.word-list-headings, .word-list-row { display:grid; grid-template-columns:var(--word-list-grid); gap:20px; }
+.word-list-headings { position:sticky; top:0; z-index:1; background:#fff; border-bottom:2px solid #cbdce9; }
+.word-list-headings>div { display:flex; align-items:center; justify-content:space-between; min-width:0; padding:8px 0; }
+.word-list-headings h3 { margin:0; font-size:16px; font-weight:700; }
+.word-list-row { border-bottom:1px solid #e4ebf1; min-height:60px; }
+.word-list-cell { display:flex; align-items:flex-start; gap:6px; padding:8px 0; min-width:0; }
+.word-list-word { padding:10px 0; font-size:17px; line-height:1.45; overflow-wrap:anywhere; min-width:0; }
+.word-list-number { font-variant-numeric:tabular-nums; font-weight:700!important; }
+.word-list-number[aria-pressed="false"] { background:#edf1f5; color:#697d8c; }
+.word-list-speaker[data-playback="playing"] { background:#d9ecfa; color:#005c97; }
+.word-list-speaker[data-playback="loading"] { background:#fff2ca; }
+.word-list-speaker[data-playback="error"] { color:#b43134; background:#fff0ef; }
+.word-list-overlay footer { flex:none; min-height:32px; padding:8px 20px; font-size:12px; background:#f5f8fa; border-top:1px solid #dae4ec; }
+.word-list-status { font:13px Arial,sans-serif; color:#375a71; padding:4px 10px; }
+.word-list-status button { margin-left:8px; text-decoration:underline; }
+.teacher-book-navigation-context--vocabulary { opacity:1!important; }
+.teacher-book-navigation-context--vocabulary .teacher-book-navigation-context-icon-set { display:block; position:relative; width:58px; height:58px; }
+.teacher-book-navigation-context--vocabulary .teacher-book-navigation-context-icon-set img { position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:contain; }
+.teacher-book-navigation-context--vocabulary .teacher-book-navigation-context-icon-set img:not([data-icon-state="active"]) { display:none; }
+.teacher-book-navigation-context--vocabulary[aria-pressed="true"] .teacher-book-navigation-context-icon-set img[data-icon-state="active"], .teacher-book-navigation-context--vocabulary:disabled .teacher-book-navigation-context-icon-set img[data-icon-state="active"] { display:none!important; }
+.teacher-book-navigation-context--vocabulary[aria-pressed="true"] .teacher-book-navigation-context-icon-set img[data-icon-state="pressed"], .teacher-book-navigation-context--vocabulary:disabled .teacher-book-navigation-context-icon-set img[data-icon-state="disabled"] { display:block!important; }
+@media(max-width:640px) { .word-list-overlay { inset:5px; border-radius:12px; } .word-list-title { padding:10px 12px; } .word-list-columns { padding:0 8px 10px; } .word-list-row,.word-list-headings { gap:10px; } .word-list-word { font-size:15px; } .word-list-cell { gap:1px; } .word-list-overlay button { min-width:36px; padding:5px; } }

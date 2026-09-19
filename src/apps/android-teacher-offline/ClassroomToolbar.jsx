@@ -39,7 +39,7 @@ function LegacyTeacherToolButton({ item, selected, onActivate }) {
   );
 }
 
-export default function ClassroomToolbar({ surfaceKey, items }) {
+export default function ClassroomToolbar({ surfaceKey, items, inert = false }) {
   const {
     activeTool,
     setActiveTool,
@@ -182,7 +182,7 @@ export default function ClassroomToolbar({ surfaceKey, items }) {
   return (
     <>
       {modeTitle && (
-        <div className="classroom-mode-banner" role="status">
+        <div inert={inert} className="classroom-mode-banner" role="status">
           <div>
             <strong>{modeTitle}</strong>
             {drawingMode && <span>{activeTool === "pen" ? "Pen" : activeTool === "eraser" ? "Eraser" : "Text"}</span>}
@@ -192,7 +192,7 @@ export default function ClassroomToolbar({ surfaceKey, items }) {
       )}
 
       {drawingMode && (
-        <div className="classroom-drawing-options-panel" role="group" aria-label="Drawing colour and size">
+        <div inert={inert} className="classroom-drawing-options-panel" role="group" aria-label="Drawing colour and size">
           <div className="classroom-tool-options">
             <span>Colour</span>
             {CLASSROOM_COLORS.map((option) => (
@@ -207,7 +207,7 @@ export default function ClassroomToolbar({ surfaceKey, items }) {
         </div>
       )}
 
-      <div className="legacy-classroom-viewer-toolbar classroom-teaching-toolbar" role="toolbar" aria-label="Classroom teaching tools" style={{ "--teacher-toolbar-slot-count": items.length }}>
+      <div inert={inert} className="legacy-classroom-viewer-toolbar classroom-teaching-toolbar" role="toolbar" aria-label="Classroom teaching tools" style={{ "--teacher-toolbar-slot-count": items.length }}>
         <div className="classroom-tool-primary legacy-teacher-tool-row">
           {items.map((item) => (
             <LegacyTeacherToolButton
@@ -221,7 +221,7 @@ export default function ClassroomToolbar({ surfaceKey, items }) {
       </div>
 
       {openPanel === "timer" && (
-        <aside className="classroom-floating-panel classroom-timer-panel" aria-label="Classroom timer">
+        <aside inert={inert} className="classroom-floating-panel classroom-timer-panel" aria-label="Classroom timer">
           <header><strong>Classroom timer</strong><button type="button" aria-label="Close timer" onClick={() => selectMouse()}>×</button></header>
           <output aria-live="polite">{formatTime(timer.remaining)}</output>
           <div className="classroom-timer-presets">{[1, 2, 5, 10].map((minutes) => <button key={minutes} type="button" onClick={() => setTimerMinutes(minutes)}>{minutes} min</button>)}</div>
@@ -235,7 +235,7 @@ export default function ClassroomToolbar({ surfaceKey, items }) {
       )}
 
       {openPanel === "scoreboard" && (
-        <aside className="classroom-floating-panel classroom-scoreboard" aria-label="Two-team scoreboard">
+        <aside inert={inert} className="classroom-floating-panel classroom-scoreboard" aria-label="Two-team scoreboard">
           <header><strong>Scoreboard</strong><button type="button" aria-label="Close scoreboard" onClick={() => selectMouse()}>×</button></header>
           {[["a", "Team A"], ["b", "Team B"]].map(([key, label]) => (
             <section key={key}><strong>{label}</strong><output aria-label={`${label} score`}>{scores[key]}</output><div>
@@ -248,7 +248,7 @@ export default function ClassroomToolbar({ surfaceKey, items }) {
       )}
 
       {openPanel === "clear" && (
-        <aside className="classroom-floating-panel classroom-clear-panel" aria-label="Clear current view">
+        <aside inert={inert} className="classroom-floating-panel classroom-clear-panel" aria-label="Clear current view">
           <header><strong>Clear current view</strong><button type="button" aria-label="Close clear menu" onClick={() => selectMouse()}>×</button></header>
           <button type="button" disabled={!history.present.length} onClick={() => runClearAction("drawing")}>Drawings &amp; text</button>
           <button type="button" disabled={!overlays.covers.length} onClick={() => runClearAction("covers")}>Covers</button>
@@ -256,7 +256,7 @@ export default function ClassroomToolbar({ surfaceKey, items }) {
           <button type="button" disabled={!history.present.length && !overlays.covers.length && !overlays.spotlight} onClick={() => runClearAction("all")}>All classroom markup</button>
         </aside>
       )}
-      {message && <div className="classroom-tool-message" role="status">{message}</div>}
+      {message && <div inert={inert} className="classroom-tool-message" role="status">{message}</div>}
     </>
   );
 }

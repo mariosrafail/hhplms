@@ -5,6 +5,8 @@ import pg from "pg";
 import { applyCanonicalProductionMigrations } from "./_migration-test-helpers.mjs";
 import { createEmptyHostedTeacherUiDocument, projectHostedTeacherUiPreview } from "../../src/data/ultimate-b2/hostedTeacherUiDocument.js";
 import { HOSTED_EDITABLE_UI_BINDINGS } from "../../src/data/ultimate-b2/hostedTeacherUiBindingCatalog.js";
+import { vocabularyUiDatabaseReady } from "../../netlify-sites/ultimate-b2-builder/server/_builder-vocabulary-ui-capability.js";
+import { clientSql } from "./_b1-page-placement-regression.mjs";
 
 const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.TEST_DATABASE_CONFIRMATION === "isolated-test-database";
 test("064 accepts exact overview UI settings and preserves 063 validation of historical projections", { skip: !enabled }, async (t) => {
@@ -23,7 +25,14 @@ test("064 accepts exact overview UI settings and preserves 063 validation of his
     assert.equal(await verify(ui), true);
     assert.equal(await verify({ ...ui, overviewCaptionFontFamily: "Georgia", independentPartsBackgrounds: true }), false);
   }
+  await applyCanonicalProductionMigrations(pool, { through: "067_wordlist_sources.sql" });
+  assert.equal(await vocabularyUiDatabaseReady(clientSql(pool)), false);
+  const vocabularyAsset = { sha256: "a".repeat(64), extension: "png", mediaType: "image/png", sizeBytes: 100, width: 20, height: 10 };
+  for (const bookSlug of ["ultimate-b1", "ultimate-b1-plus"]) {
+    for (const state of ["active", "disabled", "pressed"]) assert.equal(await verify({ schemaVersion: "1.0", packageId: `${bookSlug}-students-book`, assets: { [`navibar.vocabulary.${state}`]: vocabularyAsset } }), false);
+  }
   await applyCanonicalProductionMigrations(pool);
+  assert.equal(await vocabularyUiDatabaseReady(clientSql(pool)), true);
   for (const bookSlug of ["ultimate-b1", "ultimate-b1-plus"]) {
     const ui = { schemaVersion: "1.0", packageId: `${bookSlug}-students-book`, assets: {} };
     assert.equal(await verify(ui), true);
@@ -33,6 +42,11 @@ test("064 accepts exact overview UI settings and preserves 063 validation of his
       const asset = { sha256: "a".repeat(64), extension: "png", mediaType: "image/png", sizeBytes: 100, width: 20, height: 10 };
       assert.equal(await verify({ ...ui, assets: { [id]: asset } }), true, id);
       assert.equal(await verify({ ...ui, assets: { [id]: { ...asset, width: 0 } } }), false, `${id}: invalid dimensions`);
+    }
+    assert.equal(await verify({ ...ui, assets: { "navibar.vocabulary.unknown": vocabularyAsset } }), false);
+    assert.equal(await verify({ ...ui, assets: { "navibar.vocabulary.active": vocabularyAsset, "navigation.next": { ...vocabularyAsset, width: 21 } } }), false, "same-hash metadata consistency spans old and new bindings");
+    for (const patch of [{ sha256: "bad" }, { sizeBytes: 16777217 }, { width: null }, { height: 32769 }, { mediaType: "audio/mpeg", extension: "mp3" }, { privateKey: "forbidden" }]) {
+      assert.equal(await verify({ ...ui, assets: { "navibar.vocabulary.active": { ...vocabularyAsset, ...patch } } }), false);
     }
   }
 });

@@ -27,7 +27,7 @@ test("content editions are explicitly available only for the B2 pilot, independe
   }
   for (const id of [undefined, null, "", "el", "teacher", "student", "Greek"]) assert.throws(() => contentEdition(book, id));
   for (const field of ["language", "role", "showTranslations"]) assert.throws(() => normalizeContentEdition({ ...contentEdition(book, "greek"), [field]: "el" }));
-  assert.equal(contentEditionBooks[book].wordListOperational, false);
+  assert.equal(contentEditionBooks[book].wordListOperational, true);
   assert.equal(contentEditionBooks[book].uiOwnerComponentSlug, "ultimate-b2-students-book");
 });
 test("both editions select explicit shared SB/WB revisions and their own whole Grammar source", () => {

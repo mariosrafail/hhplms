@@ -1,7 +1,7 @@
 import { hostedTeacherUiAssetPath, normalizeHostedTeacherUiPreview } from "../../data/ultimate-b2/hostedTeacherUiDocument.js";
 import { HOSTED_VIEWER_RUNTIME_MODES, authorizedHostedPreviewPath, hostedReleasePath, resolveHostedViewerRuntimeContext } from "./hostedReleasePreview.js";
 
-export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAssetUrl, resolveFrozenFontUrl = null, hostedPreview = null, runtimeContext = resolveHostedViewerRuntimeContext(), identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" } }) {
+export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAssetUrl, resolveFrozenAssetUrl = null, resolveFrozenFontUrl = null, hostedPreview = null, runtimeContext = resolveHostedViewerRuntimeContext(), identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" } }) {
   if (!authoring || typeof resolveCanonicalAssetUrl !== "function") throw new TypeError("Teacher runtime UI asset factory requires canonical authoring and a URL resolver.");
   const preview = hostedPreview ? normalizeHostedTeacherUiPreview(hostedPreview, { packageId: identity.componentSlug }) : null;
   const overrides = preview?.assets || {};
@@ -9,6 +9,7 @@ export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAs
   const context = runtimeContext;
   const url = (binding) => {
     if (!overrides[binding.id]) return resolveCanonicalAssetUrl(binding);
+    if (resolveFrozenAssetUrl) return resolveFrozenAssetUrl(overrides[binding.id], binding.id);
     return context.kind === HOSTED_VIEWER_RUNTIME_MODES.RELEASE_PREVIEW
       ? hostedReleasePath(context, identity, `assets/${overrides[binding.id].sha256}.${overrides[binding.id].extension}`)
       : hostedTeacherUiAssetPath(overrides[binding.id], identity);
@@ -18,6 +19,7 @@ export function createTeacherRuntimeUiAssetModel({ authoring, resolveCanonicalAs
     id: item.id, label: item.label, controlId: item.controlId, normal: url(item.normal), active: url(item.active), sound: url(item.sound),
   })));
   const classroom = Object.freeze({
+    vocabulary: Object.freeze(Object.fromEntries(Object.entries(authoring.shell.vocabulary || {}).map(([state, binding]) => [state, url(binding)]))),
     overviewCaptionFontFamily: preview?.overviewCaptionFontFamily || null,
     overviewCaptionFontAsset: preview?.overviewCaptionFontAsset || null,
     overviewCaptionFontUrl: !preview?.overviewCaptionFontAsset ? null

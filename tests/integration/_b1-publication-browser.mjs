@@ -103,6 +103,15 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('response', (result) => { if (result.status() >= 400) console.log('B1_BROWSER_RESPONSE', result.status(), new URL(result.url()).host, new URL(result.url()).pathname); });
     for (const book of ['ultimate-b1', 'ultimate-b1-plus']) {
+      await page.goto(`${origin(builder)}/#/books/${book}/ui`);
+      const uiEditor = page.locator('.b2-hosted-ui-editor');
+      await uiEditor.getByRole('button', { name: 'Navigation / Window Controls', exact: true }).click();
+      for (const state of ['active', 'disabled', 'pressed']) {
+        const slot = uiEditor.locator(`[data-binding-id="navibar.vocabulary.${state}"]`);
+        await expect(slot).toBeVisible();
+        await slot.locator('img').evaluate((image) => image.decode());
+        assert.ok(await slot.locator('img').evaluate((image) => image.naturalWidth > 0));
+      }
       await page.goto(`${origin(builder)}/#/books/${book}/components/${book}-students-book/publication`);
       await expect(page.getByRole('heading', { name: 'Publication', exact: true })).toBeVisible();
       await expect(page.getByText('2 required components', { exact: true })).toBeVisible();

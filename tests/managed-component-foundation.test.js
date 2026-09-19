@@ -35,7 +35,7 @@ test("the shared product shell keeps empty managed Units navigable and highlight
   const [app, library, pagesView, overview] = await Promise.all([
     readFile("src/apps/android-teacher-offline/TeacherOfflineApp.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineLibrary.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineUnitOverview.jsx", "utf8"),
   ]);
   assert.match(app, /initialEditionId=\{activeRuntime\.component\.teacherEditionId\}/);

@@ -73,6 +73,7 @@ export const ultimateB2TeacherRevealControlDefinitions = Object.freeze([
   Object.freeze({ id: "show-next", controlId: "reveal:show-next", label: "Show Next", activeAssetId: "navibar.show.next.active", pressedAssetId: "navibar.show.next.pressed", disabledAssetId: "navibar.show.next.disabled" }),
 ]);
 const wiredNavibarAssetIds = new Set([
+  "navibar.vocabulary.active", "navibar.vocabulary.disabled", "navibar.vocabulary.pressed",
   "navibar.sb.active", "navibar.gb.active", "navibar.workbook.active",
   ...ultimateB2TeacherRevealControlDefinitions.flatMap(({ activeAssetId, pressedAssetId, disabledAssetId }) => [activeAssetId, pressedAssetId, disabledAssetId]),
 ]);
@@ -135,7 +136,7 @@ function buildDefaultAssets() {
     );
   }
   for (const [id, file] of Object.entries(navigationFiles)) entries.push(asset(`navigation.${id}`, "navigation", file.startsWith("src/assets/") ? file : `${legacyRoot}/icons/${file}`));
-  for (const { id, sourceFilename } of ultimateB2TeacherNavibarAssetDefinitions) entries.push(asset(id, wiredNavibarAssetIds.has(id) ? (id.startsWith("navibar.reload.") || id.startsWith("navibar.show.") ? "navigation-control" : "book-switch") : "navibar-library", `${legacyRoot}/icons/navigation/publisher-navibar/${sourceFilename}`));
+  for (const { id, sourceFilename } of ultimateB2TeacherNavibarAssetDefinitions) entries.push(asset(id, wiredNavibarAssetIds.has(id) ? (id.startsWith("navibar.reload.") || id.startsWith("navibar.show.") || id.startsWith("navibar.vocabulary.") ? "navigation-control" : "book-switch") : "navibar-library", `${legacyRoot}/icons/navigation/publisher-navibar/${sourceFilename}`));
   for (const [id, file] of Object.entries(mediaPlayerFiles)) entries.push(asset(`media-player.${id}`, "media-player", `${legacyRoot}/icons/media/${file}`));
   for (const [id] of toolbarLabels) {
     const stem = toolbarFileStem[id] || id;
@@ -245,6 +246,7 @@ export function buildUltimateB2TeacherAppAuthoring(candidate = storedOverrides) 
       titleAnimation: Object.freeze({ gaf: authoredAsset("title.gaf", overrides), sd: Object.freeze([authoredAsset("title.sd.1", overrides), authoredAsset("title.sd.2", overrides)]), hd: Object.freeze([authoredAsset("title.hd.1", overrides), authoredAsset("title.hd.2", overrides)]) }),
       units: Object.freeze(units), editions: Object.freeze(editions), extras: Object.freeze(extras), toolbar: Object.freeze(toolbar),
       bookSwitches: Object.freeze(bookSwitches), revealControls: Object.freeze(revealControls), navibarAssets: Object.freeze(navibarAssets),
+      vocabulary: Object.freeze(Object.fromEntries(["active", "disabled", "pressed"].map((state) => [state, authoredAsset(`navibar.vocabulary.${state}`, overrides)]))),
       navigation: Object.freeze(Object.fromEntries(Object.keys(navigationFiles).map((id) => [id, authoredAsset(`navigation.${id}`, overrides)]))),
       mediaPlayer: Object.freeze(Object.fromEntries(Object.keys(mediaPlayerFiles).map((id) => [id, authoredAsset(`media-player.${id}`, overrides)]))),
       activityHotspot: authoredAsset("control.activity-hotspot", overrides),

@@ -1,0 +1,41 @@
+.edition-classroom-host { margin:20px 0; border:1px solid #c9d5e2; border-radius:16px; background:#f3f7fa; overflow:hidden; }
+.edition-classroom-host>header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 18px; background:#e7eff6; }
+.edition-classroom-host>p { padding:24px; }
+.edition-classroom { position:relative; display:flex; flex-direction:column; height:min(850px,85vh); min-height:780px; padding:10px; color:#183349; --teacher-classroom-font:16px; }
+.edition-classroom-controls { flex:none; display:flex; align-items:center; gap:16px; padding:0 8px 8px; font-size:13px; }
+.edition-classroom-controls label { display:flex; align-items:center; gap:6px; }
+.edition-classroom-controls select { width:auto; max-width:240px; }
+.edition-classroom .teacher-offline-pages { display:flex; flex-direction:column; flex:1; min-width:0; min-height:0; gap:6px; }
+.edition-classroom .legacy-page-heading { display:flex; padding:4px 12px; align-items:center; gap:14px; min-height:36px; }
+.edition-classroom .legacy-page-heading>div:nth-child(2) { display:flex; gap:16px; align-items:center; }
+.edition-classroom .legacy-page-heading h2 { font-size:17px; margin:0; }
+.edition-classroom .teacher-offline-page-reader { position:relative; display:flex; flex:1; min-height:0; border:1px solid #becddb; border-radius:12px; background:#e0e8ef; }
+.edition-classroom .teacher-offline-page-stage { position:relative; flex:1; min-width:0; padding:8px; background:#e4ebf1; }
+.edition-classroom .teacher-offline-embedded-activity { width:100%; height:100%; min-height:0; overflow:auto; display:grid; place-items:center; padding:8px; }
+.edition-classroom .teacher-offline-embedded-activity-content { width:1024px; height:582px; transform:scale(var(--embedded-activity-scale)); transform-origin:center; }
+.edition-classroom .teacher-offline-embedded-activity[data-fit-mode="reflow"] .teacher-offline-embedded-activity-content { width:100%; transform:none; }
+.edition-classroom .teacher-book-navigation { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; flex:none; min-height:64px; padding:3px; }
+.edition-classroom .teacher-book-navigation button { border:0; background:transparent; padding:0; box-shadow:none; width:58px; height:58px; border-radius:8px; cursor:pointer; }
+.edition-classroom .teacher-book-navigation button:disabled { cursor:default; opacity:.4; }
+.edition-classroom .teacher-book-navigation img { width:58px; height:58px; object-fit:contain; }
+.edition-classroom .teacher-book-navigation-context-icon-set { display:block; position:relative; width:58px; height:58px; }
+.edition-classroom .teacher-book-navigation-context-icon-set img:not([data-icon-state="active"]) { display:none; position:absolute; inset:0; }
+.edition-classroom .teacher-book-navigation-context:active:not(:disabled) img[data-icon-state="active"], .edition-classroom .teacher-book-navigation-context:disabled img[data-icon-state="active"] { display:none; }
+.edition-classroom .teacher-book-navigation-context:active:not(:disabled) img[data-icon-state="pressed"], .edition-classroom .teacher-book-navigation-context:disabled img[data-icon-state="disabled"] { display:block; }
+.edition-classroom .teacher-unit-overview-stage { flex:1; overflow:auto; min-height:0; }
+.edition-classroom .teacher-unit-overview-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:22px; padding:20px; }
+.edition-classroom .teacher-unit-page-card { width:170px; display:flex; flex-direction:column; gap:8px; }
+.edition-classroom .teacher-unit-page-copy { display:flex; flex-direction:column; font-size:14px; }
+.edition-classroom .teacher-unit-page-thumb { display:flex; }
+.edition-classroom .teacher-unit-page-open { width:100%; padding:3px; background:white; border:1px solid #b7c9d8; }
+.edition-classroom .teacher-unit-page-open img { width:100%; height:170px; object-fit:contain; }
+.edition-page-pair { display:flex; justify-content:center; align-items:center; width:100%; height:100%; gap:8px; }
+.edition-page-pair>div { position:relative; max-width:49%; max-height:100%; height:100%; }
+.edition-page-pair img { display:block; width:100%; height:100%; object-fit:contain; }
+.edition-page-pair button { position:absolute; border:2px solid #d99834; background:#ffcd6428; padding:0; }
+.edition-classroom .classroom-toolbar { position:relative; inset:auto; flex:none; margin:0 auto; }
+.edition-classroom .word-list-overlay { box-sizing:border-box; }
+.edition-classroom .classroom-teaching-toolbar { position:relative; inset:auto; width:100%; min-height:48px; margin:0; padding:2px; background:transparent; --legacy-tool-icon-size:44px; }
+.edition-classroom .legacy-teacher-tool-row { display:flex; justify-content:center; flex-wrap:wrap; gap:3px; }
+.edition-classroom .legacy-teacher-tool-button { width:44px; height:44px; padding:0; border:0; background:transparent; box-shadow:none; }
+@media(max-width:700px) { .edition-classroom { padding:5px; } .edition-classroom .teacher-book-navigation { gap:2px; } .edition-classroom .teacher-book-navigation button, .edition-classroom .teacher-book-navigation img, .edition-classroom .teacher-book-navigation-context-icon-set { width:46px; height:46px; } }

@@ -5,6 +5,7 @@ import { stableBuilderJson } from "./_builder-content-security.js";
 import { freezeComponentPublicationAssetPins } from "./_builder-publication-pins.js";
 import { materializeCanonicalReleaseAssets, canonicalPublicationAssetFetcher } from "./_builder-canonical-release-assets.js";
 import { componentPublicationAssetStorageTarget } from "../../../lib/book-assets/publication-asset-storage.js";
+import { readBoundedImageResponse } from "../../../lib/book-assets/verified-image-bytes.js";
 
 export function editionSourceAssetIds(record) {
   const inputs = record.source.inputs;
@@ -51,13 +52,19 @@ export async function prepareEditionAssets(storage, release, context) {
     await materializeCanonicalReleaseAssets(storage, { bookSlug, componentSlug, ...compiled, fetchAsset: canonicalPublicationAssetFetcher(context) });
   }
 }
-export async function readEditionAsset(storage, release, { componentSlug, role, sha256, extension, teacher = false }) {
+export async function readEditionAsset(storage, release, { componentSlug, role, sha256, extension, teacher = false, canonicalFetcher = null }) {
   const member = release.members.find((entry) => entry.reference.componentSlug === componentSlug);
   if (!member) throw new ContentEditionError("edition_asset_context_mismatch");
   const allowed = teacher ? member.content.assetManifest : member.content.publicProjection.assets;
   const descriptor = allowed.find((entry) => entry.role === role && entry.sha256 === sha256 && entry.extension === extension);
   if (!descriptor || !teacher && ["native_teacher_answer", "teacher_ui"].includes(role)) throw new ContentEditionError("edition_asset_context_mismatch");
   const compiled = resolvePublicationCompiler(member.content.compilerId).compile(structuredClone(member.source.inputs));
+  if (canonicalFetcher && role === "canonical_page_image") {
+    const canonical = compiled.canonicalAssetSources.find((entry) => entry.descriptor.sha256 === sha256 && entry.descriptor.extension === extension);
+    if (!canonical) throw new ContentEditionError("edition_asset_context_mismatch");
+    const bytes = await readBoundedImageResponse(await canonicalFetcher(canonical.path), { ...descriptor, byteSize: canonical.byteSize, width: canonical.width, height: canonical.height });
+    return { bytes, mediaType: descriptor.mediaType };
+  }
   const source = compiled.nativeAssetSources?.find((entry) => entry.descriptor.role === role && entry.descriptor.sha256 === sha256 && entry.descriptor.extension === extension);
   if (source && (source.row.storage_profile !== "private" || source.row.storage_bucket !== storage.bucket("private"))) throw new ContentEditionError("edition_asset_context_mismatch");
   const target = source ? { profile: "private", objectKey: source.row.object_key }

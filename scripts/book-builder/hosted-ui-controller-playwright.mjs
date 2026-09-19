@@ -243,7 +243,7 @@ try {
   await page.getByRole("button", { name: "Close Review" }).click();
 
   const expectedHash = createHash("sha256").update(hostedTeacherUiPngFixture.buffer).digest("hex");
-  for (const [section, bindingId] of [["Shell / Background", "background.main"], ["Teacher Toolbar", "toolbar.mouse.normal"], ["Navigation / Window Controls", "navigation.home"], ["Navigation / Window Controls", "navigation.videoWorksheet"]]) {
+  for (const [section, bindingId] of [["Shell / Background", "background.main"], ["Teacher Toolbar", "toolbar.mouse.normal"], ["Navigation / Window Controls", "navigation.home"], ["Navigation / Window Controls", "navigation.videoWorksheet"], ...["active", "disabled", "pressed"].map((state) => ["Navigation / Window Controls", `navibar.vocabulary.${state}`])]) {
     await editor.getByRole("button", { name: section, exact: true }).click();
     const slot = editor.locator(`[data-binding-id="${bindingId}"]`);
     await slot.locator('input[type="file"]').setInputFiles(fixture(`${bindingId.replaceAll(".", "-")}.png`));
@@ -269,6 +269,14 @@ try {
   await page.locator(".b2-hosted-ui-editor").getByText("Revision 1", { exact: true }).waitFor();
   await page.locator(".b2-hosted-ui-editor").getByRole("button", { name: "Supporting UI", exact: true }).click();
   assert.equal(saved.document.overviewCaptionFontFamily, "Georgia");
+  await editor.getByRole("button", { name: "Navigation / Window Controls", exact: true }).click();
+  for (const state of ["active", "disabled", "pressed"]) {
+    const binding = `navibar.vocabulary.${state}`;
+    assert.equal(saved.document.assets[binding].sha256, expectedHash);
+    const thumbnail = editor.locator(`[data-binding-id="${binding}"] img`);
+    await thumbnail.evaluate((image) => image.decode());
+    assert.ok(await thumbnail.evaluate((image) => image.naturalWidth > 0));
+  }
   assert.equal(Object.hasOwn(saved.document, "independentPartsBackgrounds"), false, "unrelated UI edits must not opt into independent parts");
   assert.equal(Object.hasOwn(saved.document.assets, "background.workbook-parts"), false);
   assert.equal(Object.hasOwn(saved.document.assets, "background.grammar-book-parts"), false);
@@ -300,6 +308,11 @@ try {
   assert.equal(Boolean(saved.document.assets["toolbar.mouse.normal"]), true, "unrelated toolbar override was lost");
   assert.equal(Boolean(saved.document.assets["navigation.home"]), true, "unrelated navigation override was lost");
   assert.equal(Boolean(saved.document.assets["navigation.videoWorksheet"]), true, "independent Video Worksheet override was lost");
+  await editor.getByRole("button", { name: "Navigation / Window Controls", exact: true }).click();
+  for (const state of ["active", "disabled", "pressed"]) await editor.locator(`[data-binding-id="navibar.vocabulary.${state}"]`).getByRole("button", { name: "Revert to canonical", exact: true }).click();
+  await editor.getByRole("button", { name: "Save UI draft", exact: true }).click();
+  await editor.getByText("Revision 4", { exact: true }).waitFor();
+  for (const state of ["active", "disabled", "pressed"]) assert.equal(Object.hasOwn(saved.document.assets, `navibar.vocabulary.${state}`), false);
   await page.getByRole("button", { name: "Review", exact: true }).click();
   await frame().locator(".teacher-fixed-stage-host").waitFor();
   assert.equal((await frame().locator(".teacher-fixed-stage-host").evaluate((node) => node.style.backgroundImage)).includes(expectedHash), false, "reverted background remained in Viewer");
@@ -307,6 +320,7 @@ try {
   await page.goto(`${origin}/#/books/ultimate-b2/sounds`, { waitUntil: "domcontentloaded" });
   const soundController = page.locator(".b2-sound-controller");
   await soundController.getByRole("heading", { name: "Sound Controller" }).waitFor();
+  await soundController.getByRole("region", { name: "Interface sound bindings" }).waitFor();
   assert.deepEqual(await soundController.locator("article").evaluateAll((items) => items.map((item) => item.dataset.bindingId)), ["sound.button", "sound.correct", "sound.incorrect", "sound.page-turn"]);
   assert.equal(await soundController.locator('input[type="file"],button,audio').count(), 0);
   assert.equal(await soundController.getByText("Sound authoring will be added in a later milestone.", { exact: true }).count(), 1);

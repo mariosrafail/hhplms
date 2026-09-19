@@ -5,6 +5,9 @@ const classroomAssets = import.meta.glob([
   "!../../assets/books/ultimate-b2/legacy-classroom-ui/icons/navigation/publisher-navibar/**",
 ], { eager: true, query: "?url", import: "default" });
 const wiredPublisherNavibarAssets = import.meta.glob([
+  "../../assets/books/ultimate-b2/legacy-classroom-ui/icons/navigation/publisher-navibar/navibar-vocabulary-active.png",
+  "../../assets/books/ultimate-b2/legacy-classroom-ui/icons/navigation/publisher-navibar/navibar-vocabulary-disabled.png",
+  "../../assets/books/ultimate-b2/legacy-classroom-ui/icons/navigation/publisher-navibar/navibar-vocabulary-pressed.png",
   "../../assets/books/ultimate-b2/legacy-classroom-ui/icons/navigation/publisher-navibar/navibar-sb-active.png",
   "../../assets/books/ultimate-b2/legacy-classroom-ui/icons/navigation/publisher-navibar/navibar-gb-active.png",
   "../../assets/books/ultimate-b2/legacy-classroom-ui/icons/navigation/publisher-navibar/navibar-workbook-active.png",

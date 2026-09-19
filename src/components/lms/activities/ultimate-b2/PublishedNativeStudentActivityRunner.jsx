@@ -11,11 +11,11 @@ import { NativeOldschoolListeningStudentSurface } from "../../../native-oldschoo
 import { NativeDragDropStudentSurface } from "../../../native-drag-drop/NativeDragDropSurface.jsx";
 import { publishedNativeAssetUrl } from "virtual:component-publication";
 
-export function PublishedNativeStudentActivityRunner({ entry, publication, responses = null, initialResponses = null, onResponsesChange = null, readOnly = false, showMetadataHeader = true, presentation = null }) {
+export function PublishedNativeStudentActivityRunner({ entry, publication, responses = null, initialResponses = null, onResponsesChange = null, readOnly = false, showMetadataHeader = true, presentation = null, delivery = null }) {
   const document = entry.document;
   const assetUrl = (assetId) => {
     const reference = document.assets.find((asset) => asset.assetId === assetId);
-    return publishedNativeAssetUrl(publication, reference);
+    return (delivery?.assetUrl || publishedNativeAssetUrl)(publication, reference);
   };
   return <NativeReadableTextPresentation document={document} assetUrl={assetUrl} presentation={presentation}>{(activityPresentation, audioHotspotPresentation) => <article className="published-native-activity" data-native-kind={entry.kind} data-release-id={publication.releaseId} data-native-metadata={showMetadataHeader || undefined}>
     {showMetadataHeader ? <header><h2>{document.metadata.title}</h2>{document.metadata.visibleInstructionText ? <p className="native-activity-visible-instruction">{document.metadata.visibleInstructionText}</p> : null}</header> : null}

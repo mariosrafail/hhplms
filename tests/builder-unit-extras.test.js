@@ -148,7 +148,7 @@ test("Viewer renders accessible lower-right Unit Extra Audio without colliding w
     readFile(new URL("../src/components/lms/books/BookUnitExtraAudios.jsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/lms/books/BookUnitExtraAudios.css", import.meta.url), "utf8"),
     readFile(new URL("../src/components/lms/books/BookPageViewer.jsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/apps/android-teacher-offline/TeacherOfflinePages.jsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/apps/android-teacher-offline/TeacherClassroomPages.jsx", import.meta.url), "utf8"),
   ]);
   assert.match(audioPlayer, /<audio ref=\{audioRef\} controls preload="metadata"/);
   assert.match(audioPlayer, /audioRef\.current\.pause\(\)/);

@@ -59,7 +59,11 @@ const fakeInspect = async ({ bytes, originalFilename, descriptor }) => {
 };
 
 test("hosted Teacher UI catalog is the unique live subset of canonical bindings", () => {
-  assert.equal(HOSTED_EDITABLE_UI_BINDINGS.length, 144);
+  assert.equal(HOSTED_EDITABLE_UI_BINDINGS.length, 147);
+  for (const state of ["active", "disabled", "pressed"]) {
+    assert.equal(HOSTED_EDITABLE_UI_BINDINGS_BY_ID[`navibar.vocabulary.${state}`].category, "navigation-window");
+    assert.equal(ultimateB2TeacherAppDefaultAssets[`navibar.vocabulary.${state}`].role, "navigation-control");
+  }
   assert.equal(HOSTED_EDITABLE_UI_BINDINGS_BY_ID["navigation.videoWorksheet"].label, "Video Worksheet");
   assert.notEqual(ultimateB2TeacherAppDefaultAssets["navigation.videoWorksheet"].repositoryPath, ultimateB2TeacherAppDefaultAssets["navigation.video"].repositoryPath);
   assert.equal(new Set(HOSTED_EDITABLE_UI_BINDINGS.map(({ id }) => id)).size, HOSTED_EDITABLE_UI_BINDINGS.length);
@@ -123,6 +127,14 @@ test("hosted Teacher UI documents and draft assets preserve B2 compatibility whi
     const empty = createEmptyHostedTeacherUiDocument(componentSlug);
     assert.deepEqual(empty, { schemaVersion: "1.0", packageId: componentSlug, assets: {} });
     assert.equal(normalizeHostedTeacherUiDocument(empty, { packageId: componentSlug }).packageId, componentSlug);
+    for (const state of ["active", "disabled", "pressed"]) {
+      const id = `navibar.vocabulary.${state}`;
+      const edited = normalizeHostedTeacherUiDocument({ ...empty, assets: { [id]: sample } }, { packageId: componentSlug });
+      const model = createTeacherRuntimeUiAssetModel({ authoring: ultimateB2TeacherAppAuthoring, resolveCanonicalAssetUrl: ({ id }) => `canonical:${id}`,
+        hostedPreview: projectHostedTeacherUiPreview(edited, { packageId: componentSlug }), identity: { bookSlug, componentSlug } });
+      assert.equal(model.classroom.vocabulary[state], `/preview/ui-assets-v2/books/${bookSlug}/components/${componentSlug}/${checksum}.png`);
+      assert.deepEqual(empty.assets, {}, "Other book/controller documents remain unchanged");
+    }
     assert.throws(() => normalizeHostedTeacherUiDocument(empty), /identity/);
     assert.equal(hostedTeacherUiAssetPath(sample, { bookSlug, componentSlug }), `/preview/ui-assets-v2/books/${bookSlug}/components/${componentSlug}/${checksum}.png`);
     assert.equal(builderTeacherUiAssetApiScopedRoot({ bookSlug, componentSlug }), `/builder/api/ui-assets/books/${bookSlug}/components/${componentSlug}`);
@@ -306,7 +318,7 @@ test("public UI asset delivery keeps v1 compatibility and adds the isolated v2 c
 
 test("runtime UI consumers use the explicit provider boundary rather than module-static asset objects", async () => {
   const sources = await Promise.all([
-    "TeacherOfflineBook.jsx", "TeacherOfflinePages.jsx", "TeacherBookNavigation.jsx", "UltimateB2ClassroomToolbar.jsx", "LegacyMenuTitleAnimation.jsx", "legacyClassroomSound.js", "TeacherListeningPlayerAssets.js",
+    "TeacherOfflineBook.jsx", "TeacherClassroomPages.jsx", "TeacherBookNavigation.jsx", "UltimateB2ClassroomToolbar.jsx", "LegacyMenuTitleAnimation.jsx", "legacyClassroomSound.js", "TeacherListeningPlayerAssets.js",
   ].map((name) => readFile(new URL(`../src/apps/android-teacher-offline/${name}`, import.meta.url), "utf8")));
   assert.equal(sources.every((source) => /useTeacherRuntimeUiAssets|runtimeUiAssets/.test(source)), true);
   assert.equal(sources.every((source) => !/import \{ legacyClassroomAssets/.test(source)), true);

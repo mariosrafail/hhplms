@@ -19,7 +19,7 @@ export async function readPublishedEdition(sql, currentUser, query, overrides = 
     if ((query.teacherActivityId || query.teacherAssetActivityId) && !teacher) return json(403, { error: "edition_teacher_required" });
     const release = await deps.load(sql, { bookSlug: query.bookSlug, editionId: query.editionId, releaseId: query.releaseId, publishedOnly: true });
     if (!release) return json(404, { error: "edition_release_missing" });
-    return await (wordlists ? wordListReleaseRead : editionReleaseRead)(release, query, query.audioSha256 || query.assetSha256 || query.teacherAssetActivityId ? deps.storage() : null, { teacher });
+    return await (wordlists ? wordListReleaseRead : editionReleaseRead)(release, query, query.audioSha256 || query.assetSha256 || query.teacherAssetActivityId || query.uiBindingId || query.uiFont ? deps.storage() : null, { teacher });
   } catch (error) {
     return json(error instanceof ContentEditionError ? 404 : 503, { error: "edition_content_unavailable" });
   }

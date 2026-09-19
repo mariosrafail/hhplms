@@ -4,6 +4,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import pg from "pg";
 import { requireSafeDatabase, postgresTemplate } from "../../scripts/_staging-db.mjs";
 import { loadProductionMigrationManifest } from "../../scripts/_migration-readiness.mjs";
+import { applyCanonicalProductionMigrations } from "./_migration-test-helpers.mjs";
 import { contentEdition } from "../../src/data/contentEditions.js";
 import { freezeEditionSource, prepareEditionRelease } from "../../netlify-sites/ultimate-b2-builder/server/_builder-edition-domain.js";
 import { mutateEdition, loadEditionStatus, loadEditionRelease } from "../../netlify-sites/ultimate-b2-builder/server/_builder-edition-store.js";
@@ -13,6 +14,7 @@ import { studentsBookUnits } from "../fixtures/students-book-current.js";
 const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.TEST_DATABASE_CONFIRMATION === "isolated-test-database";
 if (process.env.CONTENT_EDITION_BROWSER === "1" && !enabled) throw new Error("Content edition browser gate requires an isolated test database.");
 if (process.env.WORDLIST_BROWSER === "1" && !enabled) throw new Error("Word List browser gate requires an isolated test database.");
+if (process.env.WORDLIST_CLASSROOM_BROWSER === "1" && !enabled) throw new Error("Word List classroom gate requires an isolated test database.");
 test("disposable PostgreSQL isolates edition heads, atomically captures shared revisions and rejects replay/ownership conflicts", { skip: !enabled }, async (t) => {
   const target = requireSafeDatabase("test");
   const schema = `content_editions_${randomBytes(8).toString("hex")}`;
@@ -21,8 +23,11 @@ test("disposable PostgreSQL isolates edition heads, atomically captures shared r
   const scoped = new URL(target.connectionString); scoped.searchParams.set("options", `-c search_path=${schema}`);
   const pool = new pg.Pool({ connectionString: scoped.toString(), max: 4 });
   t.after(async () => { await pool.end(); await admin.query(`drop schema "${schema}" cascade`); await admin.end(); });
-  const migrations = await loadProductionMigrationManifest();
-  for (const migration of migrations) await pool.query(migration.sql);
+  if (process.env.WORDLIST_CLASSROOM_BROWSER === "1") {
+    await applyCanonicalProductionMigrations(pool);
+  } else {
+    for (const migration of await loadProductionMigrationManifest()) await pool.query(migration.sql);
+  }
   const actor = randomUUID();
   await pool.query("insert into builder_users(id,full_name,email,password_hash) values($1,'Edition fixture','editions@example.test','unused')", [actor]);
   const sql = postgresTemplate(pool);

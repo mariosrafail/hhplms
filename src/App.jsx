@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { AdminView } from "./components/lms/AdminView.jsx";
 import { AuthView } from "./components/lms/AuthView.jsx";
@@ -18,6 +18,7 @@ import { useCourseData } from "./hooks/useCourseData.js";
 import { useHashView } from "./hooks/useHashView.js";
 import { useSchoolBrand } from "./hooks/useSchoolBrand.js";
 import { clearPublishedComponentReleaseCache } from "virtual:component-publication";
+const EditionClassroom = lazy(() => import("./components/wordlists/EditionClassroom.jsx").then((module) => ({ default: module.EditionClassroom })));
 
 const teacherSectionByView = {
   teacher: "dashboard",
@@ -121,6 +122,7 @@ export default function App() {
     attemptedHash,
     routeAction,
     accountToken,
+    editionContext,
     mode: routeMode,
   } = useHashView();
   const auth = useAuth();
@@ -195,6 +197,8 @@ export default function App() {
       )}
 
       <PageTransition pageKey={transitionKey}>
+        {view === "edition-classroom" && (auth.authLoading ? <p role="status">Checking account…</p> : !auth.currentUser ? <AccessGate requiredRole="student" currentUser={null} authLoading={false} navigateTo={navigateTo} />
+          : <Suspense fallback={<p role="status">Loading classroom…</p>}><EditionClassroom context={editionContext} teacherMode={["teacher", "admin"].includes(auth.currentUser.role)} onClose={() => navigateTo(dashboardForRole(auth.currentUser.role))} /></Suspense>)}
         {view === "home" && <RoleSelection navigateTo={navigateTo} brand={brand} />}
         {view === "invalid-route" && <InvalidRouteView attemptedHash={attemptedHash} navigateTo={navigateTo} />}
         {["accept-invitation", "reset-password", "account-security"].includes(view) && <AccountLifecycleView key={view} mode={view} token={accountToken} currentUser={auth.currentUser} onAuthenticated={auth.adoptAuthenticatedUser} onSignOut={signOut} navigateTo={navigateTo} />}

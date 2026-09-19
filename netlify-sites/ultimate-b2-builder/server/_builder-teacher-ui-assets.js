@@ -15,6 +15,7 @@ import {
 import { getBuilderSql, json, requireBuilderOrigin, requireBuilderUser } from "./_builder-auth.js";
 import { resolveBuilderPackageUi } from "./_builder-component-registry.js";
 import { overviewUiDatabaseReady, requiresOverviewUiSchema } from "./_builder-overview-ui-capability.js";
+import { vocabularyUiDatabaseReady, requiresVocabularyUiSchema } from "./_builder-vocabulary-ui-capability.js";
 import { collectOverviewFont, overviewFontDatabaseReady, requiresOverviewFontSchema } from "./_builder-overview-font.js";
 import { builderClientMutationIdPattern, builderDocumentSha256, stableBuilderJson } from "./_builder-content-security.js";
 import { resolveBuilderContentResource } from "./_builder-content-registry.js";
@@ -171,6 +172,7 @@ export function createBuilderTeacherUiAssetsHandler(overrides = {}) {
     loadDocument: overrides.loadDocument || loadBuilderComponentDocument,
     saveDocument: overrides.saveDocument || saveBuilderComponentDocument,
     overviewUiReady: overrides.overviewUiReady || overviewUiDatabaseReady,
+    vocabularyUiReady: overrides.vocabularyUiReady || vocabularyUiDatabaseReady,
     overviewFontReady: overrides.overviewFontReady || overviewFontDatabaseReady,
     collectOverviewFont: overrides.collectOverviewFont || collectOverviewFont,
     storage: overrides.storage || (() => createBookAssetStorage()),
@@ -301,6 +303,7 @@ export function createBuilderTeacherUiAssetsHandler(overrides = {}) {
           try { await dependencies.collectOverviewFont(sql, document, identity); }
           catch { return uiJson(400, { error: "invalid_overview_font_reference" }); }
         }
+        if (requiresVocabularyUiSchema(document) && !await dependencies.vocabularyUiReady(sql)) return uiJson(409, { error: "vocabulary_ui_schema_unavailable" });
         if (requiresOverviewUiSchema(document) && !await dependencies.overviewUiReady(sql)) {
           return uiJson(409, { error: "publication_ui_schema_unavailable" });
         }

@@ -71,7 +71,7 @@ test("reusable exercise visual capabilities support optional instruction and opt
 test("optional exercise images and Show Text controls render only from enabled capabilities", async () => {
   const [visuals, pages] = await Promise.all([
     readFile("src/components/lms/activities/ultimate-b2/UltimateB2ExerciseVisuals.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
   ]);
   assert.match(visuals, /return source \? <img/);
   assert.match(visuals, /showText\?\.enabled/);
@@ -218,8 +218,8 @@ test("Reading authoring endpoint round-trips editable content and geometry while
 
 test("Teacher runtime exposes Show Text for Object 4 and two-part navigation for Object 5", async () => {
   const [pages, embedded, pilot, completeRuntime, debateRuntime] = await Promise.all([
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflineEmbeddedActivity.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
+    Promise.all([readFile("src/apps/android-teacher-offline/TeacherOfflineEmbeddedActivity.jsx", "utf8"), readFile("src/apps/android-teacher-offline/EmbeddedActivityFrame.jsx", "utf8")]).then((sources) => sources.join("\n")),
     readFile("src/components/lms/activities/ultimate-b2/UltimateB2LegacyPilotActivity.jsx", "utf8"),
     readFile("src/components/lms/activities/ultimate-b2/UltimateB2CompleteSentencesActivity.jsx", "utf8"),
     readFile("src/components/lms/activities/ultimate-b2/UltimateB2DebateClubActivity.jsx", "utf8"),

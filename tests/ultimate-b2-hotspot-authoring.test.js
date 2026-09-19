@@ -92,7 +92,7 @@ test("web resolves publisher releases while offline viewers retain the tracked h
     readFile(path.join(repositoryRoot, "src/components/lms/books/BookPageViewer.jsx"), "utf8"),
     readFile(path.join(repositoryRoot, "src/components/lms/books/BookPageImagePanel.jsx"), "utf8"),
     readFile(path.join(repositoryRoot, "src/apps/android-offline/AndroidBookViewer.jsx"), "utf8"),
-    readFile(path.join(repositoryRoot, "src/apps/android-teacher-offline/TeacherOfflinePages.jsx"), "utf8"),
+    readFile(path.join(repositoryRoot, "src/apps/android-teacher-offline/TeacherClassroomPages.jsx"), "utf8"),
     readFile(path.join(repositoryRoot, "src/apps/android-teacher-offline/teacherOfflinePageViewer.css"), "utf8"),
     readFile(path.join(repositoryRoot, "src/apps/android-offline/androidOfflineServiceStubs.js"), "utf8"),
     readFile(path.join(repositoryRoot, "src/apps/android-teacher-offline/reviewComponentRegistry.js"), "utf8"),

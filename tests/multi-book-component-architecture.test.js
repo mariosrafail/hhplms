@@ -180,7 +180,7 @@ test("production boundaries contain no pending content, answers, or component-sp
   const [registry, app, pages, catalog, fixture] = await Promise.all([
     readFile("src/apps/android-teacher-offline/reviewComponentRegistry.js", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherOfflineApp.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
     readFile("src/data/bookProductCatalog.js", "utf8"),
     readFile("tests/fixtures/review-component-registry-fixture.js", "utf8"),
   ]);

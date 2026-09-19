@@ -207,38 +207,116 @@ that exact component snapshot; reads verify private bucket, size and byte hash.
 reader; Teacher/admin checks still apply. Builder draft, candidate and entitled
 published authorization remain distinct. No new assignment creation is enabled.
 
-## Task 3 handoff
+## Shared classroom runtime (Task 3)
 
-Use `src/data/wordlists/loader.js`: `loadWordList(context,{signal})`,
-`wordListAudioUrl(context,sha256)`, `wordListForPages(wordlist,pageIds)` and
-`wordListPageCapability({wordlist,componentSlug,pageIds,surface})`.
-Context is `{kind:'draft'|'candidate'|'published',bookSlug,editionId,componentSlug,
-releaseId?}`; immutable/published contexts require releaseId. Loader validates
-the returned edition/component/release. Data schema is `runtime-wordlist.v1`.
-It contains policy, mapping revision, exact target source, ordered occurrences
-and owned audio descriptors; consumers must not reparse portable raw data.
+Source: Task 3 implementation on local Task 2 parent
+`29372dc0893a55e4672ef9022bbc5716112555b2`; `verifiedAt: 2026-09-19`.
+`wordListOperational: true` describes the interactive capability only. It does
+not certify the real publisher mappings: 104 SB and 50 WB groups remain
+unresolved, and incomplete mappings still block PREPARE.
 
-States: caller starts `loading`; loader returns `ready`, `empty` or `unavailable`
-(403/404/409), and throws other errors for an explicit error/retry view. Empty
-page lookup is not a fallback to every word. Capability requires SB/WB, exact
-component, a selected page/spread, mapped entries and `page`/`activity` surface.
-Data readiness is distinct from complete interactive readiness:
-`wordListOperational` remains false; no Vocabulary launcher/modal exists yet.
+Reachable application entry points:
 
-Preserve Task 3 requirements:
+- Builder book workspace → Content edition → SB/WB → Word Lists →
+  **Open saved draft classroom** uses the exact associated saved source.
+- **Open classroom candidate N** reads the selected immutable v2 release.
+- Authenticated LMS route
+  `#/editions/ultimate-b2/{greek|international}/releases/{UUID}/components/{componentSlug}`
+  reads only historically published, entitled, explicitly granted editions.
+  Components are `ultimate-b2-students-book`, `ultimate-b2-workbook` or
+  `ultimate-b2-grammar-book`. Grammar has content but no Vocabulary control.
 
-- `navibar.vocabulary.active`, `.disabled`, `.pressed`, editable in each
-  supported Page UI Controller under **Navigation / Window Controls**.
-- Launcher on SB/WB selected page/spread and activities opened from that page;
-  absent on Unit overview and Grammar.
-- Overlay inside the page/activity frame, with aligned rows/shared scrolling
-  and unchanged underlying activity state.
-- Independent per-word/per-column English and Greek visibility; presentation
-  state cannot change edition or grant translated data to International.
-- English MP3 only, one active playback at a time; abort/stop on context exit.
+`EditionClassroom` adapts verified `content=1` delivery to the existing shared
+`TeacherClassroomPages` navigation/frame and native activity renderers. The
+legacy `TeacherOfflinePages` wrapper retains its original publication provider
+and renderer. No edition context means no fabricated lexical availability.
+Builder cookies are never passed to Player/preview. Existing LMS discovery,
+assignment creation and historical pinned releases are unchanged.
 
-Task 4's two new edition APK exporters remain deferred. Existing Student,
-Teacher and generic Teacher Project build contracts are unchanged. Local
-exports and disposable tests do not establish hosted installation, shared
-migration, signing/distribution, deployment or production recovery readiness.
-The ChatGPT Project copy has not been synchronized by this task.
+`loadEditionClassroom` returns stable publication/delivery objects, the exact
+content source reference, its page IDs and the frozen SB UI owner. The optional
+`ui=1` read supplies only normalized UI metadata; `uiBindingId`/`uiFont` with
+`uiOwnerSha256` serves a declared, hash-verified owner asset. It exposes no
+Teacher answer document. Failed authorization, missing bytes or corruption
+fail visibly; they cannot silently select a current draft or canonical override.
+Draft canonical pages use a bounded, read-only static-assets resolver.
+
+`loadWordList(context,{signal})` and `wordListAudioUrl(context,sha256)` extend the
+Task 2 loader. Context contains `kind` (draft/candidate/published), `bookSlug`,
+`editionId`, `componentSlug`, immutable `releaseId` where required, exact
+`targetSource` (including source ID, revision and hash), `sourcePageIds` and up
+to two selected stable `pageIds`. Strict `runtime-wordlist.v1` validation binds
+projection policy, source, mappings, occurrence IDs and owned audio manifest.
+`wordListForPages` returns the ordered union of occurrences, preserving distinct
+occurrences with duplicate words/numbers/audio. Foreign or stale responses are
+aborted/ignored; no data flashes across contexts. Loading, empty, unavailable
+and error/retry are separate states.
+
+Vocabulary uses the existing canonical active/disabled/pressed PNGs, under
+Page UI Controller → Navigation / Window Controls, for B2/B1/B1+ using existing
+per-book ownership. B1 artwork changes do not grant B2 lexical capability.
+Historical compiler descriptors use the explicit frozen pre-Vocabulary binding
+set; they do not derive historical fingerprints from today's expanded catalog.
+The v3 verifier matches its existing writer's deduplicated asset manifest;
+v1/v2 verification semantics remain unchanged.
+
+Migration `068_vocabulary_ui_bindings.sql` is required for B1/B1+ documents or
+immutable projections containing the new overrides. The existing SQL raster
+validator otherwise rejects these IDs. It extends only the optional binding
+catalog and retains every 064 validation check, including metadata consistency;
+065 settings/font checks remain active. It changes no stored row or compiler
+fingerprint and leaves 066/067 untouched. Save/PREPARE/PUBLISH check this
+capability against the document/compiled/frozen UI respectively and return
+`vocabulary_ui_schema_unavailable` before writes when absent. Historical UI
+without these slots and general login do not require 068. The canonical runtime
+schema generator marks it feature-optional. Shared application is not performed
+or authorized by this task; B1/B1+ use requires separately authorized migration.
+
+The overlay lives outside the measured/transformed activity canvas, inside the
+page reader. Its shared scroll, independent language/occurrence visibility and
+focus survive close/reopen and page → activity → page. Identity resets on any
+book/edition/component/source/release/mapping/page change. Greek has paired
+English/Greek rows; International receives an English-only projection. Boolean
+headwords are rendered with `String`, preserving true/false. Activities remain
+mounted; the stage and tools are inert while the overlay is open. Navigation
+is disabled except Vocabulary. Escape and registered Android Back close the
+top layer first. No lexical action saves content or assignment state.
+
+One non-preloading English audio element belongs to each active frame. Its
+owned-hash URL is resolved only on a speaker action. Playback epochs discard
+late promises; close/context exit/background/unmount clear the source. Existing
+native media in that frame pauses without seek/reset or automatic resume.
+Errors are visible and the speaker retries. No Greek audio or TTS is added.
+
+Acceptance entry: `npm run test:wordlists:classroom`, after LMS and Builder
+builds, with a safety-confirmed isolated PostgreSQL database. CI runs it after
+Task 1/2 browser gates. Synthetic source mappings/media are separate from real
+publisher data. Unit coverage includes strict contexts, historical descriptors,
+frozen UI delivery and Back-layer registration. Existing bundle, publication,
+assignment, per-book controller and Android gates remain required.
+
+## Task 4 offline handoff
+
+Reuse `TeacherClassroomPages` with an injected `ActivityRenderer`, stable
+`classroom.publication`/`classroom.delivery`, verified `selectedPageIds` and
+`classroom.wordlist = {context, load, audioUrl}`. The shared hook has no hosted
+network fallback: the hosted adapter explicitly injects the existing loader,
+and offline builds include only pure page-scope/validation code. A missing
+provider fails closed. `load(context,{signal})` returns
+`{state,wordlist}` and is validated by `usePageWordList`; `audioUrl(context,sha)`
+resolves a locally materialized owned manifest member. Preserve the real
+published release ID and complete source reference. Do not invent a draft or
+standalone-activity page context. The context key includes source/release,
+lexical/mapping revisions and the selected pages.
+
+Materialize the verified wrapped content member, exact lexical projection,
+component-owned MP3 bytes, public/role-appropriate activity assets and frozen
+book-level SB UI-owner snapshot plus declared artwork/fonts. Verify hashes and
+sizes before enabling the pack. Retain language allowlisting and Teacher/public
+separation. Packs must contain no raw import/provenance, private storage keys,
+Builder cookies, signed preview URLs, live-draft dependency or ungranted edition.
+Shared UI is ready for that adapter; the two new edition APK exporters are not
+implemented here. Real group mapping review and complete edition readiness
+remain prerequisites. Existing APK checks are regression checks, not proof that
+new edition packs exist. Hosted acceptance/production readiness are not
+established. The ChatGPT Project copy has not been synchronized.

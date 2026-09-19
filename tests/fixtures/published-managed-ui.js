@@ -10,7 +10,7 @@ export const componentReleaseRow = (c) => ({ compiler_id: c.compilerId, release_
   teacher_projection: c.teacherProjection, teacher_projection_sha256: c.teacherProjectionSha256,
   asset_manifest: c.assetManifest, release_sha256: c.releaseSha256 });
 
-export async function publishedManagedUiFixture(componentSlug, variant = 0) {
+export async function publishedManagedUiFixture(componentSlug, variant = 0, { vocabulary = false } = {}) {
   const bookSlug = componentSlug.replace(/-students-book$/, "");
   const color = variant ? "#a43287" : bookSlug === "ultimate-b1" ? "#ab3521" : "#2369b5";
   const graphic = await sharp({ create: { width: 8, height: 8, channels: 3, background: color } }).png().toBuffer();
@@ -20,7 +20,7 @@ export async function publishedManagedUiFixture(componentSlug, variant = 0) {
   sound.writeUInt32LE(16000, 28); sound.writeUInt16LE(2, 32); sound.writeUInt16LE(16, 34); sound.write("data", 36); sound.writeUInt32LE(32, 40);
   sound.writeInt16LE(bookSlug === "ultimate-b1" ? 128 : 256, 44);
   const assets = {}, objects = new Map(), heads = new Map();
-  for (const binding of ["background.main", "navigation.next", "toolbar.pencil.normal", "media-player.background", "sound.button", "sound.correct", "sound.incorrect", "sound.page-turn"]) {
+  for (const binding of ["background.main", "navigation.next", "toolbar.pencil.normal", "media-player.background", "sound.button", "sound.correct", "sound.incorrect", "sound.page-turn", ...(vocabulary ? ["active", "disabled", "pressed"].map((state) => `navibar.vocabulary.${state}`) : [])]) {
     const audio = binding.startsWith("sound."); const bytes = audio ? Buffer.from(sound) : graphic;
     if (audio) bytes.writeInt16LE(sound.readInt16LE(44) + ["button", "correct", "incorrect", "page-turn"].indexOf(binding.slice(6)), 44);
     const asset = { sha256: createHash("sha256").update(bytes).digest("hex"), extension: audio ? "wav" : "png", mediaType: audio ? "audio/wav" : "image/png",

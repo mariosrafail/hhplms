@@ -48,6 +48,7 @@ jobs:
         run: npm run test:builder:hosted-native-activity
       - run: npm run build:netlify:ultimate-b2-interactive
       - run: npm run verify:netlify:ultimate-b2-interactive
+      - run: npm run test:builder:hosted-ui-controller
       - name: Run Ultimate B2 multi-component Builder and Viewer acceptance
         run: npm run test:builder:multi-book
       - name: Gate strict multi-component Activity authoring
@@ -140,6 +141,8 @@ jobs:
         run: npm run test:builder:content-editions
       - name: Verify Word List import, mappings and immutable data/audio routes
         run: npm run test:builder:wordlists
+      - name: Verify in-frame Word List across authenticated draft, candidate and published classrooms
+        run: npm run test:wordlists:classroom
       - name: Verify managed overview font library interoperability and rendering
         run: npm run test:builder:overview-fonts && node scripts/book-builder/overview-appearance-playwright.mjs
       - name: Verify current Unit Extras editor against isolated PostgreSQL

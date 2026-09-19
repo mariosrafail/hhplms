@@ -69,6 +69,7 @@ Apply production migrations in this exact order:
 65. `065_teacher_overview_managed_font.sql`
 66. `066_content_editions.sql`
 67. `067_wordlist_sources.sql`
+68. `068_vocabulary_ui_bindings.sql`
 
 The two `010` files are historical, already-deployed migrations. Their duplicate number is resolved by this manifest rather than renaming applied files. New migrations must use a unique, increasing number.
 

@@ -37,14 +37,14 @@ import { collectManagedUiPublicationSources } from "./_builder-managed-ui-public
 import { collectManagedPublicationSources } from "./_builder-publication-store.js";
 import { overviewCaptionFontManifest } from "../../../src/data/ultimate-b2/hostedTeacherUiDocument.js";
 
-function expectedAssetManifest(publicProjection, teacherProjection) {
+function expectedAssetManifest(publicProjection, teacherProjection, unique = false) {
   const assets = [
     ...publicProjection.assets,
     ...[...new Map(Object.values(teacherProjection.nativeActivities || {}).flatMap((entry) => nativeTeacherAnswerAssetDescriptors(entry.document)).map((asset) => [`${asset.sha256}.${asset.extension}.${asset.role}`, asset])).values()],
     ...Object.values(teacherProjection.ui.assets).map((asset) => ({ sha256: asset.sha256, extension: asset.extension, mediaType: asset.mediaType, role: COMPONENT_PUBLICATION_ASSET_ROLES.TEACHER_UI })),
     ...overviewCaptionFontManifest(teacherProjection.ui),
   ];
-  const manifest = teacherProjection.ui.overviewCaptionFontAsset
+  const manifest = unique || teacherProjection.ui.overviewCaptionFontAsset
     ? [...new Map(assets.map((asset) => [`${asset.sha256}.${asset.extension}.${asset.role}`, asset])).values()] : assets;
   return manifest.sort((left, right) => `${left.sha256}.${left.extension}.${left.role}`.localeCompare(`${right.sha256}.${right.extension}.${right.role}`));
 }
@@ -176,7 +176,8 @@ const v3 = Object.freeze({
     if (Object.keys(sourceSnapshot.nativeActivities).sort().join("\0") !== Object.keys(publicProjection.nativeActivities).sort().join("\0")
       || Object.entries(sourceSnapshot.nativeActivities).some(([id, entry]) => entry.kind !== publicProjection.nativeActivities[id].kind)
       || sourceSnapshot.pages.sha256 !== builderDocumentSha256({ units: publicProjection.units, pages: publicProjection.pages })) throw new Error("release_integrity_failed");
-    verifyManifest(release, expectedAssetManifest(publicProjection, teacherProjection));
+    // V3's compiler emits a unique descriptor set; UI states may share a PNG.
+    verifyManifest(release, expectedAssetManifest(publicProjection, teacherProjection, true));
     verifyHashes(release, compatibility, sourceSnapshot, publicProjection, teacherProjection);
     return { compatibility, sourceSnapshot, publicProjection, teacherProjection };
   },

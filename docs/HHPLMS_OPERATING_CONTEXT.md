@@ -760,3 +760,39 @@ contracts, asset dependencies and regression entry points. No migration or
 provider/shared-data mutation is introduced. Hosted acceptance and production
 readiness are not established by local disposable tests; the Project copy is not
 synchronized.
+
+
+### In-frame Vocabulary classroom (local Task 3)
+
+Source: Task 3 runtime, delivery and CI changes on Task 2 parent
+`29372dc0893a55e4672ef9022bbc5716112555b2`; verifiedAt: 2026-09-19.
+Independently fetched origin/dev at task start:
+`7bdc71e1158180da96dc5e854ce31e7eeb07014c`.
+
+Builder saved-draft and immutable edition-v2 classroom entry points now share
+page/activity navigation and Word List with the entitled LMS edition route.
+See [WORD_LIST_CONTRACT.md](WORD_LIST_CONTRACT.md) for exact paths, context,
+read-only content/UI-owner adapters and Task 4 offline provider boundary.
+Vocabulary artwork is editable per book in the existing B2/B1/B1+ controllers.
+Historical UI compatibility descriptors retain the explicit old binding set;
+v3 asset-manifest verification follows the writer's existing deduplication.
+The new PostgreSQL/browser classroom gate is required in CI. Additive migration
+068 extends the B1/B1+ SQL raster catalog for the three optional Vocabulary
+bindings; the integration suite proved that the existing validator rejected
+them. All prior checks and stored rows remain intact; 066/067 are unchanged.
+There is no new document schema version. Save/PREPARE/PUBLISH gate the new slots
+using their actual document/compiled/frozen UI. Historical UI and base login
+remain available without 068; the runtime contract is generated canonically
+with 068 feature-optional. No shared migration was executed. Builder and LMS builds use a bounded visual
+asset resolver so shared classroom imports cannot embed legacy Teacher media.
+Hosted delivery is explicitly injected; the shared Word List hook imports only
+pure scope/validation helpers, keeping hosted endpoints out of offline packs.
+
+The interactive capability flag is not publisher readiness: 104 SB and 50 WB
+real source groups remain unresolved. Synthetic acceptance cannot certify those
+mappings. Task 4's two edition APK exporters remain deferred. No shared import,
+association, grants, PREPARE/PUBLISH, migration, R2 operation, deployment,
+signing change or distribution was performed. No push is authorized. Hosted
+acceptance and production readiness are not established; Project-copy
+synchronization is not claimed. Final exact-tree gate receipts belong to the
+local Task 3 report, not to this pre-validation context delta.

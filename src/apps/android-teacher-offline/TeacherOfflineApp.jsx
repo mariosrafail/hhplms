@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App } from "@capacitor/app";
+import { consumeClassroomBack } from "../../components/wordlists/classroomLayers.js";
 import { Capacitor } from "@capacitor/core";
 import { Volume2, VolumeX } from "lucide-react";
 import { readTeacherOfflineLocation, writeTeacherOfflineLocation } from "./teacherOfflineStorage.js";
@@ -355,6 +356,7 @@ export default function TeacherOfflineApp() {
     let backHandle;
     const register = async () => {
       backHandle = await App.addListener("backButton", async () => {
+        if (consumeClassroomBack()) return;
         if (startupIntroPendingRef.current) {
           return;
         }

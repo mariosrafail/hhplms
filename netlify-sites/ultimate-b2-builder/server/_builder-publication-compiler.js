@@ -5,7 +5,7 @@ import { normalizeUltimateB2HostedOpenResponseImport, normalizeUltimateB2HostedO
 import { ULTIMATE_B2_OPEN_RESPONSE_ACTIVITY_IDS } from "../../../src/data/ultimate-b2/openResponseActivityRegistry.js";
 import { findStudentsBookImplementation } from "../../../src/data/ultimate-b2/studentsBookCatalog.js";
 import { createEmptyHostedTeacherUiDocument, normalizeHostedTeacherUiDocument, projectHostedTeacherUiPreview } from "../../../src/data/ultimate-b2/hostedTeacherUiDocument.js";
-import { HOSTED_EDITABLE_UI_BINDINGS_BY_ID } from "../../../src/data/ultimate-b2/hostedTeacherUiBindingCatalog.js";
+import { HISTORICAL_B2_UI_BINDING_IDS } from "../../../src/data/ultimate-b2/historicalTeacherUiBindings.js";
 import { COMPONENT_PUBLICATION_ASSET_ROLES } from "../../../src/data/ultimate-b2/componentPublicationAssetRoles.js";
 import { validateAndNormalizeUltimateB2HotspotManifest } from "../../../scripts/ultimate-b2/hotspot-manifest.js";
 import {
@@ -27,7 +27,7 @@ export function ultimateB2PublicationCanonicalSeeds() {
   }));
 }
 
-export function ultimateB2PublicationCompatibilityDescriptor(teacherUiBindingIds = Object.keys(HOSTED_EDITABLE_UI_BINDINGS_BY_ID).filter((id) => !["background.workbook-parts", "background.grammar-book-parts"].includes(id)).sort()) {
+export function ultimateB2PublicationCompatibilityDescriptor(teacherUiBindingIds = HISTORICAL_B2_UI_BINDING_IDS) {
   const seeds = ultimateB2PublicationCanonicalSeeds();
   return {
     compilerId: ULTIMATE_B2_COMPONENT_RELEASE_COMPILER_ID,
@@ -48,7 +48,7 @@ export function ultimateB2PublicationCompatibility() {
 
 export function ultimateB2PublicationCompatibilityBeforeVideoWorksheetBinding() {
   return builderDocumentSha256(ultimateB2PublicationCompatibilityDescriptor(
-    Object.keys(HOSTED_EDITABLE_UI_BINDINGS_BY_ID).filter((id) => id !== "navigation.videoWorksheet" && !["background.workbook-parts", "background.grammar-book-parts"].includes(id)),
+    HISTORICAL_B2_UI_BINDING_IDS.filter((id) => id !== "navigation.videoWorksheet"),
   ));
 }
 

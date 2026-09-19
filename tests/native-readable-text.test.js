@@ -260,7 +260,7 @@ test("shared Builder and Teacher runtime wire all native kinds without duplicati
   assert.match(hotspotEditor, /No MP3 attached \(optional\)/); assert.match(hotspotEditor, /Remove MP3/); assert.match(hotspotEditor, /audioAssetSlot = ""/); assert.match(hotspotEditor, /Open readable excerpt/);
   assert.doesNotMatch(hotspotEditor.match(/label="Inner colored highlight"[^\n]+/)?.[0] || "", /aspectRatio|preserveAspectRatio/);
   assert.match(hotspotEditor, /NATIVE_AUDIO_TEXT_HIGHLIGHT_COLORS\.map/); assert.match(hotspotEditor, /data-studio-stage/);
-  const pages = await readFile(new URL("../src/apps/android-teacher-offline/TeacherOfflinePages.jsx", import.meta.url), "utf8");
+  const pages = await readFile(new URL("../src/apps/android-teacher-offline/TeacherClassroomPages.jsx", import.meta.url), "utf8");
   assert.match(pages, /nativeVideoAvailable/); assert.match(pages, /nativeVideoAvailable \? sendActivityCommand\("toggle-video"\)/); assert.match(pages, /activeIconName: "showTextPressed"/);
 });
 

@@ -64,7 +64,7 @@ test("legacy and native Teacher activities implement the command/progress bounda
     readFile("src/components/native-open-response/NativeOpenResponseTeacherSurface.jsx", "utf8"),
     readFile("src/components/native-open-response/nativeOpenResponseTeacherRuntime.js", "utf8"),
     readFile("src/components/native-readable-text/NativeReadableTextPresentation.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
   ]);
   for (const source of [page5, complete, debate]) {
     assert.match(source, /command\.type === "reset-activity"/);

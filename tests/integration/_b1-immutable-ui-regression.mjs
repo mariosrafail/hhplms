@@ -8,7 +8,7 @@ export async function verifyB1ImmutableUi({ pool, actor, save, media, publicatio
   const post = async (book, action, body) => publication({ path: `/builder/api/publication/books/${book}/${action}`, httpMethod: "POST",
     headers: { host: "builder.example", origin: "https://builder.example", "content-type": "application/json" }, body: JSON.stringify(body) });
   for (const book of ["ultimate-b1", "ultimate-b1-plus"]) {
-    const slug = `${book}-students-book`, ui = await publishedManagedUiFixture(slug);
+    const slug = `${book}-students-book`, ui = await publishedManagedUiFixture(slug, 0, { vocabulary: true });
     ui.payload.overviewCaptionFontFamily = "Georgia";
     ui.payload.independentPartsBackgrounds = true;
     for (const component of ["students-book", "workbook", "grammar-book"]) ui.payload.assets[`background.${component}-parts`] = { ...ui.payload.assets["background.main"] };
@@ -26,6 +26,7 @@ export async function verifyB1ImmutableUi({ pool, actor, save, media, publicatio
     assert.equal(sb.compiler_id, `${slug}-v2`); assert.equal(sb.teacher_projection.ui.packageId, slug);
     assert.equal(sb.teacher_projection.ui.overviewCaptionFontFamily, "Georgia");
     assert.equal(sb.teacher_projection.ui.independentPartsBackgrounds, true);
+    for (const state of ["active", "disabled", "pressed"]) assert.equal(sb.teacher_projection.ui.assets[`navibar.vocabulary.${state}`].sha256, ui.payload.assets[`navibar.vocabulary.${state}`].sha256);
     assert.equal(rows[1].compiler_id, `${book}-workbook-v1`); assert.equal(Object.hasOwn(rows[1].teacher_projection, "ui"), false);
     assert.equal((await pool.query("select builder_b1_product_integrity($1) valid", [prepared.productReleaseId])).rows[0].valid, true);
     assert.equal((await pool.query("select count(*)::int count from book_component_release_asset_pins where component_release_id=$1 and asset_role='teacher_ui'", [sb.id])).rows[0].count, 0);
@@ -42,7 +43,7 @@ export async function verifyB1ImmutableUi({ pool, actor, save, media, publicatio
     const rawRelease = (await pool.query("select r.* from book_component_releases r join book_product_release_members m on m.component_release_id=r.id where m.product_release_id=$1 and m.member_order=1", [JSON.parse(rawResult.body).productReleaseId])).rows[0];
     assert.equal(rawRelease.source_snapshot.teacherUi.sha256, rawHash);
     assert.deepEqual(rawRelease.teacher_projection.ui, sb.teacher_projection.ui);
-    const changed = await publishedManagedUiFixture(slug, 1); for (const [key, bytes] of changed.objects) media.set(key, bytes);
+    const changed = await publishedManagedUiFixture(slug, 1, { vocabulary: true }); for (const [key, bytes] of changed.objects) media.set(key, bytes);
     await save(book, slug, "ui-controller", changed.payload);
     const newerResult = await post(book, "prepare", { clientMutationId: randomUUID(), releaseNote: "Changed UI fixture" });
     assert.equal(newerResult.statusCode, 200, newerResult.body);

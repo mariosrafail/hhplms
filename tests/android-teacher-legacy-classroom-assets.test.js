@@ -180,6 +180,9 @@ test("teacher registry imports only in-use baseline and catalog remains outside 
   for (const sourceFile of sourceFiles) {
     if (sourceFile.startsWith(`${path.resolve("src/apps/android-teacher-offline")}${path.sep}`)) continue;
     if (sourceFile === canonicalRegistryPath || sourceFile === canonicalResolverPath || sourceFile === builderVisualResolverPath) continue;
+    // The edition classroom deliberately consumes the same provider as the
+    // Teacher shell; its build resolves only the bounded visual defaults.
+    if (sourceFile === path.resolve("src/components/wordlists/EditionClassroom.jsx")) continue;
     if (!/\.(?:js|jsx|ts|tsx|css)$/.test(sourceFile)) continue;
     assert.doesNotMatch(await readFile(sourceFile, "utf8"), /legacyClassroomAssets|legacy-classroom-ui/);
   }

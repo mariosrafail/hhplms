@@ -18,6 +18,7 @@ import { freezeComponentPublicationAssetPins } from "./_builder-publication-pins
 import { resolvePublicationCompiler, verifyImmutableComponentRelease } from "./_builder-publication-compilers.js";
 import { verifyProductReleaseEnvelope } from "./_builder-product-publication-domain.js";
 import { overviewUiDatabaseReady, requiresOverviewUiSchema } from "./_builder-overview-ui-capability.js";
+import { vocabularyUiDatabaseReady, requiresVocabularyUiSchema } from "./_builder-vocabulary-ui-capability.js";
 import { overviewFontDatabaseReady, requiresOverviewFontSchema } from "./_builder-overview-font.js";
 import {
   createProductRelease,
@@ -164,6 +165,7 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
     authorize: overrides.authorize || requireBuilderUser,
     ready: overrides.ready || productPublicationDatabaseReady,
     overviewUiReady: overrides.overviewUiReady || overviewUiDatabaseReady,
+    vocabularyUiReady: overrides.vocabularyUiReady || vocabularyUiDatabaseReady,
     overviewFontReady: overrides.overviewFontReady || overviewFontDatabaseReady,
     pinReady: overrides.pinReady || productPublicationPinDatabaseReady,
     compileProduct: overrides.compileProduct || compileProduct,
@@ -232,6 +234,8 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
         if (!builderClientMutationIdPattern.test(parsed.value.clientMutationId) || typeof parsed.value.releaseNote !== "string" || parsed.value.releaseNote.length > 240) return json(400, { error: "invalid_request" });
         if (!pinSchemaReady) return json(409, { error: "release_pin_schema_unavailable" });
         const compiledMembers = await dependencies.compileProduct(sql, configuration, dependencies);
+        if (compiledMembers.some((entry) => requiresVocabularyUiSchema(entry.compiled.teacherProjection?.ui))
+          && !await dependencies.vocabularyUiReady(sql)) return json(409, { error: "vocabulary_ui_schema_unavailable" });
         if (compiledMembers.some((entry) => requiresOverviewFontSchema(entry.compiled.teacherProjection?.ui))
           && !await dependencies.overviewFontReady(sql)) return json(409, { error: "overview_font_schema_unavailable" });
         if (compiledMembers.some((entry) => requiresOverviewUiSchema(entry.compiled.teacherProjection?.ui))
@@ -273,6 +277,8 @@ export function createBuilderProductPublicationHandler(overrides = {}) {
         if (!candidate) return json(404, { error: "release_not_found" });
         {
           const rows = await dependencies.loadComponentRows(sql, { bookSlug: parsedRoute.bookSlug, productReleaseId: candidate.id });
+          if (rows.some((row) => requiresVocabularyUiSchema(row.teacher_projection?.ui))
+            && !await dependencies.vocabularyUiReady(sql)) return json(409, { error: "vocabulary_ui_schema_unavailable" });
           if (rows.some((row) => requiresOverviewFontSchema(row.teacher_projection?.ui))
             && !await dependencies.overviewFontReady(sql)) return json(409, { error: "overview_font_schema_unavailable" });
           if (rows.some((row) => requiresOverviewUiSchema(row.teacher_projection?.ui))

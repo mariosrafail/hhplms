@@ -60,6 +60,7 @@ export const HOSTED_EDITABLE_UI_BINDINGS = Object.freeze([
   entry("branding.publisher-logo", "Publisher logo", "branding-title"),
   ...title,
   ...navigation.map(([id, label]) => entry(`navigation.${id}`, label, "navigation-window")),
+  ...["active", "disabled", "pressed"].map((state) => entry(`navibar.vocabulary.${state}`, `Vocabulary — ${state}`, "navigation-window")),
   entry("navibar.sb.active", "Students Book switch", "book-switch"),
   entry("navibar.gb.active", "Grammar Book switch", "book-switch"),
   entry("navibar.workbook.active", "Workbook switch", "book-switch"),

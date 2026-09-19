@@ -4,7 +4,8 @@ import { WORDLIST_LIMITS, WordListError, exact, reject, portableDiff, stableJson
 import { getBuilderSql, requireBuilderUser, requireBuilderOrigin, json } from "./_builder-auth.js";
 import { loadEditionStatus } from "./_builder-edition-store.js";
 import { prepareEditionAssets } from "./_builder-edition-assets.js";
-import { editionReleaseRead } from "./_builder-editions.js";
+import { editionReleaseRead, editionClassroomUiRead } from "./_builder-editions.js";
+import { canonicalPublicationAssetFetcher } from "./_builder-canonical-release-assets.js";
 import { inspectManagedMp3 } from "../../../lib/book-assets/audio-inspection.js";
 import { wordListStorage, readWordListAudio } from "../../../lib/book-assets/wordlist-storage.js";
 import { verifyWordListDataset, requiredWordListAudio, validateWordListMappings, freezeWordList, verifyWordList,
@@ -24,6 +25,7 @@ function bodyFor(event, keys) {
 const binary = (bytes) => ({ statusCode: 200, headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" }, body: Buffer.from(bytes).toString("base64"), isBase64Encoded: true });
 export async function wordListReleaseRead(release, query, storage, { teacher = false } = {}) {
   const edition = release.composition.edition;
+  if (query.ui === "1") return editionClassroomUiRead(release.content, query, storage);
   if (query.content === "1") return editionReleaseRead(release.content, query, storage, { teacher });
   if (!query.componentSlug) return json(200, wordListEditionPublic(release, edition));
   const record = release.wordlists.find((entry) => entry.targetSource.componentSlug === query.componentSlug);
@@ -48,13 +50,24 @@ export function createBuilderWordListHandler(overrides = {}) {
       const identity = { bookSlug: route.bookSlug, editionId: route.editionId, componentSlug: route.componentSlug };
       if (event.httpMethod === "GET" && route.action === "releases") {
         const release = await deps.release(sql, { ...route, releaseId: route.id });
-        return release ? wordListReleaseRead(release, query, query.audioSha256 || query.assetSha256 || query.teacherAssetActivityId ? deps.storage(context) : null, { teacher: true }) : json(404, { error: "wordlist_release_missing" });
+        return release ? wordListReleaseRead(release, query, query.audioSha256 || query.assetSha256 || query.teacherAssetActivityId || query.uiBindingId || query.uiFont ? deps.storage(context) : null, { teacher: true }) : json(404, { error: "wordlist_release_missing" });
       }
       const uploading = event.httpMethod === "POST" && route.action === "upload";
       if (uploading) { requireEditionUuid(query.clientMutationId); if (!shaPattern.test(query.sha256 || "")) reject("wordlist_audio_integrity"); }
       const status = uploading ? { sources: [], associations: {} } : await deps.status(sql, route.bookSlug, route.editionId);
       const target = status.sources.find((record) => record.reference.sourceId === status.associations[route.componentSlug] && record.reference.componentSlug === route.componentSlug);
       if (route.componentSlug && !target && !uploading) return json(409, { error: "wordlist_associated_source_required" });
+      if (event.httpMethod === "GET" && route.action === "draft") {
+        if (query.sourceId && (query.sourceId !== target.reference.sourceId || Number(query.sourceRevision) !== target.reference.revision || query.sourceSha256 !== target.reference.sha256)) reject("wordlist_target_source_changed");
+        if (query.content === "1" || query.ui === "1") {
+          const members = status.sources.filter((record) => status.associations[record.reference.componentSlug] === record.reference.sourceId);
+          const saved = { id: target.reference.sourceId, composition: { edition }, members };
+          const bytes = query.assetSha256 || query.teacherAssetActivityId || query.uiBindingId || query.uiFont;
+          if (query.ui === "1") return editionClassroomUiRead(saved, query, bytes ? deps.storage(context) : null);
+          return editionReleaseRead(saved, { ...query, componentSlug: route.componentSlug }, bytes ? deps.storage(context) : null,
+            { teacher: true, canonicalFetcher: query.assetRole === "canonical_page_image" ? canonicalPublicationAssetFetcher(context) : null });
+        }
+      }
       const current = target ? await deps.load(sql, target.reference.sourceId) : null;
       if (target) requiredWordListAudio({ bookSlug: route.bookSlug, entries: [], audio: [] }, route.componentSlug);
       if (event.httpMethod === "GET") {

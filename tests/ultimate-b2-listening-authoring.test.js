@@ -152,7 +152,7 @@ test("Teacher Listening runtime keeps static segments, karaoke, answers, and con
   const [runtime, normalized, pages, navigation, css] = await Promise.all([
     readFile("src/components/lms/activities/ultimate-b2/TeacherLegacyListeningActivity.jsx", "utf8"),
     readFile("src/components/lms/activities/ultimate-b2/NormalizedStudentsBookActivity.jsx", "utf8"),
-    readFile("src/apps/android-teacher-offline/TeacherOfflinePages.jsx", "utf8"),
+    readFile("src/apps/android-teacher-offline/TeacherClassroomPages.jsx", "utf8"),
     readFile("src/apps/android-teacher-offline/TeacherBookNavigationCore.jsx", "utf8"),
     readFile("src/components/lms/activities/ultimate-b2/teacherLegacyListeningActivity.css", "utf8"),
   ]);

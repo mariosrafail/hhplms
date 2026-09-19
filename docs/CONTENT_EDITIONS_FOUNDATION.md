@@ -161,7 +161,12 @@ reads are restricted to the public manifest. Asset fields are `assetSha256`,
 This opt-in read path does not change existing LMS discovery or assignment
 creation: old assignments continue through their original pinned release path.
 
-## Word List extension contract (milestones 2 and 3, not operational)
+## Word List extension contract (Task 2 data; Task 3 UI deferred)
+
+Task 2 implements the separate versioned data/import/publication extension in
+[WORD_LIST_CONTRACT.md](WORD_LIST_CONTRACT.md). The following requirements remain
+its compatibility foundation. `wordListOperational` denotes interactive
+launcher readiness, not availability of the new data APIs.
 
 `wordListOperational` is false. Keep one canonical imported Word List source
 with explicit available languages (`en`, `el`), provenance, an import revision
@@ -225,5 +230,6 @@ this document does not certify a future modified tree.
 No shared migration, content association/import, PREPARE/PUBLISH, grants,
 R2 sync/CORS operation or deployment is implied. Production operational
 readiness and the publisher's real Greek content are not established.
-Future Word List decisions are its versioned portable schema and explicit
-cross-component audio sharing policy. No Word List importer/runtime is present.
+The Task 2 portable schema and conservative cross-component audio policy are
+documented in WORD_LIST_CONTRACT.md. The importer and versioned data APIs are
+present; the interactive Vocabulary launcher/modal remains deferred.

@@ -1,5 +1,24 @@
 # HHPLMS — Operating Context & Engineering Map
 
+## Context delta — Word List extraction and publication
+
+`verifiedAt: 2026-09-19` · local Task 1 parent `223a3a153dcfa4958a7eac14342eeac8c0f0a162`;
+remote inspection `7bdc71e1158180da96dc5e854ce31e7eeb07014c`.
+[WORD_LIST_CONTRACT.md](WORD_LIST_CONTRACT.md) defines the bounded local SWF
+extractor/file picker, portable-wordlist.v1 verifier, dedicated Builder import
+and independent SB/WB mappings/audio ownership. Migration 067 adds separate
+Word List sessions/revisions/immutable v2 releases; 066 and historical component
+writers remain unchanged. The new v2 writer embeds verified complete v1 content
+plus lexical/mapping snapshots and allowlisted language projections. International
+receives English only; Greek receives en/el, both with English MP3 audio.
+Runtime reads require book entitlement and explicit edition grants; no draft
+fallback exists. CI adds Python prerequisites, ZIP/extractor tests, disposable
+PostgreSQL/browser import acceptance and isolated Worker/R2 validation.
+The real B2 export is additional local acceptance, outside Git. No real page
+mappings are invented and no hosted import/migration/deployment is implied.
+Vocabulary launcher/modal and two edition APK exporters remain Tasks 3/4.
+Production operational readiness and Project-copy synchronization are not claimed.
+
 ## Context delta — Content editions foundation
 
 `verifiedAt: 2026-09-19` · source: `src/data/contentEditions.js`,

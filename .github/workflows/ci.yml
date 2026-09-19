@@ -16,12 +16,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -c "import lzma, zlib"
       - run: npm ci
       - run: npm run verify:migration-manifest
       - run: npm run audit:runtime-schema-boundary
       - run: npm test
       - name: Verify full-book materialization in local Workers with isolated ASSETS and R2
         run: npm run test:students-book:fullbook-worker
+      - run: npm run test:wordlists:worker
       - run: npm run test:teacher-project-builder
       - run: npm run audit:source-structure
       - run: npm run audit:branding
@@ -133,6 +138,8 @@ jobs:
         run: npm run test:b1-publication
       - name: Verify content editions against isolated PostgreSQL and real Builder routes
         run: npm run test:builder:content-editions
+      - name: Verify Word List import, mappings and immutable data/audio routes
+        run: npm run test:builder:wordlists
       - name: Verify managed overview font library interoperability and rendering
         run: npm run test:builder:overview-fonts && node scripts/book-builder/overview-appearance-playwright.mjs
       - name: Verify current Unit Extras editor against isolated PostgreSQL

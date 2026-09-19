@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { contentEditionBooks, editionLabels } from "../../../data/contentEditions.js";
 import { PublishedNativeTeacherActivityRunner } from "../../../components/lms/activities/ultimate-b2/PublishedNativeTeacherActivityRunner.jsx";
 import "./hostedEditions.css";
+import { HostedWordListWorkspace } from "./HostedWordListWorkspace.jsx";
 
 const pathFor = (bookSlug, editionId) => `/builder/api/publication/editions/books/${bookSlug}/editions/${editionId}`;
 async function request(path, options = {}) {
@@ -77,6 +78,11 @@ function EditionWorkspace({ book, editionId, busy, dirty, setBusy, setDirty }) {
   const [component, setComponent] = useState(`${book.slug}-students-book`);
   const [scope, setScope] = useState("edition"); const [sourceId, setSource] = useState("");
   const [review, setReview] = useState(null); const mounted = useRef(true);
+  const [wordListDirty, setWordListDirty] = useState(false);
+  const sourceDirty = useRef(false);
+  const markSourceDirty = (value) => { sourceDirty.current = value; setDirty(value || wordListDirty); };
+  const markWordListDirty = (value) => { setWordListDirty(value); setDirty(value || sourceDirty.current); };
+  const clearDirty = () => { sourceDirty.current = false; setWordListDirty(false); setDirty(false); };
   const base = pathFor(book.slug, editionId);
   const load = async () => { const value = await request(base); if (mounted.current) setStatus(value); };
   useEffect(() => { mounted.current = true; const controller = new AbortController();
@@ -88,7 +94,7 @@ function EditionWorkspace({ book, editionId, busy, dirty, setBusy, setDirty }) {
     setBusy(true); setError("");
     try {
       const result = await request(`${base}/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientMutationId: crypto.randomUUID(), ...body }) });
-      if (mounted.current) { setDirty(false); await load(); after?.(result); }
+      if (mounted.current) { clearDirty(); await load(); after?.(result); }
     } catch (err) { if (mounted.current) setError(err.message); }
     finally { if (mounted.current) setBusy(false); }
   };
@@ -102,10 +108,10 @@ function EditionWorkspace({ book, editionId, busy, dirty, setBusy, setDirty }) {
     {!status ? <p role="status">{error ? "Edition sources are unavailable." : "Loading edition sources…"}</p> : <>
       <ul>{status.readiness.map((entry) => <li key={entry.componentSlug}>{entry.componentSlug}: {entry.ready ? `${entry.source.scope.kind} source · revision ${entry.source.revision}` : "Not configured — required source missing"}</li>)}</ul>
       <fieldset disabled={busy}><legend>Source association</legend>
-        <label>Component<select aria-label="Component" value={component} onChange={(event) => { if (!window.confirm("Discard any unsaved source edits and change component?")) return; setComponent(event.target.value); setSource(""); setDirty(false); }}>
+        <label>Component<select aria-label="Component" value={component} onChange={(event) => { if (!window.confirm("Discard any unsaved source edits and change component?")) return; setComponent(event.target.value); setSource(""); clearDirty(); }}>
           {contentEditionBooks[book.slug].components.map((slug) => <option key={slug}>{slug}</option>)}
         </select></label>
-        <label>Source<select aria-label="Source" value={selected?.reference.sourceId || ""} onChange={(event) => { if (!window.confirm("Discard any unsaved source edits and select this source?")) return; setSource(event.target.value); setDirty(false); }}>
+        <label>Source<select aria-label="Source" value={selected?.reference.sourceId || ""} onChange={(event) => { if (!window.confirm("Discard any unsaved source edits and select this source?")) return; setSource(event.target.value); clearDirty(); }}>
           <option value="">No source selected</option>{applicable.map((entry) => <option key={entry.reference.sourceId} value={entry.reference.sourceId}>{entry.reference.scope.kind} · {entry.reference.sourceId} · revision {entry.reference.revision}</option>)}
         </select></label>
         <button disabled={!selected || dirty} onClick={() => run("associate", { ...identity, sourceId: selected.reference.sourceId, expectedRevision: status.selectionRevision })}>Associate selected source</button>
@@ -114,7 +120,7 @@ function EditionWorkspace({ book, editionId, busy, dirty, setBusy, setDirty }) {
         <button disabled={dirty} onClick={() => run("capture", { ...identity, sourceId: crypto.randomUUID(), expectedRevision: 0,
           scope: scope === "shared" ? { kind: "shared", editionIds: ["international", "greek"] } : { kind: "edition", editionIds: [editionId] } }, (result) => setSource(result.sourceId))}>Capture current component draft</button>
       </fieldset>
-      {selected ? <SourceEditor key={`${selected.reference.sourceId}/${selected.reference.revision}`} record={selected} busy={busy} onDirty={setDirty}
+      {selected ? <SourceEditor key={`${selected.reference.sourceId}/${selected.reference.revision}`} record={selected} busy={busy || wordListDirty} onDirty={markSourceDirty}
         onSave={(inputs) => run("save-source", { ...identity, sourceId: selected.reference.sourceId, scope: selected.reference.scope, expectedRevision: selected.reference.revision, inputs })} /> : null}
       <fieldset disabled={busy || dirty}><legend>Edition publication</legend>
         <button disabled={status.readiness.some((entry) => !entry.ready)} onClick={() => run("prepare", { expectedRevision: status.selectionRevision })}>Prepare {editionLabels[editionId]} candidate</button>
@@ -123,6 +129,9 @@ function EditionWorkspace({ book, editionId, busy, dirty, setBusy, setDirty }) {
           <button onClick={() => run("publish", { expectedRevision: status.headRevision, releaseId: release.id })}>Publish release {release.number}</button>
         </div>)}
       </fieldset>
+      {!component.endsWith("grammar-book") && status.associations[component] ? <HostedWordListWorkspace
+        key={`${editionId}/${component}/${status.associations[component]}`} bookSlug={book.slug} editionId={editionId} componentSlug={component}
+        busy={busy || sourceDirty.current} setBusy={setBusy} setDirty={markWordListDirty} /> : null}
       {review ? <EditionReview key={review.id} bookSlug={book.slug} editionId={editionId} release={review} /> : null}
     </>}
   </section>;

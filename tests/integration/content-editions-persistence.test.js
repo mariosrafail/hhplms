@@ -12,6 +12,7 @@ import { studentsBookUnits } from "../fixtures/students-book-current.js";
 
 const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.TEST_DATABASE_CONFIRMATION === "isolated-test-database";
 if (process.env.CONTENT_EDITION_BROWSER === "1" && !enabled) throw new Error("Content edition browser gate requires an isolated test database.");
+if (process.env.WORDLIST_BROWSER === "1" && !enabled) throw new Error("Word List browser gate requires an isolated test database.");
 test("disposable PostgreSQL isolates edition heads, atomically captures shared revisions and rejects replay/ownership conflicts", { skip: !enabled }, async (t) => {
   const target = requireSafeDatabase("test");
   const schema = `content_editions_${randomBytes(8).toString("hex")}`;
@@ -93,6 +94,8 @@ test("disposable PostgreSQL isolates edition heads, atomically captures shared r
   await assert.rejects(pool.query("delete from book_content_edition_releases where id=$1", [releases.greek.id]), /edition_immutable_record/);
   const { editionNegativePersistence } = await import("./_content-edition-negative.mjs");
   await editionNegativePersistence({ pool, sql, actor, packageId, sources: sourceRecords, releases, saveRequest });
+  const { exerciseWordListPersistence } = await import("./_wordlists-persistence.mjs");
+  await exerciseWordListPersistence({ pool, sql, actor, packageId });
   if (process.env.CONTENT_EDITION_BROWSER === "1") {
     const { exerciseContentEditionBrowser } = await import("./_content-editions-browser.mjs");
     await exerciseContentEditionBrowser({ sql, pool, actor });

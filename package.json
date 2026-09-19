@@ -156,7 +156,11 @@
     "ultimate-b2:workspace:status": "node --env-file-if-exists=.env.local scripts/ultimate-b2/content-workspace-cli.mjs status",
     "ultimate-b2:workspace:sync": "node --env-file-if-exists=.env.local scripts/ultimate-b2/content-workspace-cli.mjs sync --write",
     "ultimate-b2:project:reading": "node scripts/ultimate-b2/project-reading-runtime.mjs",
-    "ultimate-b2:project:page5": "node scripts/ultimate-b2/project-page5-runtime.mjs"
+    "ultimate-b2:project:page5": "node scripts/ultimate-b2/project-page5-runtime.mjs",
+    "test:builder:wordlists": "cross-env WORDLIST_BROWSER=1 node --test tests/integration/content-editions-persistence.test.js",
+    "test:wordlists:worker": "node scripts/wordlists/worker-acceptance.mjs",
+    "wordlists:extract": "python scripts/wordlists/extract.py",
+    "wordlists:validate": "node scripts/wordlists/validate.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.848.0",

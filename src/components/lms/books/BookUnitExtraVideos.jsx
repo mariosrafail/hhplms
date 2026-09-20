@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Video, X } from "lucide-react";
 import { publishedUnitExtraVideoUrl, usePublishedComponentRelease } from "virtual:component-publication";
-import { unitExtrasForPage } from "../../../data/ultimate-b2/unitExtras.js";
+import { unitExtrasForPage } from "../../../data/ultimate-b2/unitExtrasRuntime.js";
 import { NativeVideoPlayer } from "../../native-video/NativeVideoPlayer.jsx";
 import "./BookUnitExtraVideos.css";
 

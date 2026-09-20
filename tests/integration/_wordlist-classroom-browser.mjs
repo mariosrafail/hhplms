@@ -24,6 +24,10 @@ export async function exerciseWordListClassroomBrowser({ sql, pool, actor, token
   const originalStatus = await loadEditionStatus(sql, "ultimate-b2", "greek");
   const originalSb = originalStatus.sources.find((entry) => entry.reference.componentSlug === "ultimate-b2-students-book");
   const synthetic = await classroomSourceInputs();
+  if (process.env.OFFLINE_EDITION_ACCEPTANCE === "1") {
+    const { completeOfflineFixtureMedia } = await import("../fixtures/offline-edition-media.js");
+    await completeOfflineFixtureMedia(synthetic);
+  }
   const sourceRecord = freezeEditionSource({ ...originalSb.source, revision: originalSb.reference.revision + 1, inputs: synthetic.inputs });
   const assetEdition = (await pool.query("select id,book_package_id from book_editions where edition_identifier='edition-fixture-assets'")).rows[0];
   await pool.query(`insert into builder_component_documents(book_package_id,book_component_id,document_type,document_key,schema_version,revision,payload,payload_sha256,created_by_builder_user_id,updated_by_builder_user_id)
@@ -77,6 +81,11 @@ export async function exerciseWordListClassroomBrowser({ sql, pool, actor, token
     await call(`${edition}/publish`, { clientMutationId: randomUUID(), releaseId: id, expectedRevision: 1 }); releases[edition] = id;
   }
   const student = (await pool.query("select * from app_users where email='student@editions.example.test'")).rows[0];
+  if (process.env.OFFLINE_EDITION_ACCEPTANCE === "1") {
+    const { exerciseOfflineEditionExport } = await import("./_offline-edition-export.mjs");
+    await exerciseOfflineEditionExport({ sql, pool, handler, storage, token, releases, student });
+    return;
+  }
   const session = await createSession(sql, student.id, { headers: { host: "localhost" } });
   const writes = [], errors = [], reads = []; const faults = { lexical: 0, audio: false }; let releaseRead = null, releaseAudio = null;
   const server = createServer(async (request, response) => {
@@ -188,9 +197,14 @@ export async function exerciseWordListClassroomBrowser({ sql, pool, actor, token
         await overlay().getByRole("button", { name: "Close Word List", exact: true }).click();
       }
       const hotspot = sourceRecord.content.publicProjection.hotspots.pages["ub2-sb-unit-1-part-1"].find((item) => item.activityKey === entry.document.activityId);
+      const teacherResponse = page.waitForResponse((response) => new URL(response.url()).searchParams.get("teacherActivityId") === entry.document.activityId);
       await classroom.getByRole("button", { name: hotspot.label, exact: true }).click();
+      const teacherDocument = await teacherResponse; assert.equal(teacherDocument.status(), 200); await teacherDocument.finished();
       const activity = classroom.locator(".teacher-offline-embedded-activity"); await expect(activity).toHaveAttribute("data-embedded-activity-id", entry.document.activityId);
       await expect(activity.locator("[data-native-media-scope]").first()).toBeVisible();
+      try { await expect(activity.getByText(/^Loading Teacher (?:model )?answers…$/)).toHaveCount(0); }
+      catch (error) { throw new Error(`${entry.kind}: ${await activity.innerText()}\n${error.message}`); }
+      await expect(activity.locator(".published-native-activity > :not(header):not([role])").first()).toBeVisible();
       await activity.evaluate((element, value) => { element.dataset.testMount = value; }, String(index));
       const reveal = classroom.getByRole("button", { name: "Show All", exact: true });
       if (await reveal.isEnabled()) { await reveal.click(); await expect(reveal).toBeDisabled(); }
@@ -219,7 +233,7 @@ export async function exerciseWordListClassroomBrowser({ sql, pool, actor, token
         assert(media.paused && media.time >= 0.2 && media.mount === "preserved", JSON.stringify(media));
         pausedMediaTime = media.time;
       }
-      await page.keyboard.press("Escape");
+      await page.keyboard.press("Escape"); await expect(overlay()).toBeHidden();
       if (pausedMediaTime !== null) assert.deepEqual(await activityAudio.evaluate((audio) => ({ paused: audio.paused, time: audio.currentTime })), { paused: true, time: pausedMediaTime });
       if (entry.kind === "open-response") await expect(activity.getByAltText("Synthetic readable passage")).toBeVisible();
       await expect(activity).toHaveAttribute("data-test-mount", String(index));

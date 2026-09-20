@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Music } from "lucide-react";
 import { publishedUnitExtraAudioUrl, usePublishedComponentRelease } from "virtual:component-publication";
 
-import { unitExtraAudiosForPage } from "../../../data/ultimate-b2/unitExtras.js";
+import { unitExtraAudiosForPage } from "../../../data/ultimate-b2/unitExtrasRuntime.js";
 import "./BookUnitExtraAudios.css";
 
 export function BookUnitExtraAudiosForPublication({ publication, unitNumber, pageId, hidden = false, assetUrl = publishedUnitExtraAudioUrl }) {

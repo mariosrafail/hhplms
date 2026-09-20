@@ -104,10 +104,14 @@ test("CI builds the teacher pack before its internal verification", async () => 
 test("CI installs Chromium once in each browser job before its first Playwright gate", async () => {
   const workflow = await readFile(".github/workflows/ci.yml", "utf8");
   const unitJob = workflow.split("\n  android-debug-builds:")[0];
-  const integrationJob = workflow.split("\n  integration-database:")[1]?.split("\n  deploy-cloudflare-builder:")[0];
+  const integrationJob = workflow.split("\n  integration-database:")[1]?.split("\n  offline-edition-debug-builds:")[0];
+  const offlineJob = workflow.split("\n  offline-edition-debug-builds:")[1]?.split("\n  deploy-cloudflare-builder:")[0];
   assert.ok(integrationJob);
+  assert.ok(offlineJob);
   assert.equal(unitJob.match(/npx playwright install --with-deps chromium/g)?.length, 1);
   assert.equal(integrationJob.match(/npx playwright install --with-deps chromium/g)?.length, 1);
+  assert.equal(offlineJob.match(/npx playwright install --with-deps chromium/g)?.length, 1);
+  assert.match(offlineJob, /npx playwright install --with-deps chromium[\s\S]*npm run test:offline-editions/);
   assert.match(unitJob, /npx playwright install --with-deps chromium[\s\S]*npm run test:lms-native-drag-drop-layout/);
   assert.match(integrationJob, /npm run test:integration[\s\S]*npm run build[\s\S]*npx playwright install --with-deps chromium[\s\S]*npm run test:published-book-assignments/);
 });

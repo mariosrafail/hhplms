@@ -796,3 +796,49 @@ signing change or distribution was performed. No push is authorized. Hosted
 acceptance and production readiness are not established; Project-copy
 synchronization is not claimed. Final exact-tree gate receipts belong to the
 local Task 3 report, not to this pre-validation context delta.
+
+### Immutable offline Teacher editions (local Task 4)
+
+Source: `lib/offline-editions`, `scripts/offline-editions`, shared classroom
+adapter and `.github/workflows/ci.yml`; verifiedAt: 2026-09-20. Task 3 parent:
+`82375669ec430663c320837129e835b44630880d`. Independently fetched origin/dev at
+task start: `7bdc71e1158180da96dc5e854ce31e7eeb07014c`.
+
+The deferred Task 4 exporter now has a local loopback GUI and CLI for an exact
+published edition-release.v2. Read-only Builder developer or entitled LMS
+Teacher access verifies the private frozen release before allowlisted projection.
+Collection retains opaque private source identities, checks projected composition
+and lexical hashes, and produces an independently hashed complete pack. Teacher
+answers stay inside the explicitly authorized Teacher artifact. SB/WB audio keeps
+independent logical ownership even when physical bytes are shared. The frozen SB
+owns UI, Vocabulary states and overview fonts across all three components.
+
+The new offline adapter shares Task 3 presentation and all nine native renderers;
+its build graph replaces hosted delivery and authoring-page data. Assets resolve
+only through the verified local pack. Missing or unsupported dependencies fail
+before content is enabled. Isolated Git-index staging, fresh npm dependencies,
+new native IDs and independent final ZIP/signature readback distinguish Greek
+and International debug exports from the three existing Android build products.
+See [OFFLINE_EDITION_EXPORT_CONTRACT.md](OFFLINE_EDITION_EXPORT_CONTRACT.md) for
+commands, role boundaries, limits, identity/version policy and failure behavior.
+The embedding root is `assets/edition-pack`, preserving the existing native
+PDF saver path restriction; worksheet download/hash acceptance accompanies the
+audio/video/font checks. No native PDF permission boundary is widened.
+
+CI adds `offline-edition-debug-builds`, requiring real disposable PostgreSQL,
+authenticated GUI/collection, interrupted/stale/tampered negative cases, actual
+Greek → International → Greek builds and cold blocked-network acceptance from
+the extracted APKs. Existing gates remain, and both deployment jobs require the
+new job. Python 3.12 with LZMA/zlib, Node 22, Java 21 and SDK/build-tools 36 are
+explicit prerequisites. The untouched Task 3 tree passed its previously
+uncertain native gate in local Ubuntu 24.04 with Node 22.23.2/Python 3.12.3 on
+2026-09-19. This is separate from the older Debian diagnostic and from remote CI.
+Final frozen-tree receipts belong in the Task 4 report.
+
+This candidate changes no migration/historical compiler, shared resource,
+publication or signing secret. The real 104 SB and 50 WB unresolved groups and
+edition-specific content remain prerequisites; fixture success cannot certify
+publisher completeness. No push, hosted activation, deployment, device install,
+production signing or distribution is authorized. Browser serving of extracted
+bytes is not Android device acceptance. Production readiness and Project-copy
+synchronization are not claimed.

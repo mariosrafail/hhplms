@@ -151,9 +151,60 @@ jobs:
         if: always()
         run: npm run test:integration:cleanup
 
+  offline-edition-debug-builds:
+    needs: unit-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hhplms_test
+          POSTGRES_PASSWORD: hhplms_test
+          POSTGRES_DB: hhplms_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hhplms_test -d hhplms_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgresql://hhplms_test:hhplms_test@localhost:5432/hhplms_test
+      TEST_DATABASE_CONFIRMATION: isolated-test-database
+      AUTH_RATE_LIMIT_SALT: isolated-ci-ordinary-auth-rate-limit-only
+      PLATFORM_ADMIN_RATE_LIMIT_SALT: isolated-ci-platform-admin-rate-limit-only
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -c "import lzma, zlib"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v4
+        with:
+          cmdline-tools-version: "12266719"
+          packages: "platform-tools"
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: npm ci
+      - run: npm run verify:migration-manifest
+      - run: npm run audit:runtime-schema-boundary
+      - run: npm test
+      - run: npm run build:netlify:ultimate-b2-builder
+      - run: npx playwright install --with-deps chromium
+      - name: Collect complete authenticated fixture releases and verify both real edition APKs offline
+        run: npm run test:offline-editions
+
   deploy-cloudflare-builder:
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    needs: [unit-and-build, android-debug-builds, integration-database]
+    needs: [unit-and-build, android-debug-builds, integration-database, offline-edition-debug-builds]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     concurrency:
@@ -196,7 +247,7 @@ jobs:
 
   deploy-cloudflare-lms:
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    needs: [unit-and-build, android-debug-builds, integration-database]
+    needs: [unit-and-build, android-debug-builds, integration-database, offline-edition-debug-builds]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:

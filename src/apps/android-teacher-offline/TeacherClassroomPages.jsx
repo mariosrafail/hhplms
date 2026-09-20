@@ -16,7 +16,7 @@ import { renderedDeltaToTeacherStage } from "./teacherStageGeometry.js";
 import { useTeacherOfflineSettings } from "./teacherOfflineSettings.js";
 import { normalizeTeacherActivityPresentationState } from "./teacherActivityPresentation.js";
 import { getUltimateB2ReadingExercisePresentationFeatures } from "../../data/ultimate-b2/readingExerciseRuntimeData.js";
-import { unitExtrasForPage } from "../../data/ultimate-b2/unitExtras.js";
+import { unitExtrasForPage } from "../../data/ultimate-b2/unitExtrasRuntime.js";
 import { BookUnitExtraAudiosForPublication } from "../../components/lms/books/BookUnitExtraAudios.jsx";
 import { NativeVideoPlayer } from "../../components/native-video/NativeVideoPlayer.jsx";
 import { publishedUnitExtraVideoUrl } from "virtual:component-publication";

@@ -6,6 +6,7 @@ export const BUILD_PROFILE_IDS = Object.freeze({
   ANDROID_STUDENT_OFFLINE: "android-student-offline",
   ANDROID_TEACHER_OFFLINE: "android-teacher-offline",
   ANDROID_TEACHER_PROJECT: "android-teacher-project",
+  ANDROID_TEACHER_EDITION: "android-teacher-edition",
 });
 
 const profile = (id, capabilities) => Object.freeze({ id, ...capabilities });
@@ -31,6 +32,9 @@ export const buildProfiles = Object.freeze({
     builderReadOnly: true, builderMutations: false, teacherSolutions: true, teacherPresentation: true, staticOnly: true,
   }),
   [BUILD_PROFILE_IDS.ANDROID_TEACHER_PROJECT]: profile(BUILD_PROFILE_IDS.ANDROID_TEACHER_PROJECT, {
+    builderReadOnly: true, builderMutations: false, teacherSolutions: true, teacherPresentation: true, staticOnly: true,
+  }),
+  [BUILD_PROFILE_IDS.ANDROID_TEACHER_EDITION]: profile(BUILD_PROFILE_IDS.ANDROID_TEACHER_EDITION, {
     builderReadOnly: true, builderMutations: false, teacherSolutions: true, teacherPresentation: true, staticOnly: true,
   }),
 });

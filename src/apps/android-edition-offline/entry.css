@@ -1,0 +1,7 @@
+@import "../../styles/base.css";
+@import "../../styles/shared-components.css";
+@import "../../styles/activities.css";
+
+html[data-app-mode="android-teacher-edition"] { background:#f1f5f9; }
+html[data-app-mode="android-teacher-edition"] body { margin:0; min-width:320px; }
+html[data-app-mode="android-teacher-edition"] #root { min-height:100vh; }

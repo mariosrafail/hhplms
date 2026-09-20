@@ -182,7 +182,7 @@ test("teacher registry imports only in-use baseline and catalog remains outside 
     if (sourceFile === canonicalRegistryPath || sourceFile === canonicalResolverPath || sourceFile === builderVisualResolverPath) continue;
     // The edition classroom deliberately consumes the same provider as the
     // Teacher shell; its build resolves only the bounded visual defaults.
-    if (sourceFile === path.resolve("src/components/wordlists/EditionClassroom.jsx")) continue;
+    if (sourceFile === path.resolve("src/components/wordlists/SharedEditionClassroom.jsx")) continue;
     if (!/\.(?:js|jsx|ts|tsx|css)$/.test(sourceFile)) continue;
     assert.doesNotMatch(await readFile(sourceFile, "utf8"), /legacyClassroomAssets|legacy-classroom-ui/);
   }

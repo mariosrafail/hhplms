@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { projectOfflineEdition } from "../../../lib/offline-editions/snapshot.js";
 import { contentEdition, requireEditionUuid, ContentEditionError } from "../../../src/data/contentEditions.js";
 import { WORDLIST_LIMITS, WordListError, exact, reject, portableDiff, stableJson, shaPattern } from "../../../src/data/wordlists/portable.js";
 import { getBuilderSql, requireBuilderUser, requireBuilderOrigin, json } from "./_builder-auth.js";
@@ -49,7 +50,12 @@ export function createBuilderWordListHandler(overrides = {}) {
       const actor = auth.builderUser.id; const query = event.queryStringParameters || {};
       const identity = { bookSlug: route.bookSlug, editionId: route.editionId, componentSlug: route.componentSlug };
       if (event.httpMethod === "GET" && route.action === "releases") {
-        const release = await deps.release(sql, { ...route, releaseId: route.id });
+        const release = await deps.release(sql, { ...route, releaseId: route.id, publishedOnly: query.offline === "1" });
+        if (query.offline === "1") {
+          if (!release) return json(404, { error: "offline_published_release_required" });
+          if (query.audience !== "teacher") return json(403, { error: "offline_teacher_audience_required" });
+          return json(200, projectOfflineEdition(release, { ...identity, audience: "teacher", teacherAuthorized: true }));
+        }
         return release ? wordListReleaseRead(release, query, query.audioSha256 || query.assetSha256 || query.teacherAssetActivityId || query.uiBindingId || query.uiFont ? deps.storage(context) : null, { teacher: true }) : json(404, { error: "wordlist_release_missing" });
       }
       const uploading = event.httpMethod === "POST" && route.action === "upload";

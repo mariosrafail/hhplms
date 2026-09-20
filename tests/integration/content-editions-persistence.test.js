@@ -15,6 +15,7 @@ const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.TEST_DATAB
 if (process.env.CONTENT_EDITION_BROWSER === "1" && !enabled) throw new Error("Content edition browser gate requires an isolated test database.");
 if (process.env.WORDLIST_BROWSER === "1" && !enabled) throw new Error("Word List browser gate requires an isolated test database.");
 if (process.env.WORDLIST_CLASSROOM_BROWSER === "1" && !enabled) throw new Error("Word List classroom gate requires an isolated test database.");
+if (process.env.OFFLINE_EDITION_ACCEPTANCE === "1" && !enabled) throw new Error("Offline edition acceptance requires an isolated test database.");
 test("disposable PostgreSQL isolates edition heads, atomically captures shared revisions and rejects replay/ownership conflicts", { skip: !enabled }, async (t) => {
   const target = requireSafeDatabase("test");
   const schema = `content_editions_${randomBytes(8).toString("hex")}`;
@@ -23,7 +24,7 @@ test("disposable PostgreSQL isolates edition heads, atomically captures shared r
   const scoped = new URL(target.connectionString); scoped.searchParams.set("options", `-c search_path=${schema}`);
   const pool = new pg.Pool({ connectionString: scoped.toString(), max: 4 });
   t.after(async () => { await pool.end(); await admin.query(`drop schema "${schema}" cascade`); await admin.end(); });
-  if (process.env.WORDLIST_CLASSROOM_BROWSER === "1") {
+  if (process.env.WORDLIST_CLASSROOM_BROWSER === "1" || process.env.OFFLINE_EDITION_ACCEPTANCE === "1") {
     await applyCanonicalProductionMigrations(pool);
   } else {
     for (const migration of await loadProductionMigrationManifest()) await pool.query(migration.sql);

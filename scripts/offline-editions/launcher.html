@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Offline Teacher edition export</title>
+<style>body{font:17px system-ui;background:#f3f5f8;color:#14283e;max-width:780px;margin:40px auto;padding:20px}form{background:white;padding:24px;border-radius:12px}label{display:block;margin:12px 0}input,select,button{font:inherit;padding:9px;box-sizing:border-box}input,select{width:100%}button{margin:10px 8px 0 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}p{line-height:1.5}</style>
+<h1>Ultimate B2 offline Teacher editions</h1><p>Select an exact published release. Collection uses your authorized session only while this launcher is running. Exports are local debug review builds.</p>
+<form id="form"><label>Server origin<input name="origin" type="url" required placeholder="https://your-authorized-server"></label>
+<label>Access<select name="access"><option value="builder">Builder developer</option><option value="entitled">Entitled Teacher (LMS)</option></select></label>
+<label>Edition<select name="editionId"><option value="greek">Greek</option><option value="international">International</option></select></label>
+<label>Published release ID<input name="releaseId" required pattern="[a-f0-9-]{36}"></label>
+<label>Session cookie · transient<input name="credential" type="password" autocomplete="off" required></label>
+<button>Inspect selected release</button></form>
+<pre id="status" role="status">No release selected.</pre>
+<label>Version code<input id="code" type="number" min="1" max="2100000000" value="1"></label><label>Version name<input id="version" value="1.0"></label>
+<button id="build" disabled>Build verified debug APK</button><button id="cancel">Cancel</button>
+<p>Existing outputs are preserved. No publication, upload, device installation or distribution is performed by this launcher.</p>
+<script nonce="__NONCE__">
+const headers={'Content-Type':'application/json','X-Export-Session':'__NONCE__'};
+const status=document.querySelector('#status'), build=document.querySelector('#build');
+async function call(route,body){const response=await fetch(route,{method:'POST',headers,body:JSON.stringify(body)});const value=await response.json();status.textContent=JSON.stringify(value,null,2);return value;}
+document.querySelector('#form').onsubmit=async(event)=>{event.preventDefault();build.disabled=true;const form=event.target;const value=await call('/select',Object.fromEntries(new FormData(form)));form.elements.credential.value='';build.disabled=value.state!=='selected';};
+build.onclick=async()=>{build.disabled=true;await call('/export',{versionCode:document.querySelector('#code').value,versionName:document.querySelector('#version').value});};
+document.querySelector('#cancel').onclick=()=>{build.disabled=true;return call('/cancel',{});};
+setInterval(async()=>{try{const response=await fetch('/status',{headers});const value=await response.json();if(value.state!=='idle')status.textContent=JSON.stringify(value,null,2);}catch{status.textContent='Local launcher disconnected.';}},1500);
+</script></html>

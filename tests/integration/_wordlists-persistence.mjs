@@ -137,7 +137,7 @@ export async function exerciseWordListPersistence({ pool, sql, actor, packageId 
     const { exerciseFullWordListSource } = await import("./_wordlists-full-source.mjs");
     await exerciseFullWordListSource({ directory: process.env.WORDLIST_ACCEPTANCE_DIR, sql, call, sources, assertPreserved });
   }
-  if (process.env.WORDLIST_CLASSROOM_BROWSER === "1") {
+  if (process.env.WORDLIST_CLASSROOM_BROWSER === "1" || process.env.OFFLINE_EDITION_ACCEPTANCE === "1") {
     const { exerciseWordListClassroomBrowser } = await import("./_wordlist-classroom-browser.mjs");
     await exerciseWordListClassroomBrowser({ sql, pool, actor, token, storage });
     await assertPreserved({ allowAddedSourceRevisions: true });

@@ -155,7 +155,9 @@ test("Netlify review targets have explicit isolated profiles and outputs", () =>
   assert.equal(resolveBuildProfile(BUILD_PROFILE_IDS.ANDROID_STUDENT_OFFLINE).teacherPresentation, false);
   assert.equal(resolveBuildProfile(BUILD_PROFILE_IDS.WEB_LMS).teacherPresentation, false);
   assert.equal(resolveBuildProfile(BUILD_PROFILE_IDS.BUILDER_HOSTED_REVIEW).teacherPresentation, false);
-  assert.equal(Object.keys(buildProfiles).length, 7);
+  assert.equal(Object.keys(buildProfiles).length, 8);
+  assert.equal(resolveBuildProfile(BUILD_PROFILE_IDS.ANDROID_TEACHER_EDITION).teacherSolutions, true);
+  assert.equal(resolveBuildProfile(BUILD_PROFILE_IDS.ANDROID_TEACHER_EDITION).staticOnly, true);
 });
 
 test("dedicated public Viewer build does not generate or package Teacher solutions", async () => {

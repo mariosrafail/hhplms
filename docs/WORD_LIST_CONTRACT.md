@@ -320,3 +320,9 @@ implemented here. Real group mapping review and complete edition readiness
 remain prerequisites. Existing APK checks are regression checks, not proof that
 new edition packs exist. Hosted acceptance/production readiness are not
 established. The ChatGPT Project copy has not been synchronized.
+
+Task 4 implements this handoff in `SharedEditionClassroom` and the explicit
+offline provider. See [OFFLINE_EDITION_EXPORT_CONTRACT.md](OFFLINE_EDITION_EXPORT_CONTRACT.md)
+for the local GUI/CLI, exact published selection, complete pack verification,
+isolated native builds and final-archive acceptance. This supersedes the
+exporter deferral above, while preserving the real publisher readiness gate.

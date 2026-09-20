@@ -82,6 +82,9 @@ button.native-drag-drop-target-text { touch-action: none; cursor: grab; }
 .native-drag-drop[data-layout-mode="text"] .native-drag-drop-target-items { overscroll-behavior: auto; }
 
 .native-drag-drop-target-items:has([data-image-item]) { flex-wrap: nowrap; }
+/* Preserve whitespace without hanging a wrapped line's trailing space outside
+   the authored mixed-image/text target (pre-wrap permits that overflow). */
+.native-drag-drop[data-layout-mode="standard"] .native-drag-drop-target-items:has([data-image-item]) .native-drag-drop-target-text:not([data-image-item]) { white-space: break-spaces; }
 .native-drag-drop .native-drag-drop-target-text[data-image-item] { display: flex; flex: 0 1 auto; align-items: center; justify-content: center; height: 100%; min-width: 0; padding: 1px; border: 0; background: transparent; white-space: normal; }
 .native-drag-drop .native-drag-drop-target-text[data-image-item] .native-drag-drop-image-content { flex-shrink: 1; }
 .native-drag-drop .native-audio-text-hotspot { z-index: 100; touch-action: manipulation; }

@@ -10,6 +10,7 @@ import { runFlowBankLifecycle } from "./flow-bank-lifecycle-regressions.mjs";
 import { captureFlowBankDiagnostic } from "./flow-bank-diagnostics.mjs";
 import { flowFitDiagnosticPlugin } from "./flow-fit-diagnostic-plugin.mjs";
 import { runFlowFitContractRegressions } from "./flow-fit-contract-regressions.mjs";
+import { runFlowBankFractionalRegressions } from "./flow-bank-fractional-regressions.mjs";
 
 export async function flowBankGeometry(page) {
   return page.locator('.native-multi-part-panel--flow .native-drag-drop').evaluate((root) => {
@@ -64,6 +65,7 @@ export async function runFlowBankRegressions(browser, output, { reproduce = fals
       assert.ok(productionCss.includes('native-multi-part-panel--flow'));
       const stylesheet={content:productionCss,mode:'Vite component fixture with built LMS entrypoint CSS',assets:assets.map(({path,sha256})=>({path,sha256}))};
       if(!fitDiagnostic) await runFlowFitContractRegressions(page,output,stylesheet);
+      if(!fitDiagnostic) await runFlowBankFractionalRegressions(page,output,stylesheet);
       await runFlowBankLifecycle(page,output,stylesheet,fitDiagnostic);
     }
     assert.deepEqual(errors,[]);

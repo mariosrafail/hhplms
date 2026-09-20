@@ -169,11 +169,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      TEST_DATABASE_URL: postgresql://hhplms_test:hhplms_test@localhost:5432/hhplms_test
-      TEST_DATABASE_CONFIRMATION: isolated-test-database
-      AUTH_RATE_LIMIT_SALT: isolated-ci-ordinary-auth-rate-limit-only
-      PLATFORM_ADMIN_RATE_LIMIT_SALT: isolated-ci-platform-admin-rate-limit-only
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -200,6 +195,11 @@ jobs:
       - run: npm run build:netlify:ultimate-b2-builder
       - run: npx playwright install --with-deps chromium
       - name: Collect complete authenticated fixture releases and verify both real edition APKs offline
+        env:
+          TEST_DATABASE_URL: postgresql://hhplms_test:hhplms_test@localhost:5432/hhplms_test
+          TEST_DATABASE_CONFIRMATION: isolated-test-database
+          AUTH_RATE_LIMIT_SALT: isolated-ci-ordinary-auth-rate-limit-only
+          PLATFORM_ADMIN_RATE_LIMIT_SALT: isolated-ci-platform-admin-rate-limit-only
         run: npm run test:offline-editions
 
   deploy-cloudflare-builder:

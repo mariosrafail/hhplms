@@ -842,3 +842,57 @@ publisher completeness. No push, hosted activation, deployment, device install,
 production signing or distribution is authorized. Browser serving of extracted
 bytes is not Android device acceptance. Production readiness and Project-copy
 synchronization are not claimed.
+
+### Offline CI environment isolation correction
+
+VerifiedAt: 2026-09-20; source: `.github/workflows/ci.yml` and
+`tests/phase5-ci-gating.test.js`, on parent `fceb86c7eabcb5230dba05ca8ebd5cc7cc6fbfdd`.
+The promotion review reproduced 58 failures because the offline job's DB-test
+environment reached its general `npm test` prefix, enabling concurrent database
+suites and changing the default email transport. Earlier command-level 62/62
+receipts did not reproduce that job-level inheritance.
+
+The four application test variables now belong only to the real offline
+acceptance step. PostgreSQL service settings, prefix order, serial integration,
+real APK acceptance and deployment dependencies remain unchanged. A parsed-YAML
+regression rejects the original job scope, workflow-level leakage and persistent
+environment exports. No application, schema, lockfile or publisher data changes.
+Final validation must derive each step's environment from the workflow in fresh
+isolated Linux jobs. Execution, commit/push and exact-SHA CI outcomes belong in
+the external repair report; this delta does not claim deployment, shared
+migration, content publication, production readiness or Project synchronization.
+
+### Mixed image/text target containment repair
+
+VerifiedAt: 2026-09-20; source: `nativeDragDrop.css` and the native drag/drop
+containment/improvement/mixed browser regressions, continuing the staged P1
+repair on parent `fceb86c7eabcb5230dba05ca8ebd5cc7cc6fbfdd`.
+Detailed Range measurements identified a preserved trailing space in
+`Longer target label` hanging 4.484375px beyond a 260px mixed-content target
+under a Linux system-font fallback. The violation persisted after font/image
+readiness; element boxes and scroll dimensions alone did not expose it.
+The standard-layout mixed image/text rule now uses `white-space: break-spaces`
+for text items, preserving whitespace inside the authored geometry. Fonts,
+images, captions, minimum readable size and the 1px containment tolerance are
+unchanged. No asynchronous fitter or readiness workaround was added; stale
+fit attributes on image targets are explicitly not treated as readiness.
+The original descendant/Range/no-overflow assertions remain, with detailed
+failure measurements and a deliberate-overflow control. Three cold contexts
+cover both supported test fonts, layouts, scales and Student/review/Teacher
+paths, including reusable items and navigation. P1 env isolation is retained.
+No authored content, schema, historical compiler or provider change is involved.
+Final-tree validation and promotion outcomes belong in the external report;
+fixture APK acceptance does not establish production or device readiness.
+
+The first frozen-tree run subsequently exposed a related adaptive-bank defect:
+integer `offsetTop/offsetHeight` measurements could shrink a successfully fitted
+bank below its fractional row extent, leaving stale `fit` metadata and a 1px
+scroll-height excess. A controlled 1011px viewport reproduced the transition
+from scroll/client 223/223 to 223/222 after temporary heights were removed.
+The runtime now measures fractional child rectangles, converts through the
+bank's display scale and rounds only the final bank height within the existing
+authored budget. The same case remains 223/223 without changing text scale.
+The fractional-bank regression covers full/partial/refilled content, adjacent
+widths, both motion preferences and scales 1/.65 with the unchanged readiness,
+containment, hit, minimum-font and response checks; it fails on the old runtime.
+The failed frozen-tree receipt is retained externally and is not promotion proof.

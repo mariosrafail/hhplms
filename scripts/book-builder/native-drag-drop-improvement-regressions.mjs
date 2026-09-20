@@ -5,6 +5,7 @@ import { expect } from "@playwright/test";
 import { dragDropImprovementsPair, dndId } from "../../tests/fixtures/native-runtime-regressions/drag-drop-improvements-data.js";
 import { normalizeNativeRuntimePublicDocument, normalizeNativeRuntimeTeacherDocument } from "../../src/data/native-activities/nativeActivityRuntimeValidation.js";
 import { runDndVariableHeightRegressions } from "./native-drag-drop-variable-height-regressions.mjs";
+import { verifyDragDropContainment } from "./native-drag-drop-containment.mjs";
 
 export async function runDragDropImprovementRegressions(browser, baseUrl, output) {
   await runDndVariableHeightRegressions(browser, baseUrl, output);
@@ -21,20 +22,7 @@ export async function runDragDropImprovementRegressions(browser, baseUrl, output
   const change = (values) => page.evaluate((values) => dnd.setPair((pair) => { const next = structuredClone(pair); Object.assign(next.publicDocument.parts[0].interaction, values); return next; }), values);
   const evidence = [];
   const contained = async (locator) => {
-    const metrics = await locator.evaluate((target) => {
-      const outer = target.getBoundingClientRect();
-      return [...target.querySelectorAll(".native-drag-drop-target-items, [data-drag-drop-target-text], .native-drag-drop-image-content, img, .native-drag-drop-image-caption")].map((el) => {
-        const box = el.getBoundingClientRect(); const css = getComputedStyle(el);
-        const range = document.createRange(); range.selectNodeContents(el);
-        return { tag: el.className || el.tagName, overflowX: css.overflowX, overflowY: css.overflowY, visible: box.width > 0 && box.height > 0 && box.left >= outer.left - 1 && box.right <= outer.right + 1 && box.top >= outer.top - 1 && box.bottom <= outer.bottom + 1, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight, textContained: [...range.getClientRects()].every((r) => r.left >= outer.left - 1 && r.right <= outer.right + 1 && r.top >= outer.top - 1 && r.bottom <= outer.bottom + 1) };
-      });
-    });
-    evidence.push(metrics);
-    for (const m of metrics) {
-      assert.ok(!["auto", "scroll"].includes(m.overflowX) && !["auto", "scroll"].includes(m.overflowY), JSON.stringify(m));
-      assert.ok(m.visible && m.textContained, JSON.stringify(m));
-      assert.ok(m.scrollWidth <= m.clientWidth + 1 && m.scrollHeight <= m.clientHeight + 1, JSON.stringify(m));
-    }
+    evidence.push(await verifyDragDropContainment(locator, output, `dnd-containment-${evidence.length}`));
   };
   try {
     await page.goto(`${baseUrl}tests/fixtures/native-runtime-regressions/drag-drop-improvements.html`);

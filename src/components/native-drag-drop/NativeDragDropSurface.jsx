@@ -176,7 +176,11 @@ function useAdaptiveBankLayout(ref, { textMode, embeddedCanvas, complete, depend
       items.style.height = `${Math.max(1, configured - inset)}px`;
       if (textMode && !root.hasAttribute("data-image-items")) fitContainedContent(items, { property: "--native-drag-drop-bank-fit-scale", sampleSelector: ".native-drag-drop-word", containChildren: true });
       else items.style.removeProperty("--native-drag-drop-bank-fit-scale");
-      const contentHeight = [...items.children].reduce((height, child) => Math.max(height, child.offsetTop - items.offsetTop + child.offsetHeight), 0);
+      // Preserve subpixel row extents before shrinking the fitted bank. Integer
+      // offsets can lose enough height to reintroduce a scrollbar after fitting.
+      const bankScale = bank.getBoundingClientRect().height / configured;
+      const itemsTop = items.getBoundingClientRect().top;
+      const contentHeight = [...items.children].reduce((height, child) => Math.max(height, (child.getBoundingClientRect().bottom - itemsTop) / bankScale), 0);
       const height = complete && items.children.length ? configured : Math.min(configured, Math.max(24, Math.ceil(contentHeight + inset)));
       const value = complete && items.children.length && !embeddedCanvas ? "" : `${height}px`;
       if (!value) root.style.removeProperty("--native-drag-drop-runtime-bank-height");

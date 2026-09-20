@@ -46,7 +46,7 @@ export function createBuilderWordListHandler(overrides = {}) {
     try {
       const edition = contentEdition(route.bookSlug, route.editionId); const sql = deps.getDatabase();
       const auth = await deps.authorize(event, sql); if (auth.error) return auth.error;
-      if (!await deps.ready(sql)) return json(409, { error: "wordlist_schema_unavailable" });
+      if (!await deps.ready(sql, route.bookSlug)) return json(409, { error: "wordlist_schema_unavailable" });
       const actor = auth.builderUser.id; const query = event.queryStringParameters || {};
       const identity = { bookSlug: route.bookSlug, editionId: route.editionId, componentSlug: route.componentSlug };
       if (event.httpMethod === "GET" && route.action === "releases") {

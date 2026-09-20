@@ -2,9 +2,8 @@ import {
   CONTENT_SOURCE_SCHEMA, EDITION_COMPOSITION_SCHEMA, ContentEditionError,
   contentEditionBooks, editionExact, freezeEditionValue, normalizeContentEdition,
   normalizeContentSourceReference, normalizeEditionComposition, requireEditionUuid,
-  requireEditionRevision, requireEditionSha,
+  requireEditionRevision, requireEditionSha, editionSourceCompilerContract, editionWriterCompilerId,
 } from "../../../src/data/contentEditions.js";
-import { publicationProductsV1 } from "../../../src/data/publicationRegistry.js";
 import { builderDocumentSha256 } from "./_builder-content-security.js";
 import { resolvePublicationCompiler, verifyImmutableComponentRelease } from "./_builder-publication-compilers.js";
 
@@ -20,8 +19,9 @@ function sourceIdentity(source, sha256) {
   return normalizeContentSourceReference({ ...identity, sha256 });
 }
 function compilerFor(componentSlug) {
-  const member = publicationProductsV1.find((entry) => entry.bookSlug === "ultimate-b2").members.find((entry) => entry.componentSlug === componentSlug);
-  const compiler = member && resolvePublicationCompiler(member.compilerId, member.releaseSchemaVersion);
+  const bookSlug = Object.keys(contentEditionBooks).find((book) => contentEditionBooks[book].components.includes(componentSlug));
+  const member = editionSourceCompilerContract(bookSlug, componentSlug);
+  const compiler = resolvePublicationCompiler(member.compilerId, member.releaseSchemaVersion);
   if (!compiler) throw new ContentEditionError("edition_source_compiler_invalid");
   return compiler;
 }
@@ -90,7 +90,7 @@ export function prepareEditionRelease({ id, number, edition: requestedEdition, s
   if (sources.length !== members.length) throw new ContentEditionError("edition_source_owner_mismatch");
   const composition = normalizeEditionComposition({ schemaVersion: EDITION_COMPOSITION_SCHEMA, edition, members: members.map((entry) => entry.reference) });
   const payload = {
-    schemaVersion: EDITION_RELEASE_SCHEMA, compilerId: EDITION_RELEASE_COMPILER,
+    schemaVersion: EDITION_RELEASE_SCHEMA, compilerId: editionWriterCompilerId(edition.bookSlug),
     id, number, composition, compositionSha256: hash(EDITION_COMPOSITION_SCHEMA, composition), members,
   };
   return freezeEditionValue({ ...payload, releaseSha256: hash(EDITION_RELEASE_SCHEMA, payload) });
@@ -98,7 +98,7 @@ export function prepareEditionRelease({ id, number, edition: requestedEdition, s
 
 export function verifyEditionRelease(value, expectedEdition = null) {
   editionExact(value, ["schemaVersion", "compilerId", "id", "number", "composition", "compositionSha256", "members", "releaseSha256"], "edition_release_invalid");
-  if (value.schemaVersion !== EDITION_RELEASE_SCHEMA || value.compilerId !== EDITION_RELEASE_COMPILER) throw new ContentEditionError("edition_release_version_invalid");
+  if (value.schemaVersion !== EDITION_RELEASE_SCHEMA || value.compilerId !== editionWriterCompilerId(expectedEdition?.bookSlug || value.composition?.edition?.bookSlug)) throw new ContentEditionError("edition_release_version_invalid");
   requireEditionSha(value.releaseSha256); requireEditionSha(value.compositionSha256);
   const composition = normalizeEditionComposition(value.composition);
   if (expectedEdition && builderDocumentSha256(normalizeContentEdition(expectedEdition)) !== builderDocumentSha256(composition.edition)) throw new ContentEditionError("edition_release_context_mismatch");

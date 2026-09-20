@@ -3,6 +3,7 @@ import test from "node:test";
 import { randomUUID } from "node:crypto";
 import { createBuilderEditionHandler, editionReadiness } from "../netlify-sites/ultimate-b2-builder/server/_builder-editions.js";
 import { readPublishedEdition } from "../netlify/functions/_book-content/edition-read.js";
+import { readQuery } from "../netlify/functions/_book-content-utils.js";
 import { contentEdition } from "../src/data/contentEditions.js";
 import { editionFixtureRelease } from "./fixtures/content-editions.js";
 
@@ -21,13 +22,13 @@ test("edition Builder routes preserve authentication, origin and explicit missin
   assert.equal(JSON.parse((await handler(request)).body).error, "edition_required_sources_missing");
   request.headers.origin = "https://foreign.invalid";
   assert.equal((await handler(request)).statusCode, 403);
-  assert.equal((await handler({ ...event(), path: root.replace("ultimate-b2", "ultimate-b1") })).statusCode, 409);
+  assert.equal((await handler({ ...event(), path: root.replace("ultimate-b2", "unknown-book") })).statusCode, 409);
   const missingSchema = createBuilderEditionHandler({ getDatabase: () => null, authorize: async () => ({ builderUser: {} }), ready: async () => false });
   assert.equal(JSON.parse((await missingSchema(event())).body).error, "edition_schema_unavailable");
 });
 test("LMS edition access is additional to book access and cannot be enabled by a UI flag", async () => {
   const release = editionFixtureRelease("greek");
-  const query = { bookSlug: "ultimate-b2", editionId: "greek", releaseId: release.id, entitled: true, role: "teacher" };
+  const query = readQuery({ queryStringParameters: { action: "edition-release", bookSlug: "ultimate-b2", editionId: "greek", releaseId: release.id, entitled: true, role: "teacher" } });
   const student = { id: randomUUID(), school_id: randomUUID(), role: "student" };
   const denied = { bookAccess: async () => null, ready: async () => true, allowed: async () => false, load: async () => { throw new Error("Must not read"); } };
   assert.equal((await readPublishedEdition(null, student, query, denied)).statusCode, 403);

@@ -70,7 +70,7 @@ export function WordListOverlay({ model, frameRef, subtitle }) {
             {language === "en" && <button type="button" className="word-list-speaker" aria-label={`Play English pronunciation ${entry.displayNumber}`} aria-pressed={playback.id === entry.id && playback.state === "playing"}
               data-playback={playback.id === entry.id ? playback.state : "idle"} onClick={() => play(entry)}><Volume2 aria-hidden="true" /></button>}
             <button type="button" className="word-list-number" aria-label={`Toggle ${language === "en" ? "English" : "Greek"} ${entry.displayNumber}`} aria-pressed={!hidden[language].has(entry.id)} onClick={() => toggle(language, entry.id)}>{entry.displayNumber}</button>
-            <span className="word-list-word" style={{ visibility: hidden[language].has(entry.id) ? "hidden" : "visible" }} aria-hidden={hidden[language].has(entry.id)}>{String(language === "en" ? entry.english.word : entry.translations.el)}</span>
+            <span className="word-list-word" style={{ visibility: !open || hidden[language].has(entry.id) ? "hidden" : "visible" }} aria-hidden={!open || hidden[language].has(entry.id)}>{String(language === "en" ? entry.english.word : entry.translations.el)}</span>
           </div>)}
         </div>)}
       </div>

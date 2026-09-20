@@ -326,3 +326,18 @@ offline provider. See [OFFLINE_EDITION_EXPORT_CONTRACT.md](OFFLINE_EDITION_EXPOR
 for the local GUI/CLI, exact published selection, complete pack verification,
 isolated native builds and final-archive acceptance. This supersedes the
 exporter deferral above, while preserving the real publisher readiness gate.
+
+## Explicit B1/B1+ edition support
+
+With migration 069, the existing import/mapping/draft/immutable Word List flow
+also accepts the registered B1/B1+ SB/WB sources. B1 SB uses its frozen UI v2
+compiler; WB uses v1. Both Word Lists are required for an edition v2 candidate.
+B1 Grammar authoring does not become a required publication member. Book-scoped
+portable JSON, source ownership and independent component audio bindings remain
+mandatory. A B2 export is still rejected when the selected target is B1/B1+.
+No publisher imports, mappings or edition grants are created by this extension.
+
+Closing the overlay hides every word as well as its container. Its retained
+scroll box and per-language reveal state survive closing; an explicit visible
+word must not override the closed container's inherited visibility. The real
+B1 classroom browser regression checks this while preserving the exercise.

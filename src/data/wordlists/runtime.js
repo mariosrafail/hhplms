@@ -1,9 +1,10 @@
-import { contentEdition, normalizeContentSourceReference, requireEditionUuid } from "../contentEditions.js";
+import { contentEdition, normalizeContentSourceReference, requireEditionUuid, requireEditionComponent } from "../contentEditions.js";
 import { exact, reject, shaPattern, stableJson, WORDLIST_LIMITS } from "./portable.js";
 
 export function validateWordListContext(context, { source = false } = {}) {
   if (!context || !["draft", "candidate", "published"].includes(context.kind)) reject("wordlist_context_invalid");
   const edition = contentEdition(context.bookSlug, context.editionId);
+  requireEditionComponent(context.bookSlug, context.componentSlug);
   if (!["students-book", "workbook", "grammar-book"].some((name) => context.componentSlug === `${context.bookSlug}-${name}`)) reject("wordlist_context_invalid");
   if (context.kind !== "draft") requireEditionUuid(context.releaseId);
   if (source || context.targetSource) normalizeContentSourceReference(context.targetSource, { edition, componentSlug: context.componentSlug });

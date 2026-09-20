@@ -1,6 +1,5 @@
 import { CONTENT_SOURCE_SCHEMA, ContentEditionError, contentEdition, contentEditionBooks, editionExact,
-  requireEditionComponent, requireEditionUuid, requireEditionRevision } from "../../../src/data/contentEditions.js";
-import { publicationProductsV1 } from "../../../src/data/publicationRegistry.js";
+  requireEditionComponent, requireEditionUuid, requireEditionRevision, editionSourceCompilerContract } from "../../../src/data/contentEditions.js";
 import { getBuilderSql, requireBuilderUser, requireBuilderOrigin, json } from "./_builder-auth.js";
 import { resolvePublicationCompiler } from "./_builder-publication-compilers.js";
 import { freezeEditionSource, prepareEditionRelease, editionReleasePublicEnvelope } from "./_builder-edition-domain.js";
@@ -65,6 +64,7 @@ export async function editionReleaseRead(release, query, storage, { teacher = fa
 // owner. It never exposes answers or consults the current UI Controller draft.
 export async function editionClassroomUiRead(release, query, storage) {
   const edition = release.composition.edition;
+  if (query.componentSlug) requireEditionComponent(edition.bookSlug, query.componentSlug);
   const owner = release.members.find((entry) => entry.reference.componentSlug === `${edition.bookSlug}-students-book`);
   if (!owner) throw new ContentEditionError("edition_ui_owner_missing");
   if (query.uiOwnerSha256 && query.uiOwnerSha256 !== owner.reference.sha256) throw new ContentEditionError("edition_ui_owner_changed");
@@ -91,7 +91,7 @@ export function createBuilderEditionHandler(overrides = {}) {
       const edition = contentEdition(route.bookSlug, route.editionId);
       const sql = deps.getDatabase(); const auth = await deps.authorize(event, sql);
       if (auth.error) return auth.error;
-      if (!await deps.ready(sql)) return json(409, { error: "edition_schema_unavailable" });
+      if (!await deps.ready(sql, route.bookSlug)) return json(409, { error: "edition_schema_unavailable" });
       if (event.httpMethod === "GET") {
         if (route.action === "releases" && route.releaseId) {
           const release = await deps.loadRelease(sql, route);
@@ -110,8 +110,8 @@ export function createBuilderEditionHandler(overrides = {}) {
       if (["capture", "save-source"].includes(route.action)) {
         body = parseBody(event, route.action === "capture" ? recordKeys.filter((key) => key !== "inputs") : recordKeys);
         requireEditionUuid(body.sourceId); requireEditionComponent(route.bookSlug, body.componentSlug);
-        const compilerId = publicationProductsV1.find((entry) => entry.bookSlug === route.bookSlug).members.find((entry) => entry.componentSlug === body.componentSlug).compilerId;
-        const inputs = route.action === "capture" ? await resolvePublicationCompiler(compilerId).collect(sql) : body.inputs;
+        const { compilerId } = editionSourceCompilerContract(route.bookSlug, body.componentSlug);
+        const inputs = route.action === "capture" ? persistableCollectedEditionInputs(await resolvePublicationCompiler(compilerId).collect(sql)) : body.inputs;
         const record = freezeEditionSource({ schemaVersion: CONTENT_SOURCE_SCHEMA, sourceId: body.sourceId, bookSlug: route.bookSlug,
           componentSlug: body.componentSlug, scope: body.scope, revision: body.expectedRevision + 1, inputs });
         if (!record.reference.scope.editionIds.includes(route.editionId)) throw new ContentEditionError("edition_source_owner_mismatch");
@@ -141,5 +141,24 @@ export function createBuilderEditionHandler(overrides = {}) {
     } catch (error) {
       return error instanceof ContentEditionError ? json(409, { error: error.code, detail: error.message }) : json(503, { error: "edition_content_unavailable" });
     }
+  };
+}
+
+// Collectors attach executable registry helpers to saved-document wrappers.
+// Capture only removes that known non-content wrapper field. Payloads, hashes,
+// revisions, asset rows and unknown fields remain subject to the strict source
+// validator; client-supplied save-source inputs never use this projection.
+export function persistableCollectedEditionInputs(collected) {
+  const document = (saved) => {
+    if (saved == null) return saved;
+    const { resource: _registryHelpers, ...durable } = saved;
+    return durable;
+  };
+  return {
+    ...collected,
+    ...(collected.documents ? { documents: Object.fromEntries(Object.entries(collected.documents).map(([key, value]) => [key, document(value)])) } : {}),
+    ...(collected.native ? { native: { ...collected.native, index: document(collected.native.index),
+      activities: Object.fromEntries(Object.entries(collected.native.activities).map(([id, activity]) => [id, { ...activity, public: document(activity.public), teacher: document(activity.teacher) }])) } } : {}),
+    ...(collected.unitExtras ? { unitExtras: { ...collected.unitExtras, document: document(collected.unitExtras.document) } } : {}),
   };
 }

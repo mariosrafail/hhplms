@@ -6,11 +6,12 @@ not a receipt for migration, publication or acceptance on a hosted service.
 
 ## Identity and compatibility
 
-`src/data/contentEditions.js` is the validated registry. Only `ultimate-b2`
-opts into `international` and `greek`. A `content-edition.v1` identity has
+`src/data/contentEditions.js` is the validated registry. `ultimate-b2`,
+`ultimate-b1` and `ultimate-b1-plus` explicitly support `international` and `greek`. A `content-edition.v1` identity has
 exactly `schemaVersion`, `bookSlug`, `editionId`. Role, interface language,
 device language and translation visibility are independent dimensions.
-B1/B1+ do not acquire editions. Existing book/component/activity/page slugs
+B1/B1+ retain their SB/WB publication membership; Grammar authoring is not
+implicitly a publication member. Existing book/component/activity/page slugs
 and IDs keep their meanings. Existing content stays unclassified by default.
 
 The new writer does not alter the strict historical product/component
@@ -54,8 +55,8 @@ asset manifest and their hashes. These are private records. Unknown identity
 keys, cross-book/component ownership and transient credentials are rejected.
 
 `edition-composition.v1` contains `schemaVersion`, `edition`, `members`.
-Members are exact source references in SB, WB, Grammar order; all three are
-required. Shared SB/WB and separate whole Grammar sources are explicit
+Members follow the closed per-book registry order. B2 requires SB, WB and
+Grammar; B1/B1+ require SB and WB. No required member can be dropped. Shared SB/WB and separate whole Grammar sources are explicit
 fixture associations, not classifications inferred from matching files.
 An image's hash does not grant cross-source or cross-component ownership.
 
@@ -237,3 +238,44 @@ present together with the shared in-frame Vocabulary UI and bounded saved-draft,
 immutable candidate and entitled published adapters. Source: Task 3 on local
 Task 2 parent `29372dc0893a55e4672ef9022bbc5716112555b2`; verifiedAt: 2026-09-19.
 The 104 SB and 50 WB unresolved real groups remain unresolved.
+
+## B1/B1+ activation extension (2026-09-20)
+
+Migration 069 extends the SQL source-owner and mutation boundaries to the explicit
+B1/B1+ book scopes without changing existing rows or historical migrations. B1
+source capture uses the existing SB v2 compiler (frozen per-book UI) and WB v1.
+New writer IDs are `{bookSlug}-edition-composition-v1` and `-v2`; B2 IDs and
+required member ordering remain unchanged. The B1 feature checks migration 069
+before serving authoring operations; legacy routes remain feature-optional.
+
+Collector-only registry helpers are removed from saved-document wrappers before
+new capture. Payloads, revisions, hashes and assets are preserved and then pass
+the unchanged strict durable-source validator. Explicit save-source inputs are
+not filtered. Existing unclassified drafts are never auto-captured or associated.
+
+Each B1 book now exposes the same Content edition selection, source association
+and SB/WB Word Lists flow. Classroom navigation disables components absent from
+that book edition. English/Greek policy, immutable review, entitlement checks,
+UI owner and audio namespaces stay independently bound to each book. No B2
+publisher words or assets are seeded into B1. This is not new B1 APK export support.
+
+The LMS query parser preserves explicit edition, contract, content, UI and audio
+parameters through the actual `book-content` HTTP route. Access still requires
+both package entitlement and the edition grant; query flags never grant a role.
+Frozen UI reads also reject a component outside the selected book's edition
+membership, before resolving the shared SB-owned artwork.
+After Associate, the Word List workspace refreshes against the new selection
+revision and source hash, including when the source ID itself is unchanged.
+
+Migration 069 rejects missing/null/malformed CAS revisions and incomplete or
+inconsistent release structures at the SQL boundary. Release IDs and replay
+mutation IDs remain separate identities, preserving the existing B2 contract.
+The B1 extension is optional for the general runtime readiness contract: tests
+exercise authenticated B2/editionless reads on schema through 068 before 069.
+
+`npm run test:b1-publication` also runs the real-Worker B1 edition fixture against
+disposable PostgreSQL: both books, editions and components across saved drafts,
+candidates and entitled published classrooms. It checks read-only ZIP preview,
+confirmed synthetic imports/mapping, pronunciation playback, language projection,
+Grammar exclusion, retained exercise state and frozen SB-owned UI after a later
+UI draft edit. Published negative controls use the actual HTTP endpoint.

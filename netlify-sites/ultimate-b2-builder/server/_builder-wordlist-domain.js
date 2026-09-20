@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { componentGroups, datasetIdentity, exact, reject, stableJson, validatePortableShape } from "../../../src/data/wordlists/portable.js";
-import { normalizeContentSourceReference, requireEditionUuid } from "../../../src/data/contentEditions.js";
+import { normalizeContentSourceReference, requireEditionUuid, editionWriterCompilerId } from "../../../src/data/contentEditions.js";
 import { prepareEditionRelease, verifyEditionRelease, editionReleasePublicEnvelope } from "./_builder-edition-domain.js";
 
 export const hashWordList = (value) => createHash("sha256").update(stableJson(value)).digest("hex");
@@ -87,7 +87,7 @@ export function prepareWordListEdition({ id, number, edition, sources, wordlists
   const composition = { schemaVersion: "edition-composition.v2", edition: content.composition.edition,
     members: content.composition.members, wordlists: members.map((record) => ({ sourceId: record.sourceId, revision: record.revision,
       sha256: record.sha256, mappingRevision: record.mappingRevision, projectionSha256: hashWordList(projectWordList(record, edition.editionId)) })) };
-  const payload = { schemaVersion: "edition-release.v2", compilerId: "ultimate-b2-edition-composition-v2", id, number,
+  const payload = { schemaVersion: "edition-release.v2", compilerId: editionWriterCompilerId(edition.bookSlug, 2), id, number,
     composition, compositionSha256: hashWordList(composition), content, wordlists: members };
   return { ...payload, releaseSha256: hashWordList(payload) };
 }

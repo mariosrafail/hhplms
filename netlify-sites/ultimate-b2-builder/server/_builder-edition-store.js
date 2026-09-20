@@ -1,9 +1,11 @@
 import { contentEdition, requireEditionUuid } from "../../../src/data/contentEditions.js";
 import { verifyEditionRelease, verifyEditionSource } from "./_builder-edition-domain.js";
 
-export async function editionDatabaseReady(sql) {
+export async function editionDatabaseReady(sql, bookSlug = "ultimate-b2") {
   const rows = await sql`select to_regprocedure('mutate_builder_content_edition(uuid,uuid,jsonb)') is not null ready`;
-  return rows[0]?.ready === true;
+  if (rows[0]?.ready !== true) return false;
+  if (bookSlug === "ultimate-b2") return true;
+  return (await sql`select to_regprocedure('builder_content_edition_components_v1(text)') is not null ready`)[0]?.ready === true;
 }
 export async function mutateEdition(sql, actor, clientMutationId, request) {
   requireEditionUuid(actor); requireEditionUuid(clientMutationId);

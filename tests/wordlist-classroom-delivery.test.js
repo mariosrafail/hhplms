@@ -25,6 +25,9 @@ test("classroom UI reads all three frozen SB-owned artwork states for WB without
   const result = JSON.parse((await editionClassroomUiRead(release, { componentSlug: "ultimate-b2-workbook" })).body);
   assert.deepEqual(result.ownerSource, owner); assert.equal(result.ui.assets["navibar.vocabulary.active"].sha256, sha);
   assert(!JSON.stringify(result).includes("nativeActivities")); assert(!JSON.stringify(result).includes("solutions"));
+  for (const componentSlug of ["ultimate-b1-plus-workbook", "unknown-component"]) {
+    await assert.rejects(editionClassroomUiRead(release, { componentSlug }), /edition_component_mismatch/);
+  }
   const target = componentPublicationAssetStorageTarget({ bookSlug: owner.bookSlug, componentSlug: owner.componentSlug, role: "teacher_ui", sha256: sha, extension: "png" });
   const storage = { async download(reference) { assert.deepEqual(reference, target); return png; } };
   for (const state of ["active", "disabled", "pressed"]) {
@@ -41,6 +44,11 @@ test("Worker UI adapter is read-only and rejects foreign namespaces, absent or o
   const target = componentPublicationAssetStorageTarget({ bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book", role: "teacher_ui", sha256: sha, extension: "png" });
   const options = { binding: { async head() {} }, privateBucket: "isolated-wordlists", publicUiBinding: { async get() { return { size: png.length, body: new Response(png).body }; } } };
   assert.deepEqual(await new WordListR2Storage(options).download(target), png);
+  for (const book of ["ultimate-b1", "ultimate-b1-plus"]) {
+    const own = { profile: "public", objectKey: target.objectKey.replaceAll("ultimate-b2", book) };
+    assert.deepEqual(await new WordListR2Storage(options).download(own), png);
+    await assert.rejects(new WordListR2Storage(options).download({ ...own, objectKey: own.objectKey.replace(`${book}-students-book`, "ultimate-b2-students-book") }), /scope/);
+  }
   for (const objectKey of [target.objectKey.replace("ultimate-b2-students-book", "ultimate-b2-workbook"), "arbitrary-private-key", target.objectKey.replace(sha, "..")] ) {
     await assert.rejects(new WordListR2Storage(options).download({ profile: "public", objectKey }), /scope/);
   }

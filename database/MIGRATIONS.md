@@ -70,6 +70,7 @@ Apply production migrations in this exact order:
 66. `066_content_editions.sql`
 67. `067_wordlist_sources.sql`
 68. `068_vocabulary_ui_bindings.sql`
+69. `069_b1_content_editions.sql`
 
 The two `010` files are historical, already-deployed migrations. Their duplicate number is resolved by this manifest rather than renaming applied files. New migrations must use a unique, increasing number.
 

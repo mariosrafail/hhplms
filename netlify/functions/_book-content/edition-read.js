@@ -15,7 +15,7 @@ export async function readPublishedEdition(sql, currentUser, query, overrides = 
     contentEdition(query.bookSlug, query.editionId);
     const bookError = await deps.bookAccess(sql, currentUser, { packageSlug: query.bookSlug });
     if (bookError) return bookError;
-    if (!await deps.ready(sql) || !await deps.allowed(sql, currentUser, query)) return json(403, { error: "edition_access_denied" });
+    if (!await deps.ready(sql, query.bookSlug) || !await deps.allowed(sql, currentUser, query)) return json(403, { error: "edition_access_denied" });
     const teacher = !requireResourceRole(currentUser, ["teacher", "admin"]);
     if (query.offline === "1" && (!wordlists || query.audience !== "teacher" || !teacher)) return json(403, { error: "offline_teacher_required" });
     if ((query.teacherActivityId || query.teacherAssetActivityId) && !teacher) return json(403, { error: "edition_teacher_required" });

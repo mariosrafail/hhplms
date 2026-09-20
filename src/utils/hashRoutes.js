@@ -1,3 +1,4 @@
+import { findContentEditionBook } from "../data/contentEditions.js";
 import { demoBookPackages, inferPackageSlugFromBookId } from "../data/bookPackages.js";
 import { isPhaseOneComponentVisible } from "../config/bookCatalogVisibility.js";
 import { managedRouteContract, publishedManagedPageId } from "./publicationPageRoutes.js";
@@ -554,8 +555,8 @@ export function parseHashRoute(hash = "") {
   const rawHashView = cleanHash(hash);
   const hashView = rawHashView ? withLeadingSlash(rawHashView) : "/";
   const legacyHashView = rawHashView || "home";
-  const editionClassroom = hashView.match(/^\/editions\/(ultimate-b2)\/(greek|international)\/releases\/([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\/components\/(ultimate-b2-(?:students-book|workbook|grammar-book))$/);
-  if (editionClassroom) return baseRoute(rawHashView, { view: "edition-classroom", role: "authenticated",
+  const editionClassroom = hashView.match(/^\/editions\/(ultimate-b2|ultimate-b1|ultimate-b1-plus)\/(greek|international)\/releases\/([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\/components\/([a-z0-9-]+)$/);
+  if (editionClassroom && findContentEditionBook(editionClassroom[1])?.components.includes(editionClassroom[4])) return baseRoute(rawHashView, { view: "edition-classroom", role: "authenticated",
     editionContext: { kind: "published", bookSlug: editionClassroom[1], editionId: editionClassroom[2], releaseId: editionClassroom[3], componentSlug: editionClassroom[4] } });
 
   const accountMatch = rawHashView.match(/^\/?(accept-invitation|reset-password|account-security)(?:\?(.*))?$/);

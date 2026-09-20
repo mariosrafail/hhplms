@@ -11,6 +11,8 @@ import { createBuilderAuthHandler } from '../../netlify-sites/ultimate-b2-builde
 import { createBuilderPublicationFunction } from '../../netlify-sites/ultimate-b2-builder/functions/builder-publication.js';
 import { createBuilderPublicationHandler } from '../../netlify-sites/ultimate-b2-builder/server/_builder-publication.js';
 import { createBuilderProductPublicationHandler } from '../../netlify-sites/ultimate-b2-builder/server/_builder-product-publication.js';
+import { createBuilderEditionHandler } from '../../netlify-sites/ultimate-b2-builder/server/_builder-editions.js';
+import { createBuilderWordListHandler } from '../../netlify-sites/ultimate-b2-builder/server/_builder-wordlists.js';
 import { createBuilderPreviewAuthorizationHandler } from '../../netlify-sites/ultimate-b2-builder/server/_builder-preview-authorization-handler.js';
 import { createBuilderPagesHandler } from '../../netlify-sites/ultimate-b2-builder/server/_builder-pages.js';
 import { createBuilderNativeActivitiesHandler } from '../../netlify-sites/ultimate-b2-builder/server/_builder-native-activities.js';
@@ -23,7 +25,7 @@ import { changeBrowserUiDraft, verifyFrozenBrowserUi } from './_b1-immutable-ui-
 
 // Real Workers, authentication, handlers and PostgreSQL. All storage and browser
 // traffic are confined to these synthetic fixture servers and bundled assets.
-export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, student, media }) {
+export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, student, media, editionAcceptance = null }) {
   const roots = { lms: resolve('dist'), builder: resolve('dist-netlify/ultimate-b2-builder'), viewer: resolve('dist-netlify/ultimate-b2-interactive') };
   for (const root of Object.values(roots)) await readFile(resolve(root, 'index.html'));
   const mime = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.json': 'application/json' };
@@ -35,11 +37,17 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
     catch { return new Response('Not found', { status: 404 }); }
   };
   const r2 = {
-    async head(key) { const bytes = media.get(key); return bytes ? { size: bytes.length, customMetadata: { sha256: createHash('sha256').update(bytes).digest('hex') }, httpMetadata: { contentType: key.endsWith('.wav') ? 'audio/wav' : 'image/png' } } : null; },
+    async head(key) { const bytes = media.get(key); return bytes ? { size: bytes.length, customMetadata: { sha256: createHash('sha256').update(bytes).digest('hex') }, httpMetadata: { contentType: key.endsWith('.mp3') ? 'audio/mpeg' : key.endsWith('.wav') ? 'audio/wav' : 'image/png' } } : null; },
     async get(key) { const bytes = media.get(key); return bytes ? { ...await this.head(key), body: new ReadableStream({ start(controller) { controller.enqueue(bytes); controller.close(); } }), arrayBuffer: async () => bytes } : null; },
+    async put(key, body, options) {
+      assert.equal(options.onlyIf.etagDoesNotMatch, '*');
+      if (!media.has(key)) media.set(key, Buffer.from(body));
+      return this.head(key);
+    },
   };
   const dependency = { getDatabase: () => sql };
-  const publication = createBuilderPublicationFunction({ componentHandler: createBuilderPublicationHandler(dependency), productHandler: createBuilderProductPublicationHandler(dependency) });
+  const publication = createBuilderPublicationFunction({ componentHandler: createBuilderPublicationHandler(dependency), productHandler: createBuilderProductPublicationHandler(dependency),
+    editionHandler: createBuilderEditionHandler(dependency), wordListHandler: createBuilderWordListHandler(dependency) });
   const builderWorker = createBuilderWorker({ handlers: {
     auth: createBuilderAuthHandler(dependency), content: createBuilderContentHandler(dependency), pages: createBuilderPagesHandler(dependency),
     nativeActivities: createBuilderNativeActivitiesHandler(dependency), nativePreview: createBuilderNativePreviewHandler(dependency),
@@ -64,9 +72,9 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
   const builder = serve((request) => builderWorker.fetch(request, builderEnv));
   const lms = serve((request) => lmsWorker.fetch(request, { ASSETS: { fetch: staticFetch(roots.lms) } }));
   const objects = serve(async (request) => {
-    const key = decodeURIComponent(new URL(request.url).pathname).replace(/^\/private-assets\//, '');
+    const key = decodeURIComponent(new URL(request.url).pathname).replace(/^\/(?:private-assets|public-assets)\//, '');
     const bytes = media.get(key);
-    return bytes ? new Response(request.method === 'HEAD' ? null : bytes, { headers: { 'Content-Type': 'image/png', 'Content-Length': String(bytes.length), 'x-amz-meta-sha256': createHash('sha256').update(bytes).digest('hex') } }) : new Response('Not found', { status: 404 });
+    return bytes ? new Response(request.method === 'HEAD' ? null : bytes, { headers: { 'Content-Type': key.endsWith('.mp3') ? 'audio/mpeg' : key.endsWith('.wav') ? 'audio/wav' : 'image/png', 'Content-Length': String(bytes.length), 'x-amz-meta-sha256': createHash('sha256').update(bytes).digest('hex') } }) : new Response('Not found', { status: 404 });
   });
   for (const server of [builder, lms, objects]) await new Promise((done) => server.listen(0, '127.0.0.1', done));
   const origin = (server) => `http://127.0.0.1:${server.address().port}`;
@@ -102,8 +110,17 @@ export async function verifyB1PublicationBrowser({ pool, sql, actor, teacher, st
     const page = await context.newPage();
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('response', (result) => { if (result.status() >= 400) console.log('B1_BROWSER_RESPONSE', result.status(), new URL(result.url()).host, new URL(result.url()).pathname); });
+    if (editionAcceptance) {
+      await editionAcceptance({ page, context, browser, builderOrigin: origin(builder), lmsOrigin: origin(lms), errors });
+      assert.deepEqual(errors, []);
+      await context.close();
+      return;
+    }
     for (const book of ['ultimate-b1', 'ultimate-b1-plus']) {
       await page.goto(`${origin(builder)}/#/books/${book}/ui`);
+      const editionSelector = page.getByLabel('Content edition', { exact: true });
+      await expect(editionSelector).toHaveValue('');
+      assert.deepEqual(await editionSelector.locator('option').evaluateAll(nodes => nodes.map(node => node.value)), ['', 'international', 'greek']);
       const uiEditor = page.locator('.b2-hosted-ui-editor');
       await uiEditor.getByRole('button', { name: 'Navigation / Window Controls', exact: true }).click();
       for (const state of ['active', 'disabled', 'pressed']) {

@@ -100,6 +100,7 @@ function EditionWorkspace({ book, editionId, busy, dirty, setBusy, setDirty }) {
   };
   const applicable = status?.sources.filter((entry) => entry.reference.componentSlug === component) || [];
   const selected = applicable.find((entry) => entry.reference.sourceId === (sourceId || status?.associations[component]));
+  const associated = applicable.find((entry) => entry.reference.sourceId === status?.associations[component]);
   const identity = { componentSlug: component };
   return <section className="edition-workspace">
     <h2>{book.title} · {editionLabels[editionId]}</h2>
@@ -130,7 +131,7 @@ function EditionWorkspace({ book, editionId, busy, dirty, setBusy, setDirty }) {
         </div>)}
       </fieldset>
       {!component.endsWith("grammar-book") && status.associations[component] ? <HostedWordListWorkspace
-        key={`${editionId}/${component}/${status.associations[component]}`} bookSlug={book.slug} editionId={editionId} componentSlug={component}
+        key={`${editionId}/${component}/${status.selectionRevision}/${associated?.reference.sha256}`} bookSlug={book.slug} editionId={editionId} componentSlug={component}
         busy={busy || sourceDirty.current} setBusy={setBusy} setDirty={markWordListDirty} /> : null}
       {review ? <EditionReview key={review.id} bookSlug={book.slug} editionId={editionId} release={review} /> : null}
     </>}

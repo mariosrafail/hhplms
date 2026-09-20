@@ -7,6 +7,7 @@ import { TeacherRuntimeUiAssetsProvider } from "../../apps/android-teacher-offli
 import { createTeacherRuntimeUiAssetModel } from "../../apps/android-teacher-offline/teacherRuntimeUiAssetModel.js";
 import { ultimateB2TeacherAppAuthoring } from "../../data/ultimate-b2/teacherAppAuthoring.js";
 import { resolveUltimateB2AuthoredAssetUrl } from "../../data/ultimate-b2/ultimateB2AuthoredAssetUrls.js";
+import { contentEditionBooks } from "../../data/contentEditions.js";
 import { consumeClassroomBack } from "./classroomLayers.js";
 import "../../apps/android-teacher-offline/teacherOffline.css";
 import "../../apps/android-teacher-offline/classroomTools.css";
@@ -17,6 +18,9 @@ const noOp = () => {};
 export function SharedEditionClassroom({ data, teacherMode, onClose, onComponentSwitch, wordListProvider }) {
   const [unitIndex, setUnit] = useState(0); const [pageIds, setPages] = useState([]); const [activityId, setActivity] = useState(""); const [uiError, setUiError] = useState(false); const [wordListOpen, setWordListOpen] = useState(false);
   const root = useRef(null);
+  const unavailableBookIds = useMemo(() => new Set(["students-book", "workbook", "grammar-book"].filter(
+    (id) => !contentEditionBooks[data.context.bookSlug].components.includes(`${data.context.bookSlug}-${id}`))), [data.context.bookSlug]);
+  const unavailableBookMessages = useMemo(() => new Map([...unavailableBookIds].map((id) => [id, "This component is not included in this edition."])), [unavailableBookIds]);
   const uiAssets = useMemo(() => createTeacherRuntimeUiAssetModel({ authoring: ultimateB2TeacherAppAuthoring,
     resolveCanonicalAssetUrl: resolveUltimateB2AuthoredAssetUrl, hostedPreview: data.ui, identity: { bookSlug: data.context.bookSlug, componentSlug: data.ownerSource.componentSlug },
     runtimeContext: { kind: "edition-classroom" }, resolveFrozenAssetUrl: data.uiAssetUrl, resolveFrozenFontUrl: data.uiFontUrl }), [data]);
@@ -55,7 +59,8 @@ export function SharedEditionClassroom({ data, teacherMode, onClose, onComponent
     <TeacherClassroomPages ActivityRenderer={EditionActivity} publication={data.publication} unit={unit} selectedPageId={pageIds[0] || ""} onSelectPage={selectPage} activeActivityId={activityId}
       activeActivity={activityId ? { stableActivityId: activityId, title: data.projection.nativeActivities[activityId]?.document.metadata.title } : null}
       onOpenActivity={openActivity} onCloseActivity={() => setActivity("")} onOpenMedia={noOp} onBackToLibrary={onClose} selectedBookId={component}
-      onBookSwitch={(id) => onComponentSwitch(`${data.context.bookSlug}-${id}`)}
+      unavailableBookIds={unavailableBookIds} unavailableBookMessages={unavailableBookMessages}
+      onBookSwitch={(id) => { if (!unavailableBookIds.has(id)) onComponentSwitch(`${data.context.bookSlug}-${id}`); }}
       classroom={classroom} componentIdentity={{ bookSlug: data.context.bookSlug, componentSlug: data.context.componentSlug }} />
   </div></ClassroomToolsProvider></TeacherRuntimeUiAssetsProvider>;
 }

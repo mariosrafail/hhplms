@@ -7,7 +7,15 @@ export const EDITION_COMPOSITION_SCHEMA = "edition-composition.v1";
 const b2Components = Object.freeze([
   "ultimate-b2-students-book", "ultimate-b2-workbook", "ultimate-b2-grammar-book",
 ]);
+// B1 editions retain the existing published Students Book/Workbook membership.
+const managedEditionBook = (bookSlug) => Object.freeze({
+  editions: Object.freeze(["international", "greek"]),
+  components: Object.freeze([`${bookSlug}-students-book`, `${bookSlug}-workbook`]),
+  uiOwnerComponentSlug: `${bookSlug}-students-book`, wordListOperational: true,
+});
 export const contentEditionBooks = Object.freeze({
+  "ultimate-b1": managedEditionBook("ultimate-b1"),
+  "ultimate-b1-plus": managedEditionBook("ultimate-b1-plus"),
   "ultimate-b2": Object.freeze({
     editions: Object.freeze(["international", "greek"]),
     components: b2Components,
@@ -108,4 +116,16 @@ export function normalizeEditionComposition(value) {
   });
   if (new Set(members.map((entry) => entry.sourceId)).size !== members.length) throw new ContentEditionError("edition_source_owner_mismatch");
   return freezeEditionValue({ schemaVersion: EDITION_COMPOSITION_SCHEMA, edition, members });
+}
+
+// Closed compiler choices; historical verification never consults a mutable
+// current-product registry. B2 retains its original v3/v1/v1 source contract.
+export function editionSourceCompilerContract(bookSlug, componentSlug) {
+  requireEditionComponent(bookSlug, componentSlug);
+  const version = componentSlug.endsWith("-students-book") ? (bookSlug === "ultimate-b2" ? 3 : 2) : 1;
+  return Object.freeze({ compilerId: `${componentSlug}-v${version}`, releaseSchemaVersion: `${version}.0` });
+}
+export function editionWriterCompilerId(bookSlug, version = 1) {
+  if (!findContentEditionBook(bookSlug) || ![1, 2].includes(version)) throw new ContentEditionError("edition_release_version_invalid");
+  return `${bookSlug}-edition-composition-v${version}`;
 }

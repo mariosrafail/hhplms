@@ -896,3 +896,27 @@ The fractional-bank regression covers full/partial/refilled content, adjacent
 widths, both motion preferences and scales 1/.65 with the unchanged readiness,
 containment, hit, minimum-font and response checks; it fails on the old runtime.
 The failed frozen-tree receipt is retained externally and is not promotion proof.
+
+### B1/B1+ Content edition enablement
+
+Source: contentEditions.js, edition/Word List handlers, migration 069 and B1
+regressions; verifiedAt: 2026-09-20; baseline 435ddd7b6348b9e4c5b1c76e0e28197809cfeb9d.
+B1/B1+ now have explicit International/Greek capabilities with required SB/WB
+membership and their own frozen SB UI owner. B2's three-member and historical
+compiler contracts remain unchanged. Capture excludes only known executable
+collector registry helpers, not authored data, before strict source validation.
+New schema capability is feature-optional for legacy routes. Canonical manifest
+and runtime metadata include migration 069; older migration files are unchanged.
+No existing content, associations, publications or grants are auto-populated.
+Operational application and hosted acceptance require dated external receipts;
+this repository delta does not establish live state or Project-copy synchronization.
+
+The B1 continuation also preserves edition/Word List parameters in the LMS
+`book-content` query parser and refreshes the Builder lexical workspace after
+association revision changes. The existing B1 publication CI gate includes real
+Worker/PG edition browser flows for both books, both editions and SB/WB, with
+frozen UI, English pronunciation, language policy and entitled HTTP reads.
+Migration 069 validates null/malformed revisions and release consistency without
+coupling replay mutation IDs to release IDs. Through-068 compatibility remains
+covered before the optional B1 capability is activated. Live activation/backup
+results must be recorded externally after promotion; they are not inferred here.

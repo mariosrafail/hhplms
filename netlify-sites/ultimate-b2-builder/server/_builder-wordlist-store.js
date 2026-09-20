@@ -1,7 +1,9 @@
 import { requireEditionUuid, contentEdition } from "../../../src/data/contentEditions.js";
+import { editionDatabaseReady } from "./_builder-edition-store.js";
 import { verifyWordListEdition } from "./_builder-wordlist-domain.js";
 
-export async function wordListDatabaseReady(sql) {
+export async function wordListDatabaseReady(sql, bookSlug = "ultimate-b2") {
+  if (!await editionDatabaseReady(sql, bookSlug)) return false;
   return (await sql`select to_regprocedure('mutate_builder_wordlist(uuid,uuid,jsonb)') is not null ready`)[0]?.ready === true;
 }
 export async function mutateWordList(sql, actor, id, request) {

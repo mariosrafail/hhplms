@@ -19,9 +19,9 @@ const composition = (editionId) => ({
   schemaVersion: EDITION_COMPOSITION_SCHEMA, edition: contentEdition(book, editionId),
   members: [reference(0), reference(1), reference(2, scoped(editionId))],
 });
-test("content editions are explicitly available only for the B2 pilot, independent of role and language", () => {
+test("content editions have an explicit per-book allowlist, independent of role and language", () => {
   assert.notDeepEqual(contentEdition(book, "international"), contentEdition(book, "greek"));
-  for (const slug of ["ultimate-b1", "ultimate-b1-plus", "unknown", "toString", "__proto__"]) {
+  for (const slug of ["unknown", "toString", "__proto__"]) {
     assert.equal(findContentEditionBook(slug), null);
     assert.throws(() => contentEdition(slug, "greek"), { code: "content_edition_unavailable" });
   }

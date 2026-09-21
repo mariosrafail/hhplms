@@ -1,0 +1,30 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { outlinePair } from "./fixtures/native-builder-options.js";
+import { enableOutlineCategories } from "../src/data/native-activities/nativeMarkWordsVisualAuthoring.js";
+import { normalizeNativeRuntimePublicDocument, normalizeNativeRuntimeTeacherDocument } from "../src/data/native-activities/nativeActivityRuntimeValidation.js";
+
+test("category removal requires explicit confirmation, cancellation is atomic, conversion survives reload", () => {
+  const pair = outlinePair(), before = structuredClone(pair);
+  const { publicDocument: pub, teacherDocument: teacher } = pair;
+  assert.equal(new Set(Object.values(teacher.parts[0].solution.answers[0].categories)).size, 2);
+  enableOutlineCategories(pub, teacher, true);
+  assert.deepEqual(pair, before);
+  assert.throws(() => enableOutlineCategories(pub, teacher, false), /confirm/i);
+  assert.deepEqual(pair, before);
+  enableOutlineCategories(pub, teacher, false, { confirmed: true });
+  const options = { activityId: pub.activityId, kind: pub.kind };
+  const saved = normalizeNativeRuntimePublicDocument(JSON.parse(JSON.stringify(pub)), options);
+  const savedTeacher = normalizeNativeRuntimeTeacherDocument(JSON.parse(JSON.stringify(teacher)), { ...options, publicDocument: saved });
+  assert.equal(saved.parts[0].interaction.answerMode, undefined);
+  assert.equal(savedTeacher.parts[0].solution.answers[0].categories, undefined);
+  const legacyWithCategories = structuredClone(savedTeacher);
+  legacyWithCategories.parts[0].solution.answers[0].categories = before.teacherDocument.parts[0].solution.answers[0].categories;
+  assert.throws(() => normalizeNativeRuntimeTeacherDocument(legacyWithCategories, { ...options, publicDocument: saved }));
+  enableOutlineCategories(saved, savedTeacher, true);
+  assert.deepEqual(new Set(Object.values(savedTeacher.parts[0].solution.answers[0].categories)), new Set(["#0055cc"]));
+  normalizeNativeRuntimeTeacherDocument(savedTeacher, { ...options, publicDocument: normalizeNativeRuntimePublicDocument(saved, options) });
+  const enabled = structuredClone({ saved, savedTeacher });
+  enableOutlineCategories(saved, savedTeacher, true);
+  assert.deepEqual({ saved, savedTeacher }, enabled);
+});

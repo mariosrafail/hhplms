@@ -1,3 +1,5 @@
+import { alternativesPair, outlinePair, sharedTextPair } from "../fixtures/native-builder-options.js";
+import { compilePair } from "./_ten-option-choice-persistence.mjs";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { sharedFive, sharedFiveTeacher } from "../fixtures/native-runtime-regressions/shared-five-data.js";
@@ -8,11 +10,11 @@ import { validateNativePublicationAssetRows } from "../../netlify-sites/ultimate
 import { normalizeNativeRuntimePublicDocument, normalizeNativeRuntimeTeacherDocument } from "../../src/data/native-activities/nativeActivityRuntimeValidation.js";
 
 export async function exerciseVisualTargetPersistence({ pool, sql, handler, event, actor, identity }) {
-  for (const kind of ["multi-part", "mark-the-words", "drag-drop"]) {
+  for (const [kind, optionFactory] of [["multi-part"], ["mark-the-words"], ["drag-drop"], ["drag-drop", alternativesPair], ["mark-the-words", outlinePair], ["multi-part", sharedTextPair]]) {
     const created = await handler(event("create", { kind, title: "Visual persistence", pageId: "ub2-sb-unit-1-part-1", clientMutationId: randomUUID() }));
     assert.equal(created.statusCode, 200, created.body);
     const activityId = JSON.parse(created.body).activityId;
-    const pair = kind === "drag-drop" ? dragDropImprovementsPair() : kind === "multi-part" ? structuredClone({ publicDocument: sharedFive, teacherDocument: sharedFiveTeacher }) : structuredClone(projectNativeMultiPartChild(sharedFive, sharedFive.parts[0].interaction.sections.find((entry) => entry.kind === kind), sharedFiveTeacher));
+    const pair = optionFactory ? optionFactory() : kind === "drag-drop" ? dragDropImprovementsPair() : kind === "multi-part" ? structuredClone({ publicDocument: sharedFive, teacherDocument: sharedFiveTeacher }) : structuredClone(projectNativeMultiPartChild(sharedFive, sharedFive.parts[0].interaction.sections.find((entry) => entry.kind === kind), sharedFiveTeacher));
     pair.publicDocument.activityId = pair.teacherDocument.activityId = activityId;
     if (kind === "multi-part") pair.publicDocument.parts[0].interaction.sections.find((section) => section.kind === "drag-drop").interaction.randomize = false;
     const rows = [];
@@ -38,8 +40,9 @@ export async function exerciseVisualTargetPersistence({ pool, sql, handler, even
     normalizeNativeRuntimePublicDocument(pub, { activityId, kind });
     normalizeNativeRuntimeTeacherDocument(teacher, { activityId, kind, publicDocument: pub });
     const manifest = validateNativePublicationAssetRows([[activityId, { publicDocument: pub, teacherDocument: teacher }]], rows);
-    assert.equal(manifest.length, kind === "drag-drop" ? 5 : 2);
-    const invalidRows = rows.map((row) => row.source_metadata.asset_slot === (kind === "drag-drop" ? "item" : "graphic") ? { ...row, mime_type: "audio/mpeg", file_extension: "mp3" } : row);
+    assert.equal(manifest.length, optionFactory ? pair.publicDocument.assets.length : kind === "drag-drop" ? 5 : 2);
+    if (optionFactory) { const compiled = compilePair({ publicDocument: pub, teacherDocument: teacher }, rows); assert.deepEqual(compiled.publicProjection.nativeActivities[activityId].document, pub); assert.doesNotMatch(JSON.stringify(compiled.publicProjection.nativeActivities[activityId]), /categories|mappings|correctTargetIds/); }
+    const invalidRows = rows.map((row) => row.source_metadata.asset_slot === (optionFactory ? pair.publicDocument.assets[0].slot : kind === "drag-drop" ? "item" : "graphic") ? { ...row, ...(optionFactory ? { checksum_sha256: "f".repeat(64) } : { mime_type: "audio/mpeg", file_extension: "mp3" }) } : row);
     assert.throws(() => validateNativePublicationAssetRows([[activityId, { publicDocument: pub, teacherDocument: teacher }]], invalidRows));
     assert.doesNotMatch(JSON.stringify(pub), /correctTargetIds|correctWordIds|isCorrect/);
     assert.equal((await handler(event(`activities/${activityId}/save`, { ...input, clientMutationId: randomUUID() }))).statusCode, 409);

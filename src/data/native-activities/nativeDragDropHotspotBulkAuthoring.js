@@ -118,7 +118,7 @@ export function generateNativeDragDropHotspotImportCandidate({ source, publicDoc
         if (!isNativeChildId(id, "target") || existingIds.has(id)) throw new Error("Target identity generation produced a duplicate or invalid ID.");
         existingIds.add(id); createdIds += 1;
       }
-      const target = { id, area: scaled.area, accessibleLabel: existing?.accessibleLabel || `Drop target ${entry.ordinal}`, capacity: wordIds.length };
+      const target = { ...existing, id, area: scaled.area, accessibleLabel: existing?.accessibleLabel || `Drop target ${entry.ordinal}`, capacity: existing?.answerMode === "any" ? 1 : wordIds.length };
       nextTargets.push(target); mappings.set(id, wordIds);
       rows.push({ line: entry.line, panelOrdinal: parsedPanel.ordinal, targetOrdinal: entry.ordinal, targetId: id, items: resolved.map(({ word, reference, resolution }) => ({ reference, resolution, id: word.id, shortLabel: word.shortLabel, text: word.text })) });
     }

@@ -1,3 +1,5 @@
+import { runNativeBuilderReviewRegressions } from "./native-builder-review-regressions.mjs";
+import { runNativeBuilderOptionsRegressions } from "./native-builder-options-regressions.mjs";
 import { runNativeMarkerCandidateRegressions } from "./native-marker-candidate-regressions.mjs";
 import { runRuntimeCorrectionsRegressions } from "./runtime-corrections-regressions.mjs";
 import { runDndTeacherStateRegressions } from './dnd-teacher-state-regressions.mjs';
@@ -94,6 +96,8 @@ try {
     entry.before.textRects.forEach((rect, index) => assert.ok(Math.abs(rect.height - entry.during.textRects[index].height) < 1 && Math.abs(rect.width - entry.during.textRects[index].width) < 1, JSON.stringify(entry)));
   }
   for (const entry of evidence.filter((item) => item.kind === "listening")) assert.ok(entry.visible && entry.top > 0, JSON.stringify(entry));
+  await runNativeBuilderOptionsRegressions(browser, server.resolvedUrls.local[0], output);
+  await runNativeBuilderReviewRegressions(browser, output);
   await runNativeMarkerCandidateRegressions(browser, server.resolvedUrls.local[0], output);
   await runNativePresentationRegressions(browser, output);
   await runHistoricalFocusRegressions(browser, output);

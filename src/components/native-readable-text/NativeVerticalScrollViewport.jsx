@@ -3,7 +3,7 @@ import { useCallback, useContext, useImperativeHandle, useLayoutEffect, useRef, 
 import { createPortal } from "react-dom";
 import { NativeScrollControlsContext } from "./NativeScrollControlsHost.jsx";
 
-export function NativeVerticalScrollViewport({ id, className, ariaLabel, resetKey, children, apiRef = null, onViewportReady = null, onManualScrollStateChange = null }) {
+export function NativeVerticalScrollViewport({ id, className, style, ariaLabel, resetKey, children, apiRef = null, onViewportReady = null, onManualScrollStateChange = null }) {
   const controlsHost = useContext(NativeScrollControlsContext);
   const viewportRef = useRef(null);
   const trackRef = useRef(null);
@@ -86,7 +86,7 @@ export function NativeVerticalScrollViewport({ id, className, ariaLabel, resetKe
 
   const renderControl = (control) => controlsHost ? createPortal(control, controlsHost) : control;
   return <>
-    <div id={id} ref={viewportRef} className={className} tabIndex={0} data-overflowing={state.overflowing || undefined} onLoadCapture={measure} onWheel={manualStep} onKeyDown={keyDown} onTouchStart={() => onManualScrollStateChange?.(true)} onTouchEnd={() => onManualScrollStateChange?.(false)} onTouchCancel={() => onManualScrollStateChange?.(false)}>{children}</div>
+    <div id={id} ref={viewportRef} style={style} className={className} tabIndex={0} data-overflowing={state.overflowing || undefined} onLoadCapture={measure} onWheel={manualStep} onKeyDown={keyDown} onTouchStart={() => onManualScrollStateChange?.(true)} onTouchEnd={() => onManualScrollStateChange?.(false)} onTouchCancel={() => onManualScrollStateChange?.(false)}>{children}</div>
     {state.overflowing ? renderControl(<div ref={trackRef} className="native-readable-text-scroll-control" role="scrollbar" aria-label={ariaLabel} aria-controls={id} aria-orientation="vertical" aria-valuemin={0} aria-valuemax={Math.round(state.maximum)} aria-valuenow={Math.round(state.top)} tabIndex={0} onKeyDown={keyDown} onPointerDown={(event) => { if (event.target === event.currentTarget) { manualStep(); scrollFromTrackPoint(event.clientY); } }}><span className="native-readable-text-scroll-thumb" style={{ "--scroll-thumb-size": `${Math.max(0.34, state.viewport / Math.max(1, state.content)) * 100}%`, "--scroll-progress": `${state.maximum ? state.top / state.maximum : 0}` }} onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag} /></div>) : null}
   </>;
 }

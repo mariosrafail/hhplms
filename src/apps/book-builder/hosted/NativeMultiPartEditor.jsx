@@ -87,6 +87,10 @@ export function NativeMultiPartEditor({ bookSlug, componentSlug, activityId, pla
     const authored = structuredClone(child.publicDocument.parts[0].interaction);
     if (selected.kind === "drag-drop") for (const childPanel of authored.panels) childPanel.images = childPanel.images.filter((image) => image.id !== SHARED_CANVAS_AUTHORING_IMAGE_ID).map((image, order) => ({ ...image, order }));
     selected.interaction = authored;
+    if (selected.bankRegion && authored.layoutMode === "text") {
+      const parent = next.publicDocument.parts[0].interaction.panels.find((entry) => entry.id === selected.panelId);
+      selected.textRegion ||= { x: selected.bankRegion.x, y: 0, width: Math.min(selected.bankRegion.width, parent.surface.width - selected.bankRegion.x), height: Math.max(1, selected.bankRegion.y) };
+    } else delete selected.textRegion;
     next.teacherDocument.parts[0].solution.sections.find((entry) => entry.id === id).solution = structuredClone(child.teacherDocument.parts[0].solution);
     for (const reference of child.publicDocument.assets) next.publicDocument.assets = mergeNativeManagedAssetReference(next.publicDocument.assets, reference);
     pruneMultiPartAssetRoots(next.publicDocument);
@@ -137,6 +141,7 @@ export function NativeMultiPartEditor({ bookSlug, componentSlug, activityId, pla
       </fieldset> : null}
       {section ? <><StudioField label="Section title"><input disabled={saving} value={section.title} onChange={(event) => mutatePublic((next) => { next.parts[0].interaction.sections.find((entry) => entry.id === section.id).title = event.target.value; })} /></StudioField>
         {panel.layout === "canvas" && !issues.length ? <details><summary>Shared canvas overview</summary><NativeMultiPartStudentSurface document={{ ...previewDocument, parts: [{ id: "part-1", interaction: { ...previewDocument.parts[0].interaction, panels: [panel], sections: previewDocument.parts[0].interaction.sections.filter((entry) => entry.panelId === panel.id) } }] }} assetUrl={assetUrl} readOnly /></details> : null}
+        {section.textRegion ? <fieldset><legend>Scrolling text image region (parent source coordinates)</legend><StageGeometryControls area={section.textRegion} stage={panel.surface} onChange={(area) => mutatePublic((next) => { next.parts[0].interaction.sections.find((entry) => entry.id === section.id).textRegion = area; })} /></fieldset> : null}
         {section.bankRegion ? <StageGeometryControls area={section.bankRegion} stage={panel.surface} onChange={(area) => mutatePublic((next) => { next.parts[0].interaction.sections.find((entry) => entry.id === section.id).bankRegion = area; })} /> : null}
 
       </> : null}

@@ -1,5 +1,5 @@
 import { NativeMarkWordsMarker } from "./NativeMarkWordsMarker.jsx";
-import { markWordsMarkerPresets } from "../../data/native-activities/nativeMarkWordsMarkers.js";
+import { markWordsMarkerPresets, isOutlineCategoryMode, outlineCategoryPresets } from "../../data/native-activities/nativeMarkWordsMarkers.js";
 import { NativeAudioTextHotspotButtons } from "../native-readable-text/NativeAudioTextHotspots.jsx";
 import { isMarkWordsVisual } from "../../data/native-activities/nativeMarkWordsVisualTargets.js";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -66,7 +66,7 @@ export function NativeMarkWordsPresentation({ document, assetUrl = () => "", res
 }
 
 function StudentSession({ document, assetUrl, responses: controlled = null, initialResponses = null, onResponsesChange = null, readOnly = false, embeddedCanvas = false, audioHotspotPresentation = null }) {
-  const presets = markWordsMarkerPresets(document.parts[0].interaction);
+  const presets = isOutlineCategoryMode(document.parts[0].interaction) ? outlineCategoryPresets(document.parts[0].interaction) : markWordsMarkerPresets(document.parts[0].interaction);
   const [activeMarker, setActiveMarker] = useState(presets[0]?.id);
   const [local, setLocal] = useState(() => restoreNativeMarkWordsResponses(document, initialResponses));
   const responses = restoreNativeMarkWordsResponses(document, controlled ?? local);

@@ -1,5 +1,19 @@
 # HHPLMS — Operating Context & Engineering Map
 
+## Context delta — Native Builder answer options (local candidate)
+
+`verifiedAt: 2026-09-21`; fresh baseline
+`fe98327c3c775cae64e472c52a9a35ec6e2aa53e`.
+[NATIVE_BUILDER_ANSWER_OPTIONS.md](NATIVE_BUILDER_ANSWER_OPTIONS.md) describes
+explicit single-slot alternatives, private outline-category grading, shared
+text-image crop ownership and Teacher-only sentence capitalization. Legacy
+semantics remain the default. There is no migration, historical compiler change
+or hosted mutation. Validation receipts are separate from this contract delta.
+The review correction preserves reveal occupancy across placement/ARIA and valid
+outline drawing defaults after reopening. Disabling category grading now requires
+explicit confirmation before deleting private assignments; the conversion and
+re-enabling behavior are documented in the same contract.
+
 ## Context delta — Word List extraction and publication
 
 `verifiedAt: 2026-09-19` · local Task 1 parent `223a3a153dcfa4958a7eac14342eeac8c0f0a162`;

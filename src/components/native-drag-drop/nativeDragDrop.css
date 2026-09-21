@@ -89,3 +89,13 @@ button.native-drag-drop-target-text { touch-action: none; cursor: grab; }
 .native-drag-drop .native-drag-drop-target-text[data-image-item] .native-drag-drop-image-content { flex-shrink: 1; }
 .native-drag-drop .native-audio-text-hotspot { z-index: 100; touch-action: manipulation; }
 .native-drag-drop[data-layout-mode="text"][data-image-items] .native-drag-drop-bank-items { overflow: auto; }
+
+/* A shared text section owns a crop of the parent source image. Both artwork
+   and targets translate in that crop; its bank stays in the reserved region. */
+.native-drag-drop[data-shared-text] .native-drag-drop-visual-region { display: block; }
+.native-drag-drop[data-shared-text] .native-drag-drop-workspace { position: absolute; pointer-events: auto; background: white; }
+.native-drag-drop[data-shared-text] .native-drag-drop-bank { position: absolute; }
+.native-drag-drop-shared-text-image { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+.native-drag-drop[data-shared-text].native-scroll-controls-host { padding: 0; }
+.native-drag-drop[data-shared-text] > .native-scroll-controls-rail { left: calc(var(--shared-text-right) - 28px); right: auto; top: var(--shared-text-top); bottom: auto; height: var(--shared-text-height); width: 28px; }

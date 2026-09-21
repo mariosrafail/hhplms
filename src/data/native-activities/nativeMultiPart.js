@@ -55,7 +55,13 @@ function validateCanvas(panel, sections, version) {
     const surface = ["drag-drop", "open-response"].includes(section.kind) ? child.surface : { width: child.sourceWidth, height: child.sourceHeight };
     if (surface.width !== panel.surface.width || surface.height !== panel.surface.height) throw new Error("Shared overlays must use their parent canvas coordinates.");
     if (section.kind === "drag-drop") {
-      if (interaction.layoutMode === "text" || child.images.length) throw new Error("Shared Drag & Drop uses the parent background and standard layout.");
+      if (child.images.length) throw new Error("Shared Drag & Drop uses the parent background.");
+      if (interaction.layoutMode === "text") {
+        if (!section.textRegion) throw new Error("Shared Text Drag & Drop requires a text image region.");
+        const region = section.textRegion;
+        for (const target of child.dropTargets) if (target.area.x < region.x || target.area.y < region.y || target.area.x + target.area.width > region.x + region.width || target.area.y + target.area.height > region.y + region.height) throw new Error("Text targets must stay inside their scrolling image region.");
+        active.push({ owner: section.id, area: region });
+      }
       if (!section.bankRegion) throw new Error("Shared Drag & Drop requires a reserved answer bank region.");
       active.push({ owner: section.id, area: section.bankRegion, bank: true });
     } else if (section.kind === "open-response") {
@@ -94,7 +100,7 @@ export function normalizeNativeMultiPartInteraction(input, { assets = [], common
     return { id: panel.id, title: normalizeNativePedagogicalText(panel.title, "Panel title", 300), layout: panel.layout, surface, background };
   });
   const sections = input.sections.map((section) => {
-    exact(section, ["id", "kind", "title", "panelId", "bankRegion", "interaction"], "Multi-Part section");
+    exact(section, ["id", "kind", "title", "panelId", "bankRegion", "interaction", ...(Object.hasOwn(section, "textRegion") ? ["textRegion"] : [])], "Multi-Part section");
     const adapter = NATIVE_MULTI_PART_CHILDREN[section.kind];
     if (!adapter || !isNativeChildId(section.id, "section") || sectionIds.has(section.id) || !panelIds.has(section.panelId) || section.interaction?.kind !== section.kind) throw new Error("Multi-Part section identity, kind or membership is invalid.");
     sectionIds.add(section.id);
@@ -108,7 +114,9 @@ export function normalizeNativeMultiPartInteraction(input, { assets = [], common
     nativeMultiPartAssetSlots(interaction).forEach((slot) => used.add(slot));
     const bankRegion = section.bankRegion === null ? null : normalizeArea(section.bankRegion, panel.surface);
     if (bankRegion && (panel.layout !== "canvas" || section.kind !== "drag-drop")) throw new Error("Reserved answer banks belong to shared Drag & Drop sections.");
-    return { id: section.id, kind: section.kind, title: normalizeNativePedagogicalText(section.title, "Section title", 300), panelId: section.panelId, bankRegion, interaction };
+    const textRegion = Object.hasOwn(section, "textRegion") ? normalizeArea(section.textRegion, panel.surface) : null;
+    if (textRegion && (panel.layout !== "canvas" || section.kind !== "drag-drop" || interaction.layoutMode !== "text")) throw new Error("Text image regions belong to shared Text Drag & Drop sections.");
+    return { ...(textRegion ? { textRegion } : {}), id: section.id, kind: section.kind, title: normalizeNativePedagogicalText(section.title, "Section title", 300), panelId: section.panelId, bankRegion, interaction };
   });
   for (const panel of panels) if (panel.layout === "canvas") {
     try { validateCanvas(panel, sections.filter((section) => section.panelId === panel.id), input.schemaVersion); }
@@ -173,7 +181,7 @@ export function duplicateNativeMultiPartSection(section, privateSection, newId =
   const collect = (value) => { if (!value || typeof value !== "object") return; for (const [key, entry] of Object.entries(value)) { if (key === "id" && typeof entry === "string" && /^[a-z]+-[a-f0-9]{32}$/.test(entry)) ids.set(entry, createNativeChildId(entry.split("-")[0])); else if (entry && typeof entry === "object") collect(entry); } };
   collect(section.interaction);
   const remapString = (value) => ids.get(value) || value.replace(/^(q-[a-f0-9]{32})(-response)$/, (_, id, suffix) => `${ids.get(id) || id}${suffix}`);
-  const remap = (value) => typeof value === "string" ? remapString(value) : Array.isArray(value) ? value.map(remap) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, remap(entry)])) : value;
+  const remap = (value) => typeof value === "string" ? remapString(value) : Array.isArray(value) ? value.map(remap) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [ids.get(key) || key, remap(entry)])) : value;
   return { section: { ...remap(section), id: newId, title: `${section.title} copy`.trim() }, privateSection: { ...remap(privateSection), id: newId } };
 }
 

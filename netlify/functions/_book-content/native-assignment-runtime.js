@@ -1,3 +1,4 @@
+import { nativeDragDropTargetCorrect } from "../../../src/data/native-activities/nativeDragDropAnswers.js";
 import { multiPartAssignmentCapability } from "./multi-part-response.js";
 import {
   RELEASE_INTEGRITY_CHECK_NAMES,
@@ -251,7 +252,7 @@ function scoreDragDrop(publicDocument, teacherDocument, payload = {}) {
   const correct = new Map((teacherDocument.parts?.[0]?.solution?.mappings || []).map((mapping) => [String(mapping.targetId), dragDropMappingWordIds(mapping)]));
   const correctCount = targets.filter((target) => {
     const expected = correct.get(String(target.id)) || [];
-    return expected.length > 0 && sameIdSet(responses.get(String(target.id)) || [], expected);
+    return nativeDragDropTargetCorrect(target, responses.get(String(target.id)) || [], expected);
   }).length;
   const totalCount = targets.length;
   return { status: "submitted", correctCount, totalCount, scorePercent: totalCount ? Math.round(correctCount / totalCount * 100) : 0 };
@@ -271,7 +272,7 @@ function dragDropReview(publicDocument, teacherDocument, payload = {}) {
       questionId: String(target.id), prompt: target.accessibleLabel || "",
       answer: selectedTexts.join("; "), modelAnswer: correctTexts.join("; "), answers: selectedTexts, modelAnswers: correctTexts,
       ...(textMode ? { answerLabels: selectedWordIds.map((id) => words.get(id)?.shortLabel).filter(Boolean), modelAnswerLabels: correctWordIds.map((id) => words.get(id)?.shortLabel).filter(Boolean) } : {}),
-      isCorrect: selectedWordIds.length > 0 && sameIdSet(selectedWordIds, correctWordIds), feedback: "",
+      isCorrect: nativeDragDropTargetCorrect(target, selectedWordIds, correctWordIds), feedback: "",
     };
   });
 }

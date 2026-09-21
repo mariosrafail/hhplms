@@ -1,4 +1,4 @@
-import { validateMarkWordsSelectionMarkers } from "../../../src/data/native-activities/nativeMarkWordsMarkers.js";
+import { validateMarkWordsSelectionMarkers, isOutlineCategoryMode, markWordsSelectionCategory } from "../../../src/data/native-activities/nativeMarkWordsMarkers.js";
 import { isMarkWordsVisual, markWordsResponseGroups, markWordsAnswerGroups } from "../../../src/data/native-activities/nativeMarkWordsVisualTargets.js";
 export function normalizeMarkWordsResponse(publicDocument, envelope) {
   const version = "native-response.v1";
@@ -30,7 +30,7 @@ export function markWordsReview(publicDocument, teacherDocument, payload = {}) {
     const labels = (ids) => ids.map((id) => interaction.targets.find((target) => target.id === id)?.label || id);
     return markWordsResponseGroups(interaction).map((group, index) => {
       const selected = responses.get(group.id) || []; const expected = answers.get(group.id) || [];
-      return { questionId: group.id, prompt: `Panel ${index + 1}`, answer: labels(selected).join("; "), modelAnswer: labels(expected).join("; "), answers: labels(selected), modelAnswers: labels(expected), isCorrect: exactSet(selected, expected), feedback: "" };
+      return { questionId: group.id, prompt: `Panel ${index + 1}`, answer: labels(selected).join("; "), modelAnswer: labels(expected).join("; "), answers: labels(selected), modelAnswers: labels(expected), isCorrect: exactSet(selected, expected) && (!isOutlineCategoryMode(interaction) || expected.every((id) => markWordsSelectionCategory(interaction, payload.items?.find((entry) => entry.id === group.id)?.markers?.[id]) === teacherDocument.parts[0].solution.answers.find((answer) => answer.panelId === group.id)?.categories?.[id])), feedback: "" };
     });
   }
   return publicDocument.parts[0].interaction.items.map((item) => {

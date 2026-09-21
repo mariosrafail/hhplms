@@ -1,4 +1,4 @@
-import { normalizeMarkWordsMarker } from "./nativeMarkWordsMarkers.js";
+import { normalizeMarkWordsMarker, isOutlineCategoryMode, outlineCategory, outlineCategoryPresets } from "./nativeMarkWordsMarkers.js";
 import { isNativeChildId } from "./nativeChildIdentity.js";
 import { normalizeNativePedagogicalText } from "./nativePedagogicalText.js";
 
@@ -22,7 +22,8 @@ export function createEmptyMarkWordsVisualSolution() {
   return { kind: "mark-the-words", schemaVersion: MARK_WORDS_VISUAL_VERSION, answers: [] };
 }
 export function normalizeMarkWordsVisualInteraction(input, { assets = [] } = {}) {
-  exact(input, ["kind", "schemaVersion", "targets", "presentation"]);
+  exact(input, ["kind", "schemaVersion", "targets", "presentation", ...(Object.hasOwn(input, "answerMode") ? ["answerMode"] : [])]);
+  if (Object.hasOwn(input, "answerMode") && !isOutlineCategoryMode(input)) throw new Error("Invalid visual answer mode.");
   if (input.kind !== "mark-the-words" || input.schemaVersion !== MARK_WORDS_VISUAL_VERSION || !Array.isArray(input.targets) || input.targets.length > 800) throw new Error("Visual target version or limits are invalid.");
   const seen = new Set();
   const targets = input.targets.map((target) => {
@@ -46,6 +47,7 @@ export function normalizeMarkWordsVisualInteraction(input, { assets = [] } = {})
     if (!Array.isArray(panel.hotspots) || panel.hotspots.length > 800) throw new Error("Visual hotspots exceed limits.");
     const hotspots = panel.hotspots.map((hotspot) => {
       exact(hotspot, ["id", "targetId", "area", "markArea", "graphicAssetSlot", ...(Object.hasOwn(hotspot, "marker") ? ["marker"] : [])]);
+      if (isOutlineCategoryMode(input) && (Object.hasOwn(hotspot, "marker") || hotspot.graphicAssetSlot !== null)) throw new Error("Grouped targets cannot expose target-specific markers.");
       if (Object.hasOwn(hotspot, "marker")) { normalizeMarkWordsMarker(hotspot.marker, assets); if (hotspot.marker.graphicAssetSlot !== hotspot.graphicAssetSlot) throw new Error("Marker graphic binding mismatch."); } identity(hotspot.id, "hot", seen);
       if (!targets.some((target) => target.id === hotspot.targetId) || mapped.has(hotspot.targetId)) throw new Error("Visual hotspot must bind one unique target.");
       mapped.add(hotspot.targetId);
@@ -59,22 +61,29 @@ export function normalizeMarkWordsVisualInteraction(input, { assets = [] } = {})
     return { ...panel, hotspots };
   });
   if (mapped.size !== targets.length) throw new Error("Every visual target must have a hotspot.");
-  return { kind: input.kind, schemaVersion: MARK_WORDS_VISUAL_VERSION, targets, presentation: { kind: "visual-target", panels, ...(hasPresets ? { markerPresets } : {}) } };
+  return { ...(isOutlineCategoryMode(input) ? { answerMode: input.answerMode } : {}), kind: input.kind, schemaVersion: MARK_WORDS_VISUAL_VERSION, targets, presentation: { kind: "visual-target", panels, ...(hasPresets ? { markerPresets } : {}) } };
 }
 export function normalizeMarkWordsVisualSolution(input) {
   exact(input, ["kind", "schemaVersion", "answers"]);
   if (input.kind !== "mark-the-words" || input.schemaVersion !== MARK_WORDS_VISUAL_VERSION || !Array.isArray(input.answers) || input.answers.length > 8) throw new Error("Visual Teacher version or limits are invalid.");
   const seen = new Set();
   return { ...input, answers: input.answers.map((answer) => {
-    exact(answer, ["panelId", "correctTargetIds"]); identity(answer.panelId, "panel", seen);
+    exact(answer, ["panelId", "correctTargetIds", ...(Object.hasOwn(answer, "categories") ? ["categories"] : [])]);
+    if (Object.hasOwn(answer, "categories")) {
+      if (!answer.categories || typeof answer.categories !== "object" || Array.isArray(answer.categories) || Object.entries(answer.categories).some(([id, color]) => !answer.correctTargetIds.includes(id) || outlineCategory({ kind: "outline", color }) !== color)) throw new Error("Invalid private outline categories.");
+    } identity(answer.panelId, "panel", seen);
     if (!Array.isArray(answer.correctTargetIds) || answer.correctTargetIds.length > 800) throw new Error("Visual Teacher targets exceed limits.");
     const ids = new Set(); answer.correctTargetIds.forEach((id) => identity(id, "target", ids));
-    return { panelId: answer.panelId, correctTargetIds: [...answer.correctTargetIds] };
+    return { panelId: answer.panelId, correctTargetIds: [...answer.correctTargetIds], ...(Object.hasOwn(answer, "categories") ? { categories: { ...answer.categories } } : {}) };
   }) };
 }
 export function validateMarkWordsVisualTopology(interaction, solution) {
   normalizeMarkWordsVisualSolution(solution);
   const panels = interaction.presentation.panels;
+  const categories = new Set(outlineCategoryPresets(interaction).map(outlineCategory));
+  for (const answer of solution.answers) {
+    if (isOutlineCategoryMode(interaction) ? !answer.categories || answer.correctTargetIds.some((id) => !categories.has(answer.categories[id])) : Object.hasOwn(answer, "categories")) throw new Error("Outline category answers must match the explicit public mode and palette.");
+  }
   if (panels.length !== solution.answers.length || panels.some((panel, index) => {
     const answer = solution.answers[index];
     const ordered = panel.hotspots.filter((hotspot) => answer?.correctTargetIds.includes(hotspot.targetId)).map((hotspot) => hotspot.targetId);

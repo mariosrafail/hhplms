@@ -31,7 +31,7 @@ function Session({ document, assetUrl = () => "", responses: controlled = null, 
     onResponsesChange?.(next);
   };
   return <NativeMultiPartLayout {...{ document, assetUrl, panelIndex, setPanelIndex }} audioHotspotPresentation={audioHotspotPresentation} externalNavigation={Boolean(presentation)} renderSection={(section, child, embeddedCanvas) => {
-    const props = { audioHotspotPresentation: nativeMultiPartAudioTextPresentation(document, audioHotspotPresentation, section.id), document: child.publicDocument, assetUrl, responses: responses[section.id] || {}, onResponsesChange: (values) => change(section.id, values), readOnly };
+    const props = { audioHotspotPresentation: embeddedCanvas?.audioHotspotPresentation || nativeMultiPartAudioTextPresentation(document, audioHotspotPresentation, section.id), document: child.publicDocument, assetUrl, responses: responses[section.id] || {}, onResponsesChange: (values) => change(section.id, values), readOnly };
     if (section.kind === "drag-drop") return <NativeDragDropStudentSurface {...props} embeddedCanvas={embeddedCanvas} />;
     if (section.kind === "single-choice") return <NativeSingleChoicePresentation {...props} navigationMode="external" embeddedCanvas={Boolean(embeddedCanvas)} />;
     if (section.kind === "complete-sentences") return <NativeCompleteSentencesStudentSurface {...props} embeddedCanvas={Boolean(embeddedCanvas)} />;

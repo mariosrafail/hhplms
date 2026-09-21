@@ -1,3 +1,4 @@
+import { isOutlineCategoryMode, outlineCategoryPresets, outlineCategory } from "../../data/native-activities/nativeMarkWordsMarkers.js";
 import { isMarkWordsVisual, markWordsResponseGroups, markWordsAnswerGroups } from "../../data/native-activities/nativeMarkWordsVisualTargets.js";
 import { useEffect, useRef, useState } from "react";
 import { NativeMarkWordsPresentation } from "./NativeMarkWordsStudentSurface.jsx";
@@ -26,6 +27,7 @@ function TeacherSession({ publicDocument, teacherDocument, assetUrl, presentatio
   }, [presentation?.command]);
   useEffect(() => { presentation?.onStateChange?.({ panelIndex, panelCount: panels.length, reveal: { supported: true, total: items.length, revealed: visual ? items.filter((item) => revealed.includes(item.id) || selected[item.panelId]?.includes(item.id)).length : revealed.length, pristine: !revealed.length && !Object.values(selected).some((ids) => ids.length) && !panelIndex } }); }, [presentation?.onStateChange, panelIndex, panels.length, items.length, revealed, selected]);
   const responses = visual ? Object.fromEntries(groups.map((group) => [group.id, [...new Set([...(selected[group.id] || []), ...group.options.filter((id) => revealed.includes(id))])]])) : Object.fromEntries(teacherDocument.parts[0].solution.answers.filter((answer) => revealed.includes(answer.itemId)).map((answer) => [answer.itemId, answer.correctWordIds]));
+  if (isOutlineCategoryMode(publicDocument.parts[0].interaction)) responses.markers = Object.fromEntries(teacherDocument.parts[0].solution.answers.map((answer) => [answer.panelId, Object.fromEntries((responses[answer.panelId] || []).map((id) => [id, outlineCategoryPresets(publicDocument.parts[0].interaction).find((preset) => outlineCategory(preset) === answer.categories[id])?.id]))]));
   return <>
     {!presentation ? <div role="group" aria-label="Teacher presentation"><button type="button" onClick={showNext}>Reveal next</button><button type="button" onClick={() => setRevealed(items.map((item) => item.id))}>Reveal all</button><button type="button" onClick={reset}>Hide / reset</button></div> : null}
     <NativeMarkWordsPresentation audioHotspotPresentation={audioHotspotPresentation} document={publicDocument} assetUrl={assetUrl} embeddedCanvas={embeddedCanvas} responses={responses} panelIndex={panelIndex} onPanelChange={setPanelIndex} externalNavigation={Boolean(presentation)} onToggle={(itemId, targetId) => {

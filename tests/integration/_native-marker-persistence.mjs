@@ -9,6 +9,7 @@ import { getStudentAssignmentDetail } from "../../netlify/functions/_book-conten
 import { handler as bookContent } from "../../netlify/functions/book-content.js";
 import { setSqlForTests, hashToken, sessionCookieName } from "../../netlify/functions/_auth-utils.js";
 import { restoreNativeSubmissionResponses } from "../../src/components/lms/student/runtime/studentSubmissionContract.js";
+import { enableOutlineCategories } from "../../src/data/native-activities/nativeMarkWordsVisualAuthoring.js";
 
 export async function exerciseNativeMarkerPersistence({ pool, sql, scope, builderId, teacher, student, classId, insertRelease, publishRelease }) {
  const identity = { bookSlug: "ultimate-b2", componentSlug: "ultimate-b2-students-book" };
@@ -60,6 +61,33 @@ export async function exerciseNativeMarkerPersistence({ pool, sql, scope, builde
    const { verifyNativeMarkerAssignmentBrowser } = await import("./_native-marker-browser.mjs");
    await verifyNativeMarkerAssignmentBrowser({ pool, sql, token, assignmentId: JSON.parse(creation.body).assignment.id, pair });
   }
-  console.log("Native markers PostgreSQL: real Builder save/reload, immutable compiler, entitled assignment, authenticated submit handler, 8 persisted score/marker cases and failure/retry passed.");
+  const grouped = structuredClone(pair);
+  const presets = grouped.publicDocument.parts[0].interaction.presentation.markerPresets;
+  presets.push({ ...presets[1], id: markerId(4), color: "#0055cc", thickness: 6 });
+  enableOutlineCategories(grouped.publicDocument, grouped.teacherDocument, true);
+  const groupedSave = await builder(event(`activities/${activityId}/save`, { ...grouped, expectedPublicRevision: 2, expectedTeacherRevision: 2, clientMutationId: randomUUID() }));
+  assert.equal(groupedSave.statusCode, 200, groupedSave.body);
+  const groupedRows = (await pool.query("select document_type,payload from builder_component_documents where document_key=$1", [activityId])).rows;
+  assert.deepEqual(groupedRows.find((row) => row.document_type === "native_activity_teacher").payload, grouped.teacherDocument);
+  const groupedCompiled = compilePair(grouped, assets);
+  assert.doesNotMatch(JSON.stringify(groupedCompiled.publicProjection.nativeActivities[activityId]), /categories|correctTargetIds|"marker":/);
+  const groupedRelease = await insertRelease(pool, { ...common, releaseNumber: releaseNumber + 1, fixture: { compiled: groupedCompiled } });
+  await publishRelease(pool, { ...common, releaseId: groupedRelease.releaseId, previousReleaseId: release.releaseId, revision: Number(head.head_revision) + 2 });
+  // A newer draft must not change the expected category pinned in the release.
+  const newer = structuredClone(grouped);
+  newer.teacherDocument.parts[0].solution.answers[0].categories[ids[0]] = "#0055cc";
+  assert.equal((await builder(event(`activities/${activityId}/save`, { ...newer, expectedPublicRevision: 3, expectedTeacherRevision: 3, clientMutationId: randomUUID() }))).statusCode, 200);
+  for (const [marker, expected] of [[markerId(2), 100], [markerId(4), 0]]) {
+    const creation = await createAssignment(sql, { idempotencyKey: `outline-category-${marker}`, classIds: [classId], target: { kind: "published_native", releaseId: groupedRelease.releaseId, nativeActivityId: activityId } }, teacher);
+    assert.equal(creation.statusCode, 200, creation.body);
+    const assignment = JSON.parse(creation.body).assignment;
+    const detail = await getStudentAssignmentDetail(sql, student, { assignmentId: assignment.id });
+    assert.equal(detail.statusCode, 200, detail.body); assert.doesNotMatch(detail.body, /categories|correctTargetIds|"marker":/);
+    const response = { schemaVersion: "native-response.v1", items: [{ id: panel.id, value: ids.slice(0, 2), markers: Object.fromEntries(ids.slice(0, 2).map((id) => [id, marker])) }] };
+    const submitted = await submit({ assignmentId: assignment.id, response }); assert.equal(submitted.statusCode, 200, submitted.body);
+    const stored = (await pool.query("select response_payload,score_percent from activity_submissions where activity_assignment_id=$1", [assignment.id])).rows[0];
+    assert.equal(Number(stored.score_percent), expected); assert.deepEqual(stored.response_payload.items, response.items);
+  }
+  console.log("Native markers PostgreSQL: 8 legacy and 2 private category scores, pinned-release isolation and real Builder save/reload passed.");
  } finally { setSqlForTests(null); }
 }

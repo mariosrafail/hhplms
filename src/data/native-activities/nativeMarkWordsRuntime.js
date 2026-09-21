@@ -1,4 +1,4 @@
-import { validateMarkWordsSelectionMarkers, markWordsMarkerPresets } from "./nativeMarkWordsMarkers.js";
+import { validateMarkWordsSelectionMarkers, markWordsMarkerPresets, isOutlineCategoryMode, markWordsSelectionCategory } from "./nativeMarkWordsMarkers.js";
 import { isMarkWordsVisual, markWordsResponseGroups } from "./nativeMarkWordsVisualTargets.js";
 export function restoreNativeMarkWordsResponses(document, input) {
   const result = {};
@@ -20,7 +20,8 @@ export function toggleNativeMarkWordsResponse(document, responses, itemId, wordI
   const item = markWordsResponseGroups(document.parts[0].interaction).find((entry) => entry.id === itemId);
   if (!item?.options.includes(wordId)) return current;
   const selected = new Set(current[itemId] || []);
-  if (selected.has(wordId)) selected.delete(wordId); else selected.add(wordId);
+  const recolor = isOutlineCategoryMode(document.parts[0].interaction) && selected.has(wordId) && markWordsSelectionCategory(document.parts[0].interaction, current.markers?.[itemId]?.[wordId]) !== markWordsSelectionCategory(document.parts[0].interaction, markerId);
+  if (selected.has(wordId) && !recolor) selected.delete(wordId); else selected.add(wordId);
   const next = { ...current, [itemId]: item.options.filter((id) => selected.has(id)) };
   if (markerId !== null || current.markers) {
     const markers = { ...(current.markers?.[itemId] || {}) };

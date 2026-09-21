@@ -1,3 +1,4 @@
+import { nativeDragDropAnswerAllocation } from "./nativeDragDropAnswers.js";
 import { NATIVE_ACTIVITY_SYSTEM_FONT_FAMILIES } from "./nativeActivityFont.js";
 import { isNativeChildId } from "./nativeChildIdentity.js";
 import { nativeActivityFontFamily } from "./nativeActivityFont.js";
@@ -194,10 +195,15 @@ export function normalizeNativeDragDropInteraction(input, { assets = [], commonA
     const dropTargets = panel.dropTargets.map((target, targetIndex) => {
       const targetLabel = `${label}.dropTargets[${targetIndex}]`;
       const hasCapacity = Object.hasOwn(target, "capacity");
-      exactKeys(target, ["id", "area", "accessibleLabel", ...(hasCapacity ? ["capacity"] : [])], targetLabel);
+      exactKeys(target, ["id", "area", "accessibleLabel", ...(hasCapacity ? ["capacity"] : []), ...["answerMode", "sentenceStart"].filter((key) => Object.hasOwn(target, key))], targetLabel);
       if (!isNativeChildId(target.id, "target") || targetIds.has(target.id)) throw new Error("Native Drag & Drop target identity is invalid or duplicate.");
       targetIds.add(target.id);
+      if (Object.hasOwn(target, "answerMode") && !["all", "any"].includes(target.answerMode)) throw new Error("Invalid target answer mode.");
+      if (target.answerMode === "any" && (target.capacity ?? 1) !== 1) throw new Error("Single-answer targets must have capacity one.");
+      if (Object.hasOwn(target, "sentenceStart") && typeof target.sentenceStart !== "boolean") throw new Error("Sentence start must be a boolean.");
       return {
+        ...(Object.hasOwn(target, "answerMode") ? { answerMode: target.answerMode } : {}),
+        ...(Object.hasOwn(target, "sentenceStart") ? { sentenceStart: target.sentenceStart } : {}),
         id: target.id,
         area: normalizeArea(target.area, composition.surface, `${targetLabel}.area`),
         accessibleLabel: normalizeNativeSingleLineText(target.accessibleLabel, `${targetLabel}.accessibleLabel`, NATIVE_DRAG_DROP_LIMITS.targetLabelLength, { required: true }),
@@ -234,24 +240,19 @@ export function validateNativeDragDropTopology(publicDocument, teacherDocument) 
   const targets = interaction.panels.flatMap((panel) => panel.dropTargets);
   const targetIds = new Set(targets.map((target) => target.id));
   const wordIds = new Set(interaction.words.map((word) => word.id));
-  const reusableWordIds = new Set(interaction.words.filter((word) => word.reusable).map((word) => word.id));
   const mappings = teacherDocument.parts[0].solution.mappings;
-  const nonReusableUses = new Set();
   if (mappings.length !== targets.length
     || mappings.some((mapping) => {
       const expected = nativeDragDropMappingWordIds(mapping);
       const target = targets.find((entry) => entry.id === mapping.targetId);
-      if (!targetIds.has(mapping.targetId) || !target || expected.length !== target.capacity || new Set(expected).size !== expected.length || expected.some((wordId) => !wordIds.has(wordId))) return true;
-      for (const wordId of expected) {
-        if (!reusableWordIds.has(wordId) && nonReusableUses.has(wordId)) return true;
-        if (!reusableWordIds.has(wordId)) nonReusableUses.add(wordId);
-      }
+      if (!targetIds.has(mapping.targetId) || !target || (target.answerMode === "any" ? !expected.length || target.capacity !== 1 : expected.length !== target.capacity) || new Set(expected).size !== expected.length || expected.some((wordId) => !wordIds.has(wordId))) return true;
       return false;
     })
     || new Set(mappings.map((mapping) => mapping.targetId)).size !== mappings.length
   ) {
     throw new Error("Drag & Drop requires one private stable-ID mapping per target, exact capacity coverage, and only reusable items may map to multiple targets.");
   }
+  if (!nativeDragDropAnswerAllocation(interaction, mappings)) throw new Error("No complete Drag & Drop allocation exists: only reusable items may occupy multiple targets.");
   return true;
 }
 
@@ -269,9 +270,10 @@ export function assessNativeDragDropReadiness(publicDocument, teacherDocument) {
     panel.dropTargets.forEach((target, targetIndex) => {
       if (!target.accessibleLabel) issues.push(`Panel ${panelIndex + 1} target ${targetIndex + 1} needs an accessible label.`);
       const expected = mappings.get(target.id) || [];
-      if (expected.length !== target.capacity || expected.some((wordId) => !wordIds.has(wordId))) issues.push(`Panel ${panelIndex + 1} target ${targetIndex + 1} needs ${target.capacity} private correct item${target.capacity === 1 ? "" : "s"}.`);
+      if ((target.answerMode === "any" ? !expected.length || target.capacity !== 1 : expected.length !== target.capacity) || expected.some((wordId) => !wordIds.has(wordId))) issues.push(`Panel ${panelIndex + 1} target ${targetIndex + 1} needs ${target.capacity} private correct item${target.capacity === 1 ? "" : "s"}.`);
     });
   });
+  if (!nativeDragDropAnswerAllocation(interaction, teacherDocument.parts[0].solution.mappings)) issues.push("No complete Drag & Drop allocation exists: only reusable items may occupy multiple targets.");
   return { ready: issues.length === 0, issues };
 }
 
@@ -407,14 +409,14 @@ export function visibleNativeDragDropWordIds(sessionWordIds, responses = {}, tar
   return (sessionWordIds || []).filter((wordId) => !consumed.has(wordId));
 }
 
-export function reassignNativeDragDropMapping(mappings, targetId, wordIds, { reusableWordIds = new Set() } = {}) {
+export function reassignNativeDragDropMapping(mappings, targetId, wordIds, { reusableWordIds = new Set(), targets = [] } = {}) {
   if (!Array.isArray(mappings)) throw new Error("Drag & Drop mappings must be an array.");
   const expected = Array.isArray(wordIds) ? [...wordIds] : [wordIds];
   if (!expected.length || new Set(expected).size !== expected.length) throw new Error("A target needs one or more unique Drag & Drop items.");
   const next = mappings.filter((mapping) => mapping.targetId !== targetId).map((mapping) => ({ targetId: mapping.targetId, wordIds: [...nativeDragDropMappingWordIds(mapping)] }));
   for (const wordId of expected) {
-    if (reusableWordIds.has(wordId)) continue;
-    const conflict = next.find((mapping) => mapping.wordIds.includes(wordId));
+    if (reusableWordIds.has(wordId) || targets.find((target) => target.id === targetId)?.answerMode === "any") continue;
+    const conflict = next.find((mapping) => mapping.wordIds.includes(wordId) && targets.find((target) => target.id === mapping.targetId)?.answerMode !== "any");
     if (conflict) throw new Error("Only reusable Drag & Drop items can be correct for multiple targets.");
   }
   next.push({ targetId, wordIds: expected });

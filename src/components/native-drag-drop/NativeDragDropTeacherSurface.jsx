@@ -1,3 +1,4 @@
+import { nativeDragDropAnswerAllocation } from "../../data/native-activities/nativeDragDropAnswers.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { nativeDragDropMappingWordIds, normalizeNativeDragDropResponses, updateNativeDragDropRevealState } from "../../data/native-activities/nativeDragDrop.js";
@@ -42,10 +43,13 @@ export function NativeDragDropTeacherSurface({ publicDocument, teacherDocument, 
   }, [interaction.panels, presentation?.command, revealed, targetIds.join("\0")]);
   useEffect(() => presentation?.onStateChange?.({ panelIndex, panelCount: interaction.panels.length, reveal: { supported: true, total: targetIds.length, revealed: revealed.size, pristine: panelIndex === 0 && revealed.size === 0 && !hasManualResponses } }), [hasManualResponses, interaction.panels.length, panelIndex, presentation?.onStateChange, revealed, targetIds.length]);
 
-  const revealedWords = new Map([...revealed].map((targetId) => [targetId, (wordIdsByTarget.get(targetId) || []).map((wordId) => wordById.get(wordId)).filter(Boolean)]).filter(([, words]) => words.length));
+  const allocation = nativeDragDropAnswerAllocation(interaction, teacherDocument.parts[0].solution.mappings) || new Map();
+  const revealedWords = new Map([...revealed].map((targetId) => [targetId, (allocation.get(targetId) || []).map((wordId) => wordById.get(wordId)).filter(Boolean)]).filter(([, words]) => words.length));
+  const revealedIds = new Set([...revealedWords.values()].flat().filter((word) => !word.reusable).map((word) => word.id));
+  const visibleResponses = Object.fromEntries(Object.entries(responses).map(([id, words]) => [id, words.filter((wordId) => revealedWords.has(id) ? revealedWords.get(id).some((word) => word.id === wordId) : !revealedIds.has(wordId))]).filter(([, words]) => words.length));
   return <NativeDragDropStudentSurface
     document={publicDocument}
-    responses={responses}
+    responses={visibleResponses}
     onResponsesChange={onResponsesChange}
     embeddedCanvas={embeddedCanvas}
     audioHotspotPresentation={audioHotspotPresentation}
